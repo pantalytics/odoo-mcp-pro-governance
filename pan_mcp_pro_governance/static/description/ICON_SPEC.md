@@ -38,9 +38,11 @@ they match the public product page.
 - **Size:** 1200 × 600 px
 - **Format:** PNG
 - **Composition:** brand mark left (380 px, soft drop shadow), text
-  block right — "MCP Pro" in dark `#001d21`, "AI Governance for Odoo"
-  in accent `#5b58d8`, tagline ("Agent identities · Audit log · API
-  call log") in muted slate.
+  block right — "MCP Pro" in dark `#001d21`, "Claude · ChatGPT ·
+  Gemini · Copilot" in accent `#5b58d8`, tagline ("in your Odoo —
+  with a full audit trail") in muted slate. The accent line matches
+  search intent (people looking for an MCP / AI connector); the
+  muted line carries the standalone-utility differentiator.
 - **Background:** vertical gradient white → faint lavender, blended
   with a top-right radial purple wash for depth.
 
