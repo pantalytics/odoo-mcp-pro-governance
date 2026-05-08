@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_mcp_governance_agent_identity_tree" model="ir.ui.view">
+        <field name="name">mcp.governance.agent.identity.tree</field>
+        <field name="model">mcp.governance.agent.identity</field>
+        <field name="arch" type="xml">
+            <list string="Agent Identities" decoration-muted="state == 'revoked'" decoration-warning="state == 'suspended'" decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="x_provider"/>
+                <field name="x_user_id"/>
+                <field name="x_owner_id"/>
+                <field name="state"/>
+                <field name="x_last_seen"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mcp_governance_agent_identity_form" model="ir.ui.view">
+        <field name="name">mcp.governance.agent.identity.form</field>
+        <field name="model">mcp.governance.agent.identity</field>
+        <field name="arch" type="xml">
+            <form string="Agent Identity">
+                <header>
+                    <button name="action_activate" type="object" string="Activate"
+                            invisible="state in ('active', 'revoked')"
+                            class="btn-primary"/>
+                    <button name="action_suspend" type="object" string="Suspend"
+                            invisible="state != 'active'"/>
+                    <button name="action_revoke" type="object" string="Revoke"
+                            invisible="state == 'revoked'"
+                            confirm="Revoking an agent identity is permanent. Continue?"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,active,suspended,revoked"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Finance Reconciliation Bot"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="x_provider"/>
+                            <field name="x_owner_id"/>
+                            <field name="x_user_id"/>
+                        </group>
+                        <group>
+                            <field name="x_last_seen"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description" name="description">
+                            <field name="x_description" placeholder="What does this agent do? Which process does it own?"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mcp_governance_agent_identity_search" model="ir.ui.view">
+        <field name="name">mcp.governance.agent.identity.search</field>
+        <field name="model">mcp.governance.agent.identity</field>
+        <field name="arch" type="xml">
+            <search string="Agent Identities">
+                <field name="name"/>
+                <field name="x_user_id"/>
+                <field name="x_owner_id"/>
+                <separator/>
+                <filter string="Active" name="active" domain="[('state', '=', 'active')]"/>
+                <filter string="Suspended" name="suspended" domain="[('state', '=', 'suspended')]"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Provider" name="group_provider" context="{'group_by': 'x_provider'}"/>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Owner" name="group_owner" context="{'group_by': 'x_owner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_mcp_governance_agent_identity" model="ir.actions.act_window">
+        <field name="name">Agent Identities</field>
+        <field name="res_model">mcp.governance.agent.identity</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register your first AI agent identity.
+            </p><p>
+                Each agent that talks to Odoo — Claude, a custom bot, an automated
+                workflow — should have its own identity. Giving every agent its own
+                name, owner and lifecycle is what lets you answer "who did this?"
+                months later when the auditor asks.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,19 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"  # Odoo 19.0 requires Python 3.11+
+extend-exclude = ["i18n"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",  # handled by formatter
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+# Odoo tests are typically run via `odoo-bin -i mcp_pro_governance --test-enable`
+# This config is only for ad-hoc unit tests that don't need the Odoo registry.
+testpaths = ["mcp_pro_governance/tests"]

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Odoo
+*.pyo
+*.swp
+*.swo
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local overrides
+*.local
+.local/
+.env
+.env.*
+!.env.example
+
+# Playwright artifacts
+node_modules/
+playwright-report/
+test-results/

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_mcp_governance_root"
+              name="MCP Pro"
+              sequence="95"
+              web_icon="pan_mcp_pro_governance,static/description/icon.png"
+              groups="group_mcp_governance_user"/>
+
+    <menuitem id="menu_mcp_governance_identities"
+              name="Agent Identities"
+              parent="menu_mcp_governance_root"
+              action="action_mcp_governance_agent_identity"
+              sequence="10"/>
+
+    <menuitem id="menu_mcp_governance_api_calls"
+              name="API Call Log"
+              parent="menu_mcp_governance_root"
+              action="action_mcp_governance_api_call_log"
+              sequence="15"/>
+
+    <menuitem id="menu_mcp_governance_audit"
+              name="Audit Log"
+              parent="menu_mcp_governance_root"
+              action="action_mcp_governance_audit_log"
+              sequence="20"/>
+
+    <menuitem id="menu_mcp_governance_config"
+              name="Configuration"
+              parent="menu_mcp_governance_root"
+              sequence="90"
+              groups="group_mcp_governance_manager"/>
+
+</odoo>

@@ -1,0 +1,109 @@
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan">MCP Pro</h2>
+    <h3 class="oe_slogan">AI Governance for Odoo</h3>
+    <p class="oe_mt32">
+      Give every AI agent its own identity. Log every action to an
+      append-only trail. Keep your auditor happy when Claude, ChatGPT
+      or your own bot starts reading and writing your ERP.
+    </p>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan">Why</h2>
+    <p class="oe_mt32">
+      Standard Odoo was designed for humans clicking through forms. When
+      an AI agent can fire 5,000 actions per hour against the same user
+      account, the gaps show — no first-class agent identity, API keys
+      with full user permissions, audit depth that doesn't capture the
+      prompt that drove the decision.
+    </p>
+    <p>
+      This module fills those gaps with thin, well-bounded primitives —
+      it does not replace Odoo's ACLs, it instruments around them.
+    </p>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan">What's inside</h2>
+    <ul>
+      <li><b>Agent identities</b> — first-class model for every AI agent
+          that touches your data, with owner, provider and lifecycle
+          (draft / active / suspended / revoked).</li>
+      <li><b>Append-only audit log</b> — every agent action writes a row
+          that cannot be edited or deleted, linked to the agent identity,
+          acting user, model, record, request id and prompt hash.</li>
+      <li><b>Append-only API call log</b> — one row per inbound MCP / API
+          call (method, path, tool, status, duration), joined to the audit
+          log via request id.</li>
+      <li><b>Security groups</b> — User (read) and Manager (admin),
+          ready for you to assign.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced text-center">
+    <h2 class="oe_slogan">Agent Identities</h2>
+    <p>Register every AI agent that talks to your Odoo. Owner, provider, lifecycle state, last-seen.</p>
+    <img src="first_screenshot.png" alt="Agent Identities list view"
+         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;"/>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
+  <div class="oe_row oe_spaced text-center">
+    <h2 class="oe_slogan">Audit Log</h2>
+    <p>
+      Append-only by design. Manager cannot edit or delete — AccessError
+      is raised on attempts. One row per agent action, linked to the
+      identity that did it, the user it acted as, and the request id.
+    </p>
+    <img src="audit_log_screenshot.png" alt="Audit Log list view"
+         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #444;"/>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced text-center">
+    <h2 class="oe_slogan">API Call Log</h2>
+    <p>
+      One row per inbound MCP/API call. Method, path, tool, HTTP status,
+      duration. Joined to the audit log via request id so you can trace
+      a single AI prompt all the way down to the records it changed.
+    </p>
+    <img src="api_call_log_screenshot.png" alt="API Call Log list view"
+         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;"/>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan">Companion to the MCP server</h2>
+    <p class="oe_mt32">
+      The MCP server itself — the bridge that lets Claude, ChatGPT,
+      Cursor, Gemini and other MCP-compatible AI tools talk to your Odoo —
+      runs outside Odoo. This addon is the oversight surface for that
+      traffic. It works whether you self-host the server or run a hosted
+      equivalent.
+    </p>
+    <p>
+      No data leaves your Odoo database. No call-home. No telemetry.
+      Open source (LGPL-3) — audit every line.
+    </p>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan">Support</h2>
+    <p class="oe_mt32">
+      Questions or issues?
+      <a href="mailto:support@pantalytics.com">support@pantalytics.com</a>
+    </p>
+  </div>
+</section>
