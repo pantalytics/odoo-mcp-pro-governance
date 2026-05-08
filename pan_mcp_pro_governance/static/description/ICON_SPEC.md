@@ -1,50 +1,48 @@
 # Icon and banner — design brief
 
-Two assets ship with the App Store listing. A baseline pair generated
-from the Pantalytics brand kit (hollow blue ring on a dark tile) lives
-in this directory now; this brief is for the *replacement* set that a
-designer should produce before v1.0.
+Two assets ship with the App Store listing. The current set matches
+the **light theme** of `pantalytics.com/apps/odoo-mcp-server`: a soft
+white-to-lavender gradient with the original blue-ring brand mark.
 
-## Brand palette (current)
+Regenerate with `python3 .local/regen_assets.py` (script lives at the
+repo root, gitignored).
 
-Source: `pantalytics-brand/public/downloads/pantalytics-colors.css`.
+## Brand palette (light theme — used by these assets)
 
-- Background dark: `#001d21` (primary), `#002328` (secondary)
-- Accent: `#9b99ff` (purple) — hover `#7370ff`
-- Text on dark: `#ffffff`, secondary `rgba(255,255,255,0.6)`
+Source: `pantalytics-website/src/styles/global.css` (`@media light` scope).
 
-Older material used navy `#1b3a5c` + gold `#e8a317`; that palette is
-**superseded** for new assets. Existing logo PNGs in the brand kit
-(`icon-blue.png`, `icon-gold.png`) still ship the legacy ring colors
-— use them as the brand mark on the new dark background.
+- Background: `#ffffff` (primary), `#f4f5f7` (secondary), faint lavender wash
+- Accent: `#5b58d8` (purple) — hover `#4a47c4`
+- Text: `#001d21` primary, muted slate for taglines
+- Brand mark: `pantalytics-brand/public/images/logo/icon-blue.png` —
+  dark blue outer ring `#1a4f8c`, light inner ring `#c0d6e4`, white centre.
+
+The dark-theme palette (`#001d21` background + `#9b99ff` accent) still
+exists in the brand kit but is **superseded** for App Store assets so
+they match the public product page.
 
 ## `icon.png`
 
 - **Size:** 256 × 256 px (square)
-- **Format:** PNG, RGBA. May be opaque (dark tile) or transparent.
-- **Style:** simple glyph, single subject, readable at 32 px favicon size
-- **Current baseline:** hollow blue brand ring with white centre on a
-  `#001d21` tile. Reads as a generic Pantalytics tile — fine for v0.x,
-  but every Pantalytics app would look identical. The replacement
-  should add a glyph that distinguishes *this* app from `pan_outlook_pro`
-  and any future Pantalytics modules.
-- **Motif idea:** a shield, badge or lock superimposed on a network /
-  agent node to signal governance of distributed AI actors. Keep it
-  abstract — "key with padlock" reads too much like an auth app.
-- **Don'ts:** no screenshots, no inner text, no gradients, no drop
-  shadows. Must survive flat rendering on the App Store tile.
+- **Format:** PNG, RGBA, opaque
+- **Style:** soft radial gradient (faint lavender highlight top-left
+  → `#f4f5f7` edges) with the blue-ring mark centred at ~76% size and
+  a subtle 4 px / 22 % drop shadow for depth.
+- **Readable at 32 px favicon size.** The gradient survives downscale
+  because it's low-contrast; the ring carries the recognition.
+- **Don'ts:** no screenshots, no inner text, no high-contrast shadows
+  that turn into a hard halo at small sizes.
 
 ## `banner.png`
 
 - **Size:** 1200 × 600 px
 - **Format:** PNG
-- **Content:** wide brand hero above the fold of the App Store
-  description page. The current baseline is the brand mark + product
-  wordmark on the dark background. A replacement could show a
-  dashboard-style composition (agent list left, audit log right) or
-  an abstract pattern with the wordmark.
-- **Palette:** dominant `#001d21`, accent `#9b99ff` in small doses,
-  text white or `rgba(255,255,255,0.6)`.
+- **Composition:** brand mark left (380 px, soft drop shadow), text
+  block right — "MCP Pro" in dark `#001d21`, "AI Governance for Odoo"
+  in accent `#5b58d8`, tagline ("Agent identities · Audit log · API
+  call log") in muted slate.
+- **Background:** vertical gradient white → faint lavender, blended
+  with a top-right radial purple wash for depth.
 
 ## Where they're referenced
 

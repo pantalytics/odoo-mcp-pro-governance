@@ -13,11 +13,10 @@
         or Microsoft Copilot. Works on desktop and mobile. Works on Odoo
         Online, Odoo.sh and on-premise.
 
-        The MCP Pro server runs outside Odoo (5-minute setup, free tier
-        available, EU-hosted). This addon installs *inside* your Odoo and
-        gives operators what the server alone cannot: a first-class registry
-        of every AI agent, an append-only audit trail, and a per-request
-        API call log.
+        The MCP Pro server runs outside Odoo (5-minute setup, EU-hosted).
+        This addon installs *inside* your Odoo and gives operators what
+        the server alone cannot: a first-class registry of every AI agent,
+        an append-only audit trail, and a per-request API call log.
 
         Why this module?
         ----------------
@@ -70,7 +69,7 @@
     "website": "https://www.pantalytics.com/apps/mcp-pro-governance/",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "license": "LGPL-3",
     "depends": [
         "base",

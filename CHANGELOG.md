@@ -3,6 +3,13 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.0.2] - 2026-05-08
+
+### Changed
+- Removed pricing tiers from the App Store listing and manifest
+  description. The Odoo App Store frame is "free addon" - users
+  discovering the SaaS register on pantalytics.com themselves.
+
 ## [19.0.1.0.1] - 2026-05-08
 
 ### Changed
