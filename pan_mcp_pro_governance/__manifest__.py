@@ -1,19 +1,23 @@
 {
     "name": "MCP Pro",
-    "summary": "Companion to MCP Pro - the AI connector for Odoo. Agent identities, audit log, API call log. Works with Claude, ChatGPT, Cursor, Gemini.",
+    "summary": "Connect your Odoo with Claude, ChatGPT, Gemini and Copilot - with a full audit trail of every AI action.",
     "description": """
-        MCP Pro - AI Connector Governance for Odoo
-        ===========================================
+        MCP Pro - Connect your Odoo with Claude, ChatGPT, Gemini, Copilot
+        =================================================================
 
-        **This is the free companion app to MCP Pro, the AI connector for Odoo.**
+        The MCP server that brings your favourite AI app inside your Odoo -
+        with a full audit trail of every action.
 
-        The actual MCP server - which connects your Odoo to Claude, ChatGPT,
-        Cursor, Gemini, Copilot and any other MCP-compatible AI tool - runs
-        outside Odoo. This addon installs *inside* your Odoo and gives
-        operators what the server alone cannot: a first-class registry of
-        every AI agent, an append-only audit trail, and a per-request API
-        call log. It is the oversight surface for AI-driven access to your
-        ERP, whether you self-host the server or run a hosted equivalent.
+        Pull open quotes, follow up with customers, create sales orders,
+        reconcile invoices - straight from chat in Claude, ChatGPT, Gemini
+        or Microsoft Copilot. Works on desktop and mobile. Works on Odoo
+        Online, Odoo.sh and on-premise.
+
+        The MCP Pro server runs outside Odoo (5-minute setup, free tier
+        available, EU-hosted). This addon installs *inside* your Odoo and
+        gives operators what the server alone cannot: a first-class registry
+        of every AI agent, an append-only audit trail, and a per-request
+        API call log.
 
         Why this module?
         ----------------
@@ -66,7 +70,7 @@
     "website": "https://www.pantalytics.com/apps/mcp-pro-governance/",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "license": "LGPL-3",
     "depends": [
         "base",

@@ -1,55 +1,108 @@
 <section class="oe_container">
   <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan">MCP Pro</h2>
-    <h3 class="oe_slogan">AI Governance for Odoo</h3>
+    <h2 class="oe_slogan">Connect your Odoo with Claude, ChatGPT, Gemini and Copilot.</h2>
+    <h3 class="oe_slogan">The MCP server that brings your favourite AI app inside your Odoo &mdash; with a full audit trail of every action.</h3>
     <p class="oe_mt32">
-      Give every AI agent its own identity. Log every action to an
-      append-only trail. Keep your auditor happy when Claude, ChatGPT
-      or your own bot starts reading and writing your ERP.
+      Pull open quotes, follow up with customers, create sales orders, reconcile invoices &mdash; straight from chat. Works on desktop and mobile. Works on Odoo Online, Odoo.sh and on-premise.
+    </p>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced text-center">
+    <img src="demo.gif" alt="Claude using Odoo via MCP Pro"
+         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0; border-radius: 8px;"/>
+    <p class="oe_mt32"><i>Claude reading and writing real Odoo records via the MCP Pro server.</i></p>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
+  <div class="oe_row oe_spaced text-center">
+    <h2 class="oe_slogan">Works with every major AI tool</h2>
+    <p>
+      <img src="logos/claude.svg" alt="Claude" style="height: 56px; margin: 16px 24px;"/>
+      <img src="logos/openai.svg" alt="OpenAI / ChatGPT" style="height: 56px; margin: 16px 24px;"/>
+      <img src="logos/gemini.png" alt="Gemini" style="height: 56px; margin: 16px 24px;"/>
+      <img src="logos/copilot.svg" alt="Microsoft Copilot" style="height: 56px; margin: 16px 24px;"/>
+      <img src="logos/mistral.svg" alt="Mistral" style="height: 56px; margin: 16px 24px;"/>
+    </p>
+    <p class="oe_mt32">
+      Claude, ChatGPT, Gemini, Microsoft Copilot, Mistral &mdash; or any other MCP-compatible AI client. One connector, every model.
+    </p>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan text-center">What customers say</h2>
+    <div class="row oe_mt32">
+      <div class="col-md-4">
+        <p>
+          <i>"Our team lives inside Odoo. The Pantalytics MCP server has changed how we work. Pulling open quotes, following up with customers, creating sales orders, straight from chat. Saves us real hours every week."</i>
+        </p>
+        <p><b>Freek Bos</b> &mdash; Thuisbatterijnederland.nl</p>
+      </div>
+      <div class="col-md-4">
+        <p>
+          <i>"The MCP is working great! Definitely worth it."</i>
+        </p>
+        <p><b>Daniel Degetau</b> &mdash; Pigmentum</p>
+      </div>
+      <div class="col-md-4">
+        <p>
+          <i>"Love love love your tool!"</i>
+        </p>
+        <p><b>Andrew Law</b> &mdash; Odoo It Yourself</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan text-center">How it works</h2>
+    <div class="row oe_mt32">
+      <div class="col-md-4 text-center">
+        <h4>1. Connect your Odoo</h4>
+        <p>
+          Sign in with Google or Microsoft on the MCP Pro server (5-minute setup, free tier available). Point it at your Odoo Online, Odoo.sh or on-premise instance.
+        </p>
+      </div>
+      <div class="col-md-4 text-center">
+        <h4>2. Add your AI app</h4>
+        <p>
+          Connect Claude Desktop, ChatGPT, Cursor, Gemini, Copilot or any MCP client &mdash; one shared MCP endpoint serves them all. Existing Odoo access rights apply.
+        </p>
+      </div>
+      <div class="col-md-4 text-center">
+        <h4>3. Install this module</h4>
+        <p>
+          This free Odoo addon registers every AI agent that talks to your data, logs every API call and ORM action to an append-only trail, and gives operators a single place to oversee it.
+        </p>
+      </div>
+    </div>
+    <p class="oe_mt32 text-center">
+      Free tier: 50 calls/day. Pro: &euro;25/user/month, 500 calls/day, 30-day free trial. Open source, EU-hosted.
+    </p>
+    <p class="text-center">
+      Server &amp; pricing: pantalytics.com/apps/odoo-mcp-server
     </p>
   </div>
 </section>
 
 <section class="oe_container oe_dark">
   <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan">Why</h2>
-    <p class="oe_mt32">
-      Standard Odoo was designed for humans clicking through forms. When
-      an AI agent can fire 5,000 actions per hour against the same user
-      account, the gaps show — no first-class agent identity, API keys
-      with full user permissions, audit depth that doesn't capture the
-      prompt that drove the decision.
+    <h2 class="oe_slogan text-center">What this module gives you</h2>
+    <p class="text-center oe_mt32">
+      The MCP Pro server runs outside Odoo. <b>This addon installs inside Odoo</b> and gives operators what the server alone cannot &mdash; the oversight surface for AI-driven access to your ERP.
     </p>
-    <p>
-      This module fills those gaps with thin, well-bounded primitives —
-      it does not replace Odoo's ACLs, it instruments around them.
-    </p>
-  </div>
-</section>
-
-<section class="oe_container">
-  <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan">What's inside</h2>
-    <ul>
-      <li><b>Agent identities</b> — first-class model for every AI agent
-          that touches your data, with owner, provider and lifecycle
-          (draft / active / suspended / revoked).</li>
-      <li><b>Append-only audit log</b> — every agent action writes a row
-          that cannot be edited or deleted, linked to the agent identity,
-          acting user, model, record, request id and prompt hash.</li>
-      <li><b>Append-only API call log</b> — one row per inbound MCP / API
-          call (method, path, tool, status, duration), joined to the audit
-          log via request id.</li>
-      <li><b>Security groups</b> — User (read) and Manager (admin),
-          ready for you to assign.</li>
-    </ul>
   </div>
 </section>
 
 <section class="oe_container">
   <div class="oe_row oe_spaced text-center">
-    <h2 class="oe_slogan">Agent Identities</h2>
-    <p>Register every AI agent that talks to your Odoo. Owner, provider, lifecycle state, last-seen.</p>
+    <h2 class="oe_slogan">Agent identities</h2>
+    <p>Register every AI agent that talks to your Odoo. Owner, provider, lifecycle (draft / active / suspended / revoked), last-seen.</p>
     <img src="first_screenshot.png" alt="Agent Identities list view"
          class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;"/>
   </div>
@@ -57,11 +110,9 @@
 
 <section class="oe_container oe_dark">
   <div class="oe_row oe_spaced text-center">
-    <h2 class="oe_slogan">Audit Log</h2>
+    <h2 class="oe_slogan">Append-only audit log</h2>
     <p>
-      Append-only by design. Manager cannot edit or delete — AccessError
-      is raised on attempts. One row per agent action, linked to the
-      identity that did it, the user it acted as, and the request id.
+      Every agent action writes an immutable row, linked to the agent identity, the acting user, the model, the record, the request id and the prompt hash. Manager cannot edit or delete &mdash; AccessError is raised on attempts.
     </p>
     <img src="audit_log_screenshot.png" alt="Audit Log list view"
          class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #444;"/>
@@ -70,11 +121,9 @@
 
 <section class="oe_container">
   <div class="oe_row oe_spaced text-center">
-    <h2 class="oe_slogan">API Call Log</h2>
+    <h2 class="oe_slogan">API call log</h2>
     <p>
-      One row per inbound MCP/API call. Method, path, tool, HTTP status,
-      duration. Joined to the audit log via request id so you can trace
-      a single AI prompt all the way down to the records it changed.
+      One row per inbound MCP/API call. Method, path, tool, HTTP status, duration. Joined to the audit log via request id so you can trace a single AI prompt all the way down to the records it changed.
     </p>
     <img src="api_call_log_screenshot.png" alt="API Call Log list view"
          class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;"/>
@@ -83,18 +132,43 @@
 
 <section class="oe_container oe_dark">
   <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan">Companion to the MCP server</h2>
+    <h2 class="oe_slogan">Why governance matters</h2>
     <p class="oe_mt32">
-      The MCP server itself — the bridge that lets Claude, ChatGPT,
-      Cursor, Gemini and other MCP-compatible AI tools talk to your Odoo —
-      runs outside Odoo. This addon is the oversight surface for that
-      traffic. It works whether you self-host the server or run a hosted
-      equivalent.
+      Standard Odoo was designed for humans clicking through forms. When an AI agent fires 5,000 actions per hour against the same user account, the gaps show:
     </p>
+    <ul>
+      <li>No first-class "agent" identity &mdash; API keys inherit full user permissions.</li>
+      <li>Audit trails record field changes, not which prompt drove the decision.</li>
+      <li>Segregation of Duties breaks when one agent can create AND approve.</li>
+      <li>EU AI Act Art. 12 / 13 / 26 / 50 record-keeping obligations apply from August 2026.</li>
+    </ul>
     <p>
-      No data leaves your Odoo database. No call-home. No telemetry.
-      Open source (LGPL-3) — audit every line.
+      This module fills those gaps with thin, well-bounded primitives. It does not replace Odoo's ACLs &mdash; it instruments around them.
     </p>
+  </div>
+</section>
+
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan text-center">Data handling</h2>
+    <ul class="oe_mt32">
+      <li>No data leaves your Odoo database.</li>
+      <li>No call-home, no telemetry, no third parties from this module.</li>
+      <li>Open source (LGPL-3) &mdash; audit every line.</li>
+      <li>The MCP Pro server is EU-hosted, GDPR-aware, and respects existing Odoo access rights.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan text-center">Get started</h2>
+    <ol class="oe_mt32">
+      <li>Install this module from the Odoo App Store.</li>
+      <li>Sign up for the MCP Pro server: pantalytics.com/apps/odoo-mcp-server</li>
+      <li>Connect your AI tool (Claude, ChatGPT, Gemini, Copilot, ...) to the server.</li>
+      <li>Watch agent activity flow into the Agent Identities, API Call Log and Audit Log inside your Odoo.</li>
+    </ol>
   </div>
 </section>
 

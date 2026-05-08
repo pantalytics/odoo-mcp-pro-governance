@@ -3,6 +3,17 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.0.1] - 2026-05-08
+
+### Changed
+- App Store listing flipped to lead with the AI-connector value
+  proposition (Claude / ChatGPT / Gemini / Copilot / Mistral) and the
+  hosted MCP Pro server, with governance positioned as the differentiator
+  in the second half. Adds demo GIF, AI tool logos, and the three
+  customer testimonials from the SaaS landing page.
+- Manifest `summary` and `description` rewritten to match the funnel.
+- Pre-commit `check-added-large-files` raised to 5MB to fit the demo GIF.
+
 ## [19.0.1.0.0] - 2026-05-08
 
 ### Security
