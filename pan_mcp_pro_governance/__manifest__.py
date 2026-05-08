@@ -66,7 +66,7 @@
         - Python 3.11+
     """,
     "author": "Pantalytics B.V. by Rutger Hofste",
-    "website": "https://www.pantalytics.com/apps/mcp-pro-governance/",
+    "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
     "version": "19.0.1.0.2",
