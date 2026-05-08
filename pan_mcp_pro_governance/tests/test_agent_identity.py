@@ -1,4 +1,6 @@
 from odoo.tests.common import TransactionCase
+from odoo.tools import mute_logger
+from psycopg2 import IntegrityError
 
 
 class TestAgentIdentity(TransactionCase):
@@ -24,5 +26,6 @@ class TestAgentIdentity(TransactionCase):
 
     def test_name_must_be_unique(self):
         self.Identity.create({"name": "Unique Bot"})
-        with self.assertRaises(Exception):
+        with mute_logger("odoo.sql_db"), self.assertRaises(IntegrityError):
             self.Identity.create({"name": "Unique Bot"})
+            self.Identity.flush_model()

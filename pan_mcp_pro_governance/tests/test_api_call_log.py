@@ -7,9 +7,7 @@ class TestApiCallLog(TransactionCase):
         super().setUp()
         self.CallLog = self.env["mcp.governance.api.call.log"]
         self.AuditLog = self.env["mcp.governance.audit.log"]
-        self.agent = self.env["mcp.governance.agent.identity"].create(
-            {"name": "API Log Test Bot"}
-        )
+        self.agent = self.env["mcp.governance.agent.identity"].create({"name": "API Log Test Bot"})
 
     def test_create_entry(self):
         entry = self.CallLog.create(

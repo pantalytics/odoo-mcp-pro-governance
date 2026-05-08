@@ -80,9 +80,7 @@ class McpGovernanceApiCallLog(models.Model):
         AuditLog = self.env["mcp.governance.audit.log"]
         for rec in self:
             if rec.x_request_id:
-                rec.x_audit_log_ids = AuditLog.search(
-                    [("x_request_id", "=", rec.x_request_id)]
-                )
+                rec.x_audit_log_ids = AuditLog.search([("x_request_id", "=", rec.x_request_id)])
             else:
                 rec.x_audit_log_ids = AuditLog.browse()
             rec.x_audit_log_count = len(rec.x_audit_log_ids)

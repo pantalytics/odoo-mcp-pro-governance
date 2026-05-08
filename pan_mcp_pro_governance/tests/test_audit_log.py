@@ -6,9 +6,7 @@ class TestAuditLog(TransactionCase):
     def setUp(self):
         super().setUp()
         self.Log = self.env["mcp.governance.audit.log"]
-        self.agent = self.env["mcp.governance.agent.identity"].create(
-            {"name": "Audit Test Bot"}
-        )
+        self.agent = self.env["mcp.governance.agent.identity"].create({"name": "Audit Test Bot"})
 
     def test_create_entry(self):
         entry = self.Log.create(

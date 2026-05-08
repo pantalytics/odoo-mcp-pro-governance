@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 {
     "name": "MCP Pro",
     "summary": "Companion to MCP Pro - the AI connector for Odoo. Agent identities, audit log, API call log. Works with Claude, ChatGPT, Cursor, Gemini.",
