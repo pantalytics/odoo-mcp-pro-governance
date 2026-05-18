@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit the API-key wizard form: insert a required Role dropdown
+         between Description and Duration. The dropdown is filtered to the
+         current user's own assigned roles. -->
+    <record id="view_apikey_description_form_inherit" model="ir.ui.view">
+        <field name="name">res.users.apikeys.description.form.mcp_pro</field>
+        <field name="model">res.users.apikeys.description</field>
+        <field name="inherit_id" ref="base.form_res_users_key_description"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='duration']" position="before">
+                <h3 class="fw-bold">Role</h3>
+                <p>
+                    Pick what this key is allowed to do. The role's groups
+                    define the key's effective permissions. You can only pick
+                    a role already assigned to your user.
+                </p>
+                <field name="x_available_role_ids" invisible="1"/>
+                <field name="x_role_id"
+                       options="{'no_create': True, 'no_open': True}"
+                       domain="[('id', 'in', x_available_role_ids)]"/>
+                <p invisible="x_role_id">
+                    <em>No role selected yet. If your user has no roles,
+                    ask an administrator to assign one first.</em>
+                </p>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit the kanban view of existing keys: surface role + state. -->
+    <record id="view_apikey_kanban_inherit" model="ir.ui.view">
+        <field name="name">res.users.apikeys.kanban.mcp_pro</field>
+        <field name="model">res.users.apikeys</field>
+        <field name="inherit_id" ref="base.res_users_apikeys_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='create_date']" position="after">
+                <field name="x_role_id"/>
+                <field name="x_state"/>
+                <field name="x_last_used"/>
+                <field name="x_use_count"/>
+            </xpath>
+            <xpath expr="//small[contains(., 'Scope:')]" position="after">
+                <small invisible="not x_role_id">
+                    Role: <field name="x_role_id"/>
+                </small>
+                <small>
+                    State: <field name="x_state"/>
+                    <span invisible="not x_last_used">
+                        · last used <field name="x_last_used"/>
+                        (<field name="x_use_count"/> calls)
+                    </span>
+                </small>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

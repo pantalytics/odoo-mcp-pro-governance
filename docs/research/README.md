@@ -14,6 +14,9 @@ them together into concrete design decisions for the module.
 | 04 | [mcp_ecosystem.md](04_mcp_ecosystem.md) | MCP spec auth, OAuth 2.1 + resource indicators, fine-grained authz (Cerbos/OpenFGA/Permit.io), audit patterns across MCP servers |
 | 05 | [how_ai_breaks_controls.md](05_how_ai_breaks_controls.md) | Speed, prompt injection, SoD collapse, data exfil, tool chaining, real incidents |
 | 06 | [competitive_landscape.md](06_competitive_landscape.md) | SAP Joule, Oracle AI Agent Studio, Workday, NetSuite, and what exists on the Odoo app store today |
+| 07 | [related_repos.md](07_related_repos.md) | Three-repo product family map (MCP server / SaaS admin / this governance addon) |
+| 08 | [api_call_logging_options.md](08_api_call_logging_options.md) | Three paths to make the API Call Log actually fill up: depend on OCA `auditlog`, roll our own dispatch hook, or fork. Recommendation + license/scope trade-offs. |
+| 09 | [mcp_pro_internals.md](09_mcp_pro_internals.md) | Architectural snapshot of the two sibling repos (`odoo-mcp-pro` server + `odoo-mcp-pro-admin` SaaS overlay): entry points, modules, auth, billing, deployment. |
 
 ## Synthesis
 

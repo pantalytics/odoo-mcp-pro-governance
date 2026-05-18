@@ -1,9 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mcp_governance_agent_identity_user,mcp.governance.agent.identity user,model_mcp_governance_agent_identity,group_mcp_governance_user,1,0,0,0
 access_mcp_governance_agent_identity_manager,mcp.governance.agent.identity manager,model_mcp_governance_agent_identity,group_mcp_governance_manager,1,1,1,1
-access_mcp_governance_audit_log_user,mcp.governance.audit.log user,model_mcp_governance_audit_log,group_mcp_governance_user,1,0,0,0
-access_mcp_governance_audit_log_manager,mcp.governance.audit.log manager,model_mcp_governance_audit_log,group_mcp_governance_manager,1,0,0,0
-access_mcp_governance_audit_log_system,mcp.governance.audit.log system,model_mcp_governance_audit_log,base.group_system,1,0,1,0
-access_mcp_governance_api_call_log_user,mcp.governance.api.call.log user,model_mcp_governance_api_call_log,group_mcp_governance_user,1,0,0,0
-access_mcp_governance_api_call_log_manager,mcp.governance.api.call.log manager,model_mcp_governance_api_call_log,group_mcp_governance_manager,1,0,0,0
-access_mcp_governance_api_call_log_system,mcp.governance.api.call.log system,model_mcp_governance_api_call_log,base.group_system,1,0,1,0

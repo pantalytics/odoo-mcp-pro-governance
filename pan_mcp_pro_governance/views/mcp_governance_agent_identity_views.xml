@@ -11,7 +11,7 @@
                 <field name="x_user_id"/>
                 <field name="x_owner_id"/>
                 <field name="state"/>
-                <field name="x_last_seen"/>
+                <field name="x_api_call_count" string="Calls"/>
             </list>
         </field>
     </record>
@@ -34,6 +34,13 @@
                            statusbar_visible="draft,active,suspended,revoked"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_api_calls" type="object"
+                                class="oe_stat_button" icon="fa-exchange"
+                                invisible="not x_user_id">
+                            <field name="x_api_call_count" widget="statinfo" string="API Calls"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name" placeholder="e.g. Finance Reconciliation Bot"/></h1>
@@ -45,7 +52,6 @@
                             <field name="x_user_id"/>
                         </group>
                         <group>
-                            <field name="x_last_seen"/>
                             <field name="active"/>
                         </group>
                     </group>
@@ -91,9 +97,9 @@
                 Register your first AI agent identity.
             </p><p>
                 Each agent that talks to Odoo — Claude, a custom bot, an automated
-                workflow — should have its own identity. Giving every agent its own
-                name, owner and lifecycle is what lets you answer "who did this?"
-                months later when the auditor asks.
+                workflow — should have its own identity. Pick the technical Odoo
+                user the MCP server logs in as: every inbound HTTP call from that
+                user is then logged under "API Calls".
             </p>
         </field>
     </record>

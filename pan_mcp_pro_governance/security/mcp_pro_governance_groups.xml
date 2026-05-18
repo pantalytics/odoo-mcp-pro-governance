@@ -8,29 +8,28 @@
     </record>
 
     <record id="res_groups_privilege_mcp_governance" model="res.groups.privilege">
-        <field name="name">MCP Governance</field>
+        <field name="name">MCP Pro</field>
         <field name="category_id" ref="module_category_mcp_governance"/>
     </record>
 
     <record id="group_mcp_governance_user" model="res.groups">
         <field name="name">User</field>
         <field name="privilege_id" ref="res_groups_privilege_mcp_governance"/>
+        <field name="implied_ids" eval="[Command.link(ref('auditlog.group_auditlog_user'))]"/>
         <field name="comment">
-            Read-only access to agent identities, the audit log and the
-            API call log. No record rule scoping yet — sees all rows.
+            Read-only access to agent identities and the API call log
+            (auditlog.http.request from OCA `auditlog`).
         </field>
     </record>
 
     <record id="group_mcp_governance_manager" model="res.groups">
         <field name="name">Manager</field>
         <field name="privilege_id" ref="res_groups_privilege_mcp_governance"/>
-        <field name="implied_ids" eval="[Command.link(ref('group_mcp_governance_user'))]"/>
+        <field name="implied_ids" eval="[Command.link(ref('group_mcp_governance_user')), Command.link(ref('auditlog.group_auditlog_manager'))]"/>
         <field name="user_ids" eval="[Command.link(ref('base.user_admin'))]"/>
         <field name="comment">
-            Governance administration: create/suspend/revoke agent
-            identities. Cannot create, edit or delete audit and API
-            call log rows — those are written by a system-level
-            technical user (base.group_system) only.
+            Governance administration: create / suspend / revoke agent
+            identities and configure audit rules.
         </field>
     </record>
 

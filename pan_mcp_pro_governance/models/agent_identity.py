@@ -1,7 +1,18 @@
-from odoo import fields, models
+from odoo import _, api, fields, models
 
 
 class McpGovernanceAgentIdentity(models.Model):
+    """First-class identity for every AI agent that talks to Odoo.
+
+    The agent binds to a technical `res.users` record — its ACLs and record
+    rules govern what the agent can actually do. Inbound HTTP calls made by
+    that user are logged by OCA `auditlog` and surfaced here via the
+    "API Calls" smart button.
+
+    Future governance features (policies, quotas, risk class, approval
+    workflows) attach to this model.
+    """
+
     _name = "mcp.governance.agent.identity"
     _description = "MCP Governance Agent Identity"
     _inherit = ["mail.thread", "mail.activity.mixin"]
@@ -14,7 +25,8 @@ class McpGovernanceAgentIdentity(models.Model):
         string="Technical User",
         tracking=True,
         help="The Odoo user this agent operates as. ACLs and record rules "
-        "of that user apply to every call the agent makes.",
+        "of that user apply to every call the agent makes. Inbound HTTP "
+        "requests made by this user appear under 'API Calls'.",
     )
     x_provider = fields.Selection(
         selection=[
@@ -40,7 +52,6 @@ class McpGovernanceAgentIdentity(models.Model):
         required=True,
         tracking=True,
     )
-    x_last_seen = fields.Datetime(readonly=True, string="Last Seen")
     x_owner_id = fields.Many2one(
         "res.users",
         default=lambda self: self.env.user,
@@ -51,10 +62,35 @@ class McpGovernanceAgentIdentity(models.Model):
     )
     active = fields.Boolean(default=True)
 
+    x_api_call_count = fields.Integer(
+        compute="_compute_api_call_count",
+        string="API Calls",
+    )
+
     _name_uniq = models.Constraint(
         "UNIQUE(name)",
         "An agent identity with this name already exists.",
     )
+
+    @api.depends("x_user_id")
+    def _compute_api_call_count(self):
+        HttpRequest = self.env["auditlog.http.request"]
+        for rec in self:
+            rec.x_api_call_count = (
+                HttpRequest.search_count([("user_id", "=", rec.x_user_id.id)])
+                if rec.x_user_id
+                else 0
+            )
+
+    def action_view_api_calls(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("API Calls — %s", self.name),
+            "res_model": "auditlog.http.request",
+            "view_mode": "list,form",
+            "domain": [("user_id", "=", self.x_user_id.id)],
+        }
 
     def action_activate(self):
         self.write({"state": "active"})

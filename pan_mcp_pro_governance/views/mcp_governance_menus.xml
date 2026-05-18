@@ -17,12 +17,6 @@
               name="API Call Log"
               parent="menu_mcp_governance_root"
               action="action_mcp_governance_api_call_log"
-              sequence="15"/>
-
-    <menuitem id="menu_mcp_governance_audit"
-              name="Audit Log"
-              parent="menu_mcp_governance_root"
-              action="action_mcp_governance_audit_log"
               sequence="20"/>
 
     <menuitem id="menu_mcp_governance_config"
@@ -30,5 +24,11 @@
               parent="menu_mcp_governance_root"
               sequence="90"
               groups="group_mcp_governance_manager"/>
+
+    <menuitem id="menu_mcp_governance_audit_rules"
+              name="Audit Rules"
+              parent="menu_mcp_governance_config"
+              action="auditlog.action_auditlog_rule_tree"
+              sequence="10"/>
 
 </odoo>

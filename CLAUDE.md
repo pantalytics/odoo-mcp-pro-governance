@@ -10,15 +10,29 @@ The actual MCP server (which connects Odoo to Claude/ChatGPT/Cursor/Gemini) runs
 
 For the full three-repo family map see [docs/research/07_related_repos.md](docs/research/07_related_repos.md).
 
+## Design & Feedback
+
+- **UI design rules** for this module: [docs/design.md](docs/design.md). Bound to Pantalytics design philosophy at [brand.pantalytics.com/en/design-philosophy](https://brand.pantalytics.com/en/design-philosophy). Touching menus/views/forms? Read it first.
+- **Feedback loops** for "how do I know my change is good?": [docs/FEEDBACK.md](docs/FEEDBACK.md). Lists every loop from pre-commit (<2s) to CI (~6 min) and which to use when.
+
 ## Models
 
 | Model | Purpose | Mutability |
 |---|---|---|
 | `mcp.governance.agent.identity` | First-class identity for every AI agent that talks to Odoo | mutable lifecycle (draft/active/suspended/revoked) |
-| `mcp.governance.audit.log` | ORM-level audit trail (per-record CRUD) | append-only |
-| `mcp.governance.api.call.log` | Per-HTTP-request log of inbound MCP calls | append-only |
 
-The two append-only models raise `AccessError` from `write` and `unlink` — even managers cannot tamper. Correlation between them is via `x_request_id`.
+The HTTP call log and the per-record audit trail come from OCA `auditlog`
+(dependency since v0.2.0): `auditlog.http.request`, `auditlog.http.session`,
+`auditlog.log`, `auditlog.log.line`. The agent identity binds to a
+`res.users` via `x_user_id` and links to the OCA records through that user.
+A `post_init_hook` in [hooks.py](pan_mcp_pro_governance/hooks.py) seeds
+draft `auditlog.rule` records for sale.order, res.partner, account.move,
+crm.lead, product.template, stock.picking — only for models whose owning
+module is installed.
+
+`mcp.governance.audit.log` and `mcp.governance.api.call.log` from v0.1
+were dropped in v0.2.0; the migration in
+`migrations/19.0.0.2.0/pre-migration.py` drops the empty tables.
 
 ## Development Principles
 
@@ -45,9 +59,9 @@ The two append-only models raise `AccessError` from `write` and `unlink` — eve
 All fields specific to this module's domain use the `x_` prefix. Examples:
 
 ```python
-x_agent_identity_id = fields.Many2one(...)
-x_request_id = fields.Char(...)
-x_tool_name = fields.Char(...)
+x_user_id = fields.Many2one(...)
+x_provider = fields.Selection(...)
+x_api_call_count = fields.Integer(...)
 ```
 
 **Keep without prefix** (Odoo standard fields, override or reuse):
@@ -68,15 +82,16 @@ When a field's semantic meaning is *new* to the domain (e.g. "the technical user
 
 | File | Purpose |
 |---|---|
-| `models/agent_identity.py` | Agent identity model + lifecycle actions |
-| `models/audit_log.py` | Append-only ORM audit log |
-| `models/api_call_log.py` | Append-only per-HTTP-request log + audit log correlation |
-| `views/mcp_governance_*_views.xml` | Tree/form/search per model |
-| `views/mcp_governance_menus.xml` | Top-level menu "MCP Pro" + submenus |
-| `security/mcp_pro_governance_groups.xml` | User / Manager groups |
-| `security/ir.model.access.csv` | Per-model ACLs |
+| `models/agent_identity.py` | Agent identity model + lifecycle actions + smart-button into `auditlog.http.request` |
+| `hooks.py` | `post_init_hook` seeds draft `auditlog.rule` rows for installed AI-target models |
+| `migrations/19.0.0.2.0/pre-migration.py` | Drops the two v0.1 governance log tables on upgrade |
+| `views/mcp_governance_agent_identity_views.xml` | Agent identity tree/form/search/action |
+| `views/mcp_governance_api_call_log_views.xml` | Window action over `auditlog.http.request` (re-uses OCA views) |
+| `views/mcp_governance_menus.xml` | Top-level "MCP Pro" + Agent Identities + API Call Log + Configuration → Audit Rules |
+| `security/mcp_pro_governance_groups.xml` | User / Manager groups; imply `auditlog.group_auditlog_*` |
+| `security/ir.model.access.csv` | ACL rows for `mcp.governance.agent.identity` only |
 | `tests/test_*.py` | Unit tests (TransactionCase) |
-| `static/description/index.html` | App Store listing HTML (do not put external links here) |
+| `static/description/index.html` | App Store listing HTML (no external links allowed) |
 | `static/src/js/tours/` | Web tours for HttpCase tests |
 
 ## Local Docker setup
@@ -129,7 +144,7 @@ make shell        # exec bash inside Odoo container
 make restart      # restart Odoo (rare; --dev=all usually obviates this)
 make upgrade      # apply schema/manifest changes (-u pan_mcp_pro_governance)
 make test         # fresh DB + install + run all module tests
-make test-one TAG=:TestApiCallLog.test_audit_log_correlation
+make test-one TAG=:TestAgentIdentity.test_lifecycle_transitions
 make lint         # pre-commit on all files
 make e2e          # Playwright screenshot capture (for App Store assets)
 make clean        # drop test_* databases
@@ -166,7 +181,7 @@ make clean        # drop test_* databases
 
 ## App Store positioning rules
 
-- This app is €0, LGPL-3, listed under name "MCP Pro" on Odoo App Store
+- This app is €0, AGPL-3, listed under name "MCP Pro" on Odoo App Store. License is AGPL-3 from v0.2.0 because we depend on OCA `auditlog` (AGPL-3).
 - `static/description/index.html` allows ONLY `mailto:` and YouTube canonical anchors. **No `https://pantalytics.com` anchors** in listing HTML.
 - The in-app CTA promoting the MCP Pro SaaS lives in a single discreet menu item (planned: Configuration → About) — not banners on every view.
 - Manifest must drop "promised future features" before submission — reviewers flag those as misleading.

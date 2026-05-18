@@ -1,121 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="view_mcp_governance_api_call_log_tree" model="ir.ui.view">
-        <field name="name">mcp.governance.api.call.log.tree</field>
-        <field name="model">mcp.governance.api.call.log</field>
-        <field name="arch" type="xml">
-            <list string="API Call Log" create="false" edit="false"
-                  decoration-success="x_status_code &gt;= 200 and x_status_code &lt; 300"
-                  decoration-warning="x_status_code &gt;= 400 and x_status_code &lt; 500"
-                  decoration-danger="x_status_code &gt;= 500">
-                <field name="create_date" string="When"/>
-                <field name="x_agent_identity_id"/>
-                <field name="x_user_id" optional="hide"/>
-                <field name="x_method"/>
-                <field name="x_tool_name"/>
-                <field name="x_path" optional="hide"/>
-                <field name="x_status_code"/>
-                <field name="x_duration_ms"/>
-                <field name="x_audit_log_count" string="Audit"/>
-                <field name="x_request_id" optional="hide"/>
-                <field name="x_ip_address" optional="hide"/>
-            </list>
-        </field>
-    </record>
-
-    <record id="view_mcp_governance_api_call_log_form" model="ir.ui.view">
-        <field name="name">mcp.governance.api.call.log.form</field>
-        <field name="model">mcp.governance.api.call.log</field>
-        <field name="arch" type="xml">
-            <form string="API Call Log Entry" create="false" edit="false">
-                <header>
-                    <button name="action_open_audit_log"
-                            type="object"
-                            string="Open Audit Entries"
-                            class="oe_highlight"
-                            invisible="x_audit_log_count == 0"/>
-                </header>
-                <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_audit_log"
-                                type="object"
-                                class="oe_stat_button"
-                                icon="fa-list">
-                            <field name="x_audit_log_count" widget="statinfo" string="Audit"/>
-                        </button>
-                    </div>
-                    <group>
-                        <group>
-                            <field name="create_date" string="When"/>
-                            <field name="x_agent_identity_id"/>
-                            <field name="x_user_id"/>
-                            <field name="x_ip_address"/>
-                        </group>
-                        <group>
-                            <field name="x_method"/>
-                            <field name="x_path"/>
-                            <field name="x_tool_name"/>
-                            <field name="x_status_code"/>
-                            <field name="x_duration_ms"/>
-                            <field name="x_request_id"/>
-                        </group>
-                    </group>
-                    <group string="Sizes">
-                        <group>
-                            <field name="x_request_bytes"/>
-                        </group>
-                        <group>
-                            <field name="x_response_bytes"/>
-                        </group>
-                    </group>
-                    <group string="Error" invisible="not x_error_message">
-                        <field name="x_error_message" nolabel="1"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
-
-    <record id="view_mcp_governance_api_call_log_search" model="ir.ui.view">
-        <field name="name">mcp.governance.api.call.log.search</field>
-        <field name="model">mcp.governance.api.call.log</field>
-        <field name="arch" type="xml">
-            <search string="API Call Log">
-                <field name="x_agent_identity_id"/>
-                <field name="x_user_id"/>
-                <field name="x_tool_name"/>
-                <field name="x_path"/>
-                <field name="x_request_id"/>
-                <field name="x_status_code"/>
-                <separator/>
-                <filter string="Today" name="today"
-                        domain="[('create_date', '&gt;=', (context_today()).strftime('%Y-%m-%d'))]"/>
-                <filter string="Errors" name="errors"
-                        domain="[('x_status_code', '&gt;=', 400)]"/>
-                <filter string="Slow (&gt; 1s)" name="slow"
-                        domain="[('x_duration_ms', '&gt;', 1000)]"/>
-                <group>
-                    <filter string="Agent" name="group_agent" context="{'group_by': 'x_agent_identity_id'}"/>
-                    <filter string="Tool" name="group_tool" context="{'group_by': 'x_tool_name'}"/>
-                    <filter string="Status" name="group_status" context="{'group_by': 'x_status_code'}"/>
-                    <filter string="Method" name="group_method" context="{'group_by': 'x_method'}"/>
-                </group>
-            </search>
-        </field>
-    </record>
+    <!--
+        The API Call Log is `auditlog.http.request` from OCA `auditlog`.
+        Tree/form/search views are shipped by that module. This file only
+        defines our entry-point action and an MCP-Pro-flavoured help block.
+    -->
 
     <record id="action_mcp_governance_api_call_log" model="ir.actions.act_window">
         <field name="name">API Call Log</field>
-        <field name="res_model">mcp.governance.api.call.log</field>
+        <field name="res_model">auditlog.http.request</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No API calls logged yet.
             </p><p>
-                Once MCP Pro (or any integration writing to this log) is wired up,
-                every inbound HTTP request appears here — method, path, tool, status,
-                duration — append-only, joined to the audit log via request id.
+                One row is created for every inbound HTTP request that touches an
+                audited model. Configure which models are audited under
+                <b>MCP Pro → Configuration → Audit Rules</b>. Filter by user to see
+                only the calls made by a specific AI agent.
             </p>
         </field>
     </record>
