@@ -205,7 +205,21 @@ The dotted bit (alt block) is the only invasive piece: the same user, asking the
 
 ## Open questions (must resolve before promoting Proposed → Accepted)
 
-1. **Feasibility of per-request group override.** Manual prototype: can we cleanly override `res.users.has_group` and `_get_effective_groups` so that ONLY API-key-authenticated requests see narrowed groups, while UI requests of the same user see the full set? Need to map the exact callsites and verify nothing in core Odoo or commonly-installed apps trips up.
+1. ~~**Feasibility of per-request group override.**~~ **Resolved 2026-05-18.** Two complementary overrides cover the two main paths:
+   - `res.users._has_group()` — handles menu visibility, view-level groups, button gates. When the request authenticated via an API key with a bound role, returns answers based on the role's groups (role.group_id ∪ role.implied_ids ∪ transitive implied groups).
+   - `ir.model.access.check()` — handles ORM-level CRUD (search/read/write/create/unlink on models). Same narrowing logic; uses the same role-groups set against `ir_model_access` SQL.
+   - `ir.model.access._make_access_error()` — overridden to surface a role-specific error message instead of Odoo's generic "you need group X" pointer (which is misleading when the actual fix is to broaden the role or pick a different one).
+
+   UI sessions are unaffected because `_get_api_key_role()` checks `request.session['x_mcp_api_key_role_id']`, which only the API-key auth path sets.
+
+   Verified locally on Odoo 19.0 with `mcp_v02_test` DB:
+   - Role "MCP CRM Reader" (only `group_partner_manager`) on admin's API key
+   - `res.partner.search_count` → 4 (allowed by ACL, group_partner_manager has read on res.partner)
+   - `ir.module.module.search_count` → AccessError with our role-specific message
+   - `has_group("base.group_system")` → False (admin has this group, role does not)
+   - `has_group("base.group_partner_manager")` → True
+
+   Not yet covered: `ir.rule` (record-level rules). Filed as a new follow-up.
 2. **Should `x_role_id` be required when a key is created on a user that has roles?** Argument for: prevent operators from accidentally creating an unscoped key. Argument against: legacy keys exist; need a soft fallback. Probably: warn in UI, don't hard-require.
 3. **Should we surface "effective groups" on the key's form** (read-only computed from `x_role_id.implied_ids`) so operators can answer "what can this key actually do?" without clicking through three models? Probably yes — small UX win.
 4. **Interaction with `base_user_role`'s `date_from` / `date_to` time-bound roles.** If a role expires while a key still references it, what happens? Either deny the call or fall back to no-role (full user access). The former is safer; document clearly.
