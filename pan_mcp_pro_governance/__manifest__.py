@@ -79,6 +79,7 @@
     "assets": {
         "web.assets_tests": [
             "pan_mcp_pro_governance/static/src/js/tours/governance_tour.js",
+            "pan_mcp_pro_governance/static/src/js/tours/lifecycle_tour.js",
         ],
     },
     "images": [
