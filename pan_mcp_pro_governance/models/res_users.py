@@ -35,10 +35,23 @@ class ResUsers(models.Model):
 
     @api.model
     def _get_api_key_role(self):
-        """Return the active API-key role for this request, or False."""
-        if not request:
-            return False
-        role_id = request.session.get("x_mcp_api_key_role_id")
+        """Return the active API-key role for this request, or False.
+
+        Reads from two channels:
+        - request.session (modern bearer auth path keeps the request on the
+          local stack, session writes persist)
+        - thread-local (legacy /jsonrpc path pops the request via
+          borrow_request, so session writes don't survive; thread-local does)
+
+        The first non-empty value wins.
+        """
+        from .res_users_apikeys import get_thread_api_key_role_id
+
+        role_id = None
+        if request:
+            role_id = request.session.get("x_mcp_api_key_role_id")
+        if not role_id:
+            role_id = get_thread_api_key_role_id()
         if not role_id:
             return False
         role = self.env["res.users.role"].sudo().browse(role_id)

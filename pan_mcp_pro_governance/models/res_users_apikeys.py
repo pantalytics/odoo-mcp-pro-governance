@@ -3,15 +3,44 @@
 The key is still owned by one `res.users` (Odoo native, billing-bound) but
 its capability surface is narrowed to the linked role for the duration of
 any request that authenticates via this key. See ADR-010.
+
+Attribution storage: thread-local. The modern `/json/2/*` bearer auth path
+keeps the request on the local stack, so `request.session` would have
+worked there. But the legacy `/jsonrpc` path runs `dispatch_rpc()` inside
+a `borrow_request()` context that pops the request — `request.session`
+writes during that dispatch don't survive to subsequent ACL checks. A
+thread-local is the lowest-common-denominator: every Odoo worker handles
+one request per thread, so per-thread storage gives us a stable channel
+for the role id regardless of which auth path was taken.
 """
 
 import logging
+import threading
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
+
+# Per-thread storage for the API-key role attribution. Cleared at the
+# start of every _check_credentials call so a stale value from a prior
+# request on the same worker thread can't leak. Read by res.users
+# ._get_api_key_role().
+_mcp_thread_local = threading.local()
+
+
+def get_thread_api_key_role_id():
+    return getattr(_mcp_thread_local, "api_key_role_id", None)
+
+
+def set_thread_api_key_role_id(role_id):
+    _mcp_thread_local.api_key_role_id = role_id
+
+
+def clear_thread_api_key_role_id():
+    if hasattr(_mcp_thread_local, "api_key_role_id"):
+        del _mcp_thread_local.api_key_role_id
 
 
 class ResUsersApikeys(models.Model):
@@ -76,16 +105,19 @@ class ResUsersApikeys(models.Model):
                 )
 
     def _check_credentials(self, *, scope, key):
-        """Override: stash matched key id + role id on the request session.
+        """Override: stash matched key id + role id for the duration of
+        this request, both on the request session (modern path) and on
+        a thread-local (covers the legacy /jsonrpc path where the
+        request is popped from the stack during dispatch_rpc).
 
-        Fails closed: if the key has a role but is suspended/revoked, deny.
-        If anything goes wrong identifying the key, no attribution is recorded
-        and Odoo's standard fallback (user's full rights) applies — which we
-        consider acceptable only because the migration suspends pre-existing
-        unscoped keys at install time.
+        Fails closed: if the key is suspended/revoked, deny.
         """
+        # Reset any leftover thread-local from a previous request on this
+        # worker thread. Belt-and-braces: also reset the session.
+        clear_thread_api_key_role_id()
+
         user_id = super()._check_credentials(scope=scope, key=key)
-        if not (user_id and request and key):
+        if not (user_id and key):
             return user_id
 
         try:
@@ -120,9 +152,14 @@ class ResUsersApikeys(models.Model):
             )
             return None  # fail closed
 
-        request.session["x_mcp_api_key_id"] = api_key_id
+        # Modern path: write to session if a request is on the stack.
+        if request:
+            request.session["x_mcp_api_key_id"] = api_key_id
+            if role_id:
+                request.session["x_mcp_api_key_role_id"] = role_id
+        # Always: thread-local. Survives borrow_request() in /jsonrpc.
         if role_id:
-            request.session["x_mcp_api_key_role_id"] = role_id
+            set_thread_api_key_role_id(role_id)
 
         # Lightweight usage counter; one UPDATE per call. Tolerable for
         # the prototype — promote to a deferred / batched update if it
