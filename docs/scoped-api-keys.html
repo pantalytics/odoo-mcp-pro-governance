@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Scoped API keys — MCP Pro</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-mute: #6e6e6e;
+    --line: #1a1a1a;
+    --line-soft: #cfcfcf;
+    --bg: #ffffff;
+    --bg-soft: #fafaf7;
+    --accent: #9b99ff;
+    --accent-soft: #efeeff;
+    --warn: #d97757;
+    --warn-soft: #fbeee6;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 64px 48px 96px;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 12px;
+  }
+
+  h1 {
+    font-size: 38px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    font-weight: 600;
+  }
+
+  h1 .accent { color: var(--accent); }
+
+  .lede {
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 64ch;
+    margin: 0 0 56px;
+  }
+
+  .block {
+    margin-bottom: 64px;
+  }
+
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin: 0 0 20px;
+  }
+
+  .label {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .label-before { background: var(--warn-soft); color: var(--warn); }
+  .label-after  { background: var(--accent-soft); color: var(--accent); }
+
+  .title {
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .diagram {
+    background: var(--bg-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: 16px;
+    padding: 40px 32px 32px;
+  }
+
+  .diagram svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .caption {
+    margin: 20px 4px 0;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 70ch;
+  }
+
+  .caption b { color: var(--ink); font-weight: 600; }
+
+  .footnote {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-soft);
+    color: var(--ink-mute);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* SVG primitives */
+  .node-rect {
+    fill: #ffffff;
+    stroke: var(--line);
+    stroke-width: 1.5;
+  }
+  .node-rect.accent {
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+  .node-rect.muted {
+    stroke: var(--line-soft);
+  }
+  .node-label {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    fill: var(--ink);
+  }
+  .node-sub {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    font-size: 11px;
+    fill: var(--ink-mute);
+  }
+  .link {
+    stroke: var(--line);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .link-dashed {
+    stroke: var(--ink-mute);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    fill: none;
+  }
+  .link-accent {
+    stroke: var(--accent);
+    stroke-width: 2;
+    fill: none;
+  }
+  .star {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    font-size: 14px;
+    fill: var(--accent);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+
+    <p class="eyebrow">MCP Pro · Governance</p>
+    <h1>One user, many <span class="accent">scoped</span> API keys.</h1>
+    <p class="lede">
+      Today every API key inherits the full rights of the user it belongs to.
+      Tomorrow each key carries only the role it needs — so an enrichment bot
+      cannot read invoices, and a finance bot cannot edit contacts.
+    </p>
+
+    <!-- BEFORE -->
+    <section class="block">
+      <header class="block-head">
+        <span class="label label-before">Before</span>
+        <h2 class="title">The API key is as powerful as the user.</h2>
+      </header>
+
+      <div class="diagram">
+        <svg viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Before diagram">
+          <!-- nodes -->
+          <g>
+            <rect class="node-rect" x="20"  y="70" width="140" height="60" rx="10"/>
+            <text class="node-label" x="90" y="100" text-anchor="middle">App</text>
+            <text class="star"       x="120" y="100">*</text>
+            <text class="node-sub"   x="90" y="118" text-anchor="middle">Claude, n8n, cron…</text>
+          </g>
+          <g>
+            <rect class="node-rect" x="210" y="70" width="140" height="60" rx="10"/>
+            <text class="node-label" x="280" y="105" text-anchor="middle">API key</text>
+          </g>
+          <g>
+            <rect class="node-rect" x="400" y="70" width="140" height="60" rx="10"/>
+            <text class="node-label" x="470" y="105" text-anchor="middle">User</text>
+          </g>
+          <g>
+            <rect class="node-rect" x="590" y="70" width="170" height="60" rx="10"/>
+            <text class="node-label" x="675" y="105" text-anchor="middle">Access Groups</text>
+          </g>
+          <g>
+            <rect class="node-rect" x="810" y="70" width="170" height="60" rx="10"/>
+            <text class="node-label" x="895" y="105" text-anchor="middle">Access Rights</text>
+          </g>
+
+          <!-- links -->
+          <path class="link" d="M160 100 H210"/>
+          <path class="link" d="M350 100 H400"/>
+          <path class="link" d="M540 100 H590"/>
+          <path class="link" d="M760 100 H810"/>
+        </svg>
+      </div>
+
+      <p class="caption">
+        <b>The problem.</b> Every API key inherits the full access of the user.
+        To let an automation tool only enrich contacts, you either accept the
+        full data risk — or pay for an extra user with a stripped-down role.
+      </p>
+    </section>
+
+    <!-- AFTER -->
+    <section class="block">
+      <header class="block-head">
+        <span class="label label-after">After</span>
+        <h2 class="title">The API key carries its own role.</h2>
+      </header>
+
+      <div class="diagram">
+        <svg viewBox="0 0 1000 280" preserveAspectRatio="xMidYMid meet" role="img" aria-label="After diagram">
+          <!-- User on top -->
+          <g>
+            <rect class="node-rect muted" x="210" y="20" width="140" height="56" rx="10"/>
+            <text class="node-label" x="280" y="53" text-anchor="middle">User</text>
+          </g>
+
+          <!-- bottom row -->
+          <g>
+            <rect class="node-rect" x="20" y="160" width="140" height="60" rx="10"/>
+            <text class="node-label" x="90" y="190" text-anchor="middle">App</text>
+            <text class="star"       x="120" y="190">*</text>
+            <text class="node-sub"   x="90" y="208" text-anchor="middle">Claude, n8n, cron…</text>
+          </g>
+          <g>
+            <rect class="node-rect accent" x="210" y="160" width="140" height="60" rx="10"/>
+            <text class="node-label" x="280" y="190" text-anchor="middle">API Key 1</text>
+            <text class="node-sub"   x="280" y="208" text-anchor="middle">scoped</text>
+          </g>
+          <g>
+            <rect class="node-rect accent" x="400" y="160" width="160" height="60" rx="10"/>
+            <text class="node-label" x="480" y="190" text-anchor="middle">User Role</text>
+            <text class="node-sub"   x="480" y="208" text-anchor="middle">Role Based Access · OCA</text>
+          </g>
+          <g>
+            <rect class="node-rect" x="610" y="160" width="170" height="60" rx="10"/>
+            <text class="node-label" x="695" y="195" text-anchor="middle">Access Groups</text>
+          </g>
+          <g>
+            <rect class="node-rect" x="830" y="160" width="150" height="60" rx="10"/>
+            <text class="node-label" x="905" y="195" text-anchor="middle">Access Rights</text>
+          </g>
+
+          <!-- links -->
+          <!-- App → API Key (dashed: the carrier) -->
+          <path class="link-dashed" d="M160 190 H210"/>
+          <!-- API Key → User Role (accent: the new wiring) -->
+          <path class="link-accent" d="M350 190 H400"/>
+          <!-- User Role → Access Groups -->
+          <path class="link" d="M560 190 H610"/>
+          <!-- Access Groups → Access Rights -->
+          <path class="link" d="M780 190 H830"/>
+          <!-- User → API Key (owns it) -->
+          <path class="link-dashed" d="M280 76 V160"/>
+          <!-- User → User Role (default role) -->
+          <path class="link" d="M280 76 C 280 120, 480 120, 480 160"/>
+        </svg>
+      </div>
+
+      <p class="caption">
+        <b>Give the key only the access it needs.</b> The API key picks one
+        role from the user's set of roles. The key's scope can be smaller than
+        the user's. Powered by Role Based Access Control (OCA).
+      </p>
+    </section>
+
+    <p class="footnote">
+      * App can be anything that calls Odoo over the API — an AI chat (Claude,
+      ChatGPT), an automation tool (n8n), an AI agent (OpenHands) or a plain
+      cron job.
+    </p>
+
+  </main>
+</body>
+</html>
