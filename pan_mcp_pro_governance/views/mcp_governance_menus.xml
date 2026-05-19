@@ -7,17 +7,30 @@
               web_icon="pan_mcp_pro_governance,static/description/icon.png"
               groups="group_mcp_governance_user"/>
 
+    <menuitem id="menu_mcp_governance_audit_log"
+              name="Audit Log"
+              parent="menu_mcp_governance_root"
+              action="action_mcp_governance_api_call_log"
+              sequence="10"/>
+
+    <menuitem id="menu_mcp_governance_apikeys"
+              name="API Keys"
+              parent="menu_mcp_governance_root"
+              action="action_mcp_governance_apikeys"
+              sequence="20"/>
+
+    <!--
+        Agent Identities is staged for a future release. The model, views and
+        tests stay in the codebase, but the menu is hidden from end-users so
+        the app surface is just Audit Log + API Keys until that feature lands.
+        Visible in developer mode via `base.group_no_one`.
+    -->
     <menuitem id="menu_mcp_governance_identities"
               name="Agent Identities"
               parent="menu_mcp_governance_root"
               action="action_mcp_governance_agent_identity"
-              sequence="10"/>
-
-    <menuitem id="menu_mcp_governance_api_calls"
-              name="API Call Log"
-              parent="menu_mcp_governance_root"
-              action="action_mcp_governance_api_call_log"
-              sequence="20"/>
+              sequence="80"
+              groups="base.group_no_one"/>
 
     <menuitem id="menu_mcp_governance_config"
               name="Configuration"

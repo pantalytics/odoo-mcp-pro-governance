@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- Top-level action shown in the MCP Pro menu. The base record rule on
+         res.users.apikeys already restricts users to their own keys; managers
+         go through Settings → Users to see everyone's keys. -->
+    <record id="action_mcp_governance_apikeys" model="ir.actions.act_window">
+        <field name="name">API Keys</field>
+        <field name="res_model">res.users.apikeys</field>
+        <field name="view_mode">kanban</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No API keys yet.
+            </p><p>
+                Create an API key from your user preferences
+                (top-right avatar → Preferences → Account Security → New API Key).
+                Pick a role to scope the key down — without a role, the key
+                inherits your full user permissions.
+            </p>
+        </field>
+    </record>
+
     <!-- Inherit the API-key wizard form: insert a required Role dropdown
          between Description and Duration. The dropdown is filtered to the
          current user's own assigned roles. -->

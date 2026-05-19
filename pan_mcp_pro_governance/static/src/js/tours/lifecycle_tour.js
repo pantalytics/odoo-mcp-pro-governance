@@ -16,18 +16,11 @@ import { registry } from "@web/core/registry";
  */
 registry.category("web_tour.tours").add("pan_mcp_pro_governance.lifecycle", {
     test: true,
-    url: "/odoo",
+    // The Agent Identities menu is hidden from end users (staged for a
+    // future release), so this tour navigates straight to the action URL
+    // instead of clicking through the menu.
+    url: "/odoo/action-pan_mcp_pro_governance.action_mcp_governance_agent_identity",
     steps: () => [
-        {
-            trigger: ".o_app[data-menu-xmlid='pan_mcp_pro_governance.menu_mcp_governance_root']",
-            content: "Open the MCP Pro app",
-            run: "click",
-        },
-        {
-            trigger: "[data-menu-xmlid='pan_mcp_pro_governance.menu_mcp_governance_identities']",
-            content: "Navigate to Agent Identities",
-            run: "click",
-        },
         {
             trigger: ".o_list_button_add, button.o_list_button_add",
             content: "Click 'New' to create an agent",

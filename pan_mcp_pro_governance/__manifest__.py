@@ -15,23 +15,24 @@
 
         The MCP Pro server runs outside Odoo (5-minute setup, EU-hosted).
         This addon installs *inside* your Odoo and gives operators what
-        the server alone cannot: a first-class registry of every AI agent
-        plus an audit trail of every inbound call, powered by OCA Audit Log.
+        the server alone cannot: scoped API keys bound to OCA user roles,
+        and an audit trail of every inbound call, powered by OCA Audit Log.
 
         Features
         --------
-        **Agent identities:**
-        - First-class model for every AI agent touching your data
-        - Owner, provider, lifecycle state (draft / active / suspended / revoked)
-        - Bound to a technical Odoo user so ACLs still apply
-        - Smart link to every API call this agent has made
-
-        **API call log (powered by OCA Audit Log):**
+        **Audit log (powered by OCA Audit Log):**
         - One row per inbound HTTP request from any AI agent
         - Per-record ORM change log correlated to the originating call
         - Pre-seeded rules for the models AI agents touch most:
           sale.order, res.partner, account.move, crm.lead,
           product.template, stock.picking. Operators can add more.
+
+        **Scoped API keys (powered by OCA Server Backend):**
+        - Bind each API key to a single OCA user role
+        - The key's effective permissions are exactly that role's groups —
+          never broader than the owning user, never broader than the role
+        - Suspended and revoked keys fail closed at authentication
+        - Last-used timestamp and call counter per key
 
         **Security groups:**
         - MCP Pro User (read-only)
@@ -39,9 +40,10 @@
 
         Roadmap (broader AI governance)
         -------------------------------
-        Agent identities are the spine future features attach to: per-agent
-        policies, quotas, risk classification, approval workflows for
-        high-impact actions, and EU AI Act compliance reporting.
+        - First-class agent identity registry (provider, owner, lifecycle)
+        - Per-agent policies, quotas, risk classification
+        - Approval workflows for high-impact actions
+        - EU AI Act compliance reporting
 
         Data handling
         -------------
@@ -59,7 +61,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.0.3.0",
+    "version": "19.0.0.4.0",
     "license": "AGPL-3",
     "depends": [
         "base",
