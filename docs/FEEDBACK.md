@@ -97,8 +97,26 @@ De `test` job in `.github/workflows/ci.yml` doet hetzelfde als loop 4 maar:
 - Tegen Postgres 16.
 - Zonder lokale filestore.
 - Met Odoo 19 Community (geen Enterprise — dus geen Enterprise-only paden testen!).
+- Chromium wordt apt-installed zodat HttpCase tours (smoke + lifecycle) niet stilletjes overgeslagen worden.
+
+Daarnaast draaien er twee aparte gates:
+
+- **Fresh-install gate** — installeert het module op een lege DB zonder demo-data en zonder `--test-enable`. Dat is letterlijk wat de Odoo App Store reviewer doet. Faalt deze stap → listing-rejection bij submit.
+- **Manifest version bump check** — alleen op PRs. Faalt wanneer code/views/csv in `pan_mcp_pro_governance/` veranderden zonder dat `__manifest__.py` zijn `version` bumpte. Documentatie en tests vallen erbuiten, lifecycle van OCA `auditlog`-conventies blijft intact.
 
 Faalt CI maar werkt het lokaal: meestal Enterprise-vs-Community drift of een lokaal cached asset.
+
+## UI-feedback skill — wat zit erin?
+
+`/ui-feedback` (in `~/.claude/skills/ui-feedback/`) draait via Playwright MCP tegen de lokale Odoo en checkt de vijf regels uit [design.md](design.md):
+
+1. Eén top-level app van deze module (geen tweede).
+2. App-naam matcht `__manifest__.py`.
+3. Empty-state placeholders aanwezig op lijsten zonder records.
+4. Statusbar op lifecycle-forms.
+5. Geen brand-accent `#9b99ff` in de Odoo UI.
+
+Output is een markdown-rapport. De skill *rapporteert* — fixt niets zelf. Wijzigingen aan de UI doe je dan in een aparte iteratie.
 
 ## Snelle checks voor zelfvertrouwen
 

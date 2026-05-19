@@ -96,7 +96,11 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential libldap2-dev libsasl2-dev libxml2-dev libxslt1-dev \
             libjpeg-dev zlib1g-dev libpq-dev libffi-dev libssl-dev \
-            postgresql-client
+            postgresql-client \
+            chromium-browser
+          # Odoo's HttpCase looks up the browser via `which chromium`/`google-chrome`.
+          # Without this the web tours (test_governance_tour, test_lifecycle_tour)
+          # silently skip and we lose the only end-to-end check we have.
 
       - name: Install Odoo Python dependencies
         working-directory: odoo
@@ -123,6 +127,28 @@ jobs:
           ln -s "$GITHUB_WORKSPACE/oca-server-backend/base_user_role" \
                 "$GITHUB_WORKSPACE/extra-addons/base_user_role"
 
+      - name: Fresh-install gate (App Store reviewer simulation)
+        # No --test-enable. Just install on a clean DB without demo data.
+        # This is what the Odoo App Store reviewer actually does; if it
+        # fails the listing is rejected, so we keep it as a distinct
+        # gate from the test run.
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: odoo
+          PGPASSWORD: odoo
+        run: |
+          python -m odoo \
+            --addons-path="$GITHUB_WORKSPACE/odoo/addons,$GITHUB_WORKSPACE/extra-addons" \
+            --db_host=localhost --db_port=5432 --db_user=odoo --db_password=odoo \
+            -d install_gate \
+            -i pan_mcp_pro_governance \
+            --stop-after-init \
+            --without-demo=True \
+            --log-level=info \
+            --workers=0 \
+            --max-cron-threads=0
+
       - name: Install module + run tests
         env:
           PGHOST: localhost
@@ -141,3 +167,41 @@ jobs:
             --log-level=info \
             --workers=0 \
             --max-cron-threads=0
+
+  manifest-version:
+    name: Manifest version bump check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify version bumped if module files changed
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          # Files inside the addon (excluding docs-only / static description text).
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- \
+            'pan_mcp_pro_governance/*.py' \
+            'pan_mcp_pro_governance/**/*.py' \
+            'pan_mcp_pro_governance/**/*.xml' \
+            'pan_mcp_pro_governance/**/*.csv' \
+            ':!pan_mcp_pro_governance/static/description/*' \
+            ':!pan_mcp_pro_governance/tests/*' \
+            ':!pan_mcp_pro_governance/static/src/js/tours/*' \
+            || true)
+          if [ -z "$CHANGED" ]; then
+            echo "No production code changes; manifest bump not required."
+            exit 0
+          fi
+          echo "Changed module files:"
+          echo "$CHANGED"
+          MANIFEST_DIFF=$(git diff "$BASE_SHA" "$HEAD_SHA" -- \
+            pan_mcp_pro_governance/__manifest__.py | grep -E '^\+\s*"version"' || true)
+          if [ -z "$MANIFEST_DIFF" ]; then
+            echo "::error::Production files changed but __manifest__.py version was not bumped. See CLAUDE.md Odoo 19 checklist."
+            exit 1
+          fi
+          echo "Manifest version was bumped:"
+          echo "$MANIFEST_DIFF"
