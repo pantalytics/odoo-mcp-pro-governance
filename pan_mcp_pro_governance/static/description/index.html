@@ -1,7 +1,7 @@
 <section class="oe_container">
   <div class="oe_row oe_spaced">
     <h2 class="oe_slogan">Connect your Odoo with Claude, ChatGPT, Gemini and Copilot.</h2>
-    <h3 class="oe_slogan">The MCP server that brings your favourite AI app inside your Odoo &mdash; with a full audit trail of every action.</h3>
+    <h3 class="oe_slogan">The MCP server that brings your favourite AI app inside your Odoo &mdash; with scoped API keys and a full audit trail of every action.</h3>
     <p class="oe_mt32">
       Pull open quotes, follow up with customers, create sales orders, reconcile invoices &mdash; straight from chat. Works on desktop and mobile. Works on Odoo Online, Odoo.sh and on-premise.
     </p>
@@ -71,13 +71,13 @@
       <div class="col-md-4 text-center">
         <h4>2. Add your AI app</h4>
         <p>
-          Connect Claude Desktop, ChatGPT, Cursor, Gemini, Copilot or any MCP client &mdash; one shared MCP endpoint serves them all. Existing Odoo access rights apply.
+          Connect Claude Desktop, ChatGPT, Cursor, Gemini, Copilot or any MCP client &mdash; one shared MCP endpoint serves them all.
         </p>
       </div>
       <div class="col-md-4 text-center">
         <h4>3. Install this module</h4>
         <p>
-          This free Odoo addon registers every AI agent that talks to your data, logs every API call and ORM action to an append-only trail, and gives operators a single place to oversee it.
+          This free Odoo addon adds scoped API keys bound to OCA user roles, and surfaces a full audit trail of every inbound call. Give your AI agent exactly the access it needs &mdash; no more, no less.
         </p>
       </div>
     </div>
@@ -91,80 +91,85 @@
   <div class="oe_row oe_spaced">
     <h2 class="oe_slogan text-center">What this module gives you</h2>
     <p class="text-center oe_mt32">
-      The MCP Pro server runs outside Odoo. <b>This addon installs inside Odoo</b> and gives operators what the server alone cannot &mdash; the oversight surface for AI-driven access to your ERP.
+      The MCP Pro server runs outside Odoo. <b>This addon installs inside Odoo</b> and gives operators what the server alone cannot &mdash; per-agent permission scoping and an inbound-call audit trail, both built on top of well-maintained OCA modules.
     </p>
   </div>
 </section>
 
 <section class="oe_container">
-  <div class="oe_row oe_spaced text-center">
-    <h2 class="oe_slogan">Agent identities</h2>
-    <p>Register every AI agent that talks to your Odoo. Owner, provider, lifecycle (draft / active / suspended / revoked), last-seen.</p>
-    <img src="first_screenshot.png" alt="Agent Identities list view"
-         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;"/>
-  </div>
-</section>
-
-<section class="oe_container oe_dark">
-  <div class="oe_row oe_spaced text-center">
-    <h2 class="oe_slogan">Append-only audit log</h2>
-    <p>
-      Every agent action writes an immutable row, linked to the agent identity, the acting user, the model, the record, the request id and the prompt hash. Manager cannot edit or delete &mdash; AccessError is raised on attempts.
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan text-center">Scoped API keys</h2>
+    <p class="text-center oe_mt32">
+      Every API key can be bound to a single OCA user role &mdash; a named bundle of Odoo groups. During every request that authenticates with the key, the user's effective permissions are narrowed to that role's groups. Never broader than the role, never broader than the owning user.
     </p>
-    <img src="audit_log_screenshot.png" alt="Audit Log list view"
-         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #444;"/>
-  </div>
-</section>
-
-<section class="oe_container">
-  <div class="oe_row oe_spaced text-center">
-    <h2 class="oe_slogan">API call log</h2>
-    <p>
-      One row per inbound MCP/API call. Method, path, tool, HTTP status, duration. Joined to the audit log via request id so you can trace a single AI prompt all the way down to the records it changed.
+    <ul class="oe_mt32">
+      <li><b>One paid Odoo user, multiple agents.</b> Bind separate keys to the same user, each with its own role. No extra Internal User licences for headless integrations.</li>
+      <li><b>Least privilege by design.</b> A cron-sync key only sees its target models. A read-only assistant cannot accidentally write. A delete-bot scope is impossible because you didn't grant it.</li>
+      <li><b>Suspended &amp; revoked keys fail closed</b> at authentication &mdash; no race window where a revoked key still works.</li>
+      <li><b>Last-used timestamp and call counter</b> on every key. Spot dormant integrations and unexpected spikes at a glance.</li>
+      <li><b>Both modern and legacy endpoints</b> (<code>/json/2/*</code> and <code>/jsonrpc</code>) honour the same narrowing &mdash; no bypass route.</li>
+    </ul>
+    <p class="oe_mt32">
+      Roles are managed in Settings &rarr; Users &amp; Companies &rarr; User Roles (provided by OCA <code>base_user_role</code>). The API key wizard simply shows a dropdown filtered to the roles already assigned to the current user.
     </p>
-    <img src="api_call_log_screenshot.png" alt="API Call Log list view"
-         class="img img-fluid" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;"/>
   </div>
 </section>
 
 <section class="oe_container oe_dark">
   <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan">Why governance matters</h2>
-    <p class="oe_mt32">
-      Standard Odoo was designed for humans clicking through forms. When an AI agent fires 5,000 actions per hour against the same user account, the gaps show:
+    <h2 class="oe_slogan text-center">Audit log</h2>
+    <p class="text-center oe_mt32">
+      Built on OCA <code>auditlog</code>. Every inbound HTTP request that touches an audited model writes one row, linked down to the per-record ORM changes that resulted.
     </p>
-    <ul>
-      <li>No first-class "agent" identity &mdash; API keys inherit full user permissions.</li>
-      <li>Audit trails record field changes, not which prompt drove the decision.</li>
-      <li>Segregation of Duties breaks when one agent can create AND approve.</li>
-      <li>EU AI Act Art. 12 / 13 / 26 / 50 record-keeping obligations apply from August 2026.</li>
+    <ul class="oe_mt32">
+      <li><b>One row per call</b> &mdash; path, HTTP status, duration, request id, session id, acting user.</li>
+      <li><b>Drill down to records</b>. From a request, click through to the create / write / unlink lines and see exactly which records the call changed, with old and new values per field.</li>
+      <li><b>Pre-seeded rules</b> for the models AI agents touch most: <code>sale.order</code>, <code>res.partner</code>, <code>account.move</code>, <code>crm.lead</code>, <code>product.template</code>, <code>stock.picking</code>. Created on install, only for modules already present in your database.</li>
+      <li><b>Cleanup cron included</b> via OCA's autovacuum. Configure retention to your compliance needs.</li>
     </ul>
-    <p>
-      This module fills those gaps with thin, well-bounded primitives. It does not replace Odoo's ACLs &mdash; it instruments around them.
-    </p>
   </div>
 </section>
 
 <section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <h2 class="oe_slogan">Why governance matters</h2>
+    <p class="oe_mt32">
+      Standard Odoo was designed for humans clicking through forms. When an AI agent fires thousands of actions per hour against the same user account, the gaps show:
+    </p>
+    <ul>
+      <li>Native API keys inherit the full permissions of their owning user. There is no built-in way to scope a key narrower than the user. <b>This module fixes that.</b></li>
+      <li>Native audit recording is scattered across many models and not consolidated for inbound RPC traffic. <b>This module surfaces a single auditable timeline via OCA <code>auditlog</code>.</b></li>
+      <li>Per-user billing makes "one technical user per AI agent" economically unviable. <b>This module lets one paid user host many distinctly-scoped agents.</b></li>
+      <li>EU AI Act Art. 12 / 13 / 26 / 50 record-keeping obligations apply from August 2026.</li>
+    </ul>
+    <p>
+      The module fills these gaps with thin, well-bounded primitives. It does not replace Odoo's ACLs &mdash; it composes with them.
+    </p>
+  </div>
+</section>
+
+<section class="oe_container oe_dark">
   <div class="oe_row oe_spaced">
     <h2 class="oe_slogan text-center">Data handling</h2>
     <ul class="oe_mt32">
       <li>No data leaves your Odoo database.</li>
       <li>No call-home, no telemetry, no third parties from this module.</li>
-      <li>Open source (LGPL-3) &mdash; audit every line.</li>
+      <li>Open source (AGPL-3) &mdash; audit every line.</li>
       <li>The MCP Pro server is EU-hosted, GDPR-aware, and respects existing Odoo access rights.</li>
     </ul>
   </div>
 </section>
 
-<section class="oe_container oe_dark">
+<section class="oe_container">
   <div class="oe_row oe_spaced">
     <h2 class="oe_slogan text-center">Get started</h2>
     <ol class="oe_mt32">
-      <li>Install this module from the Odoo App Store.</li>
-      <li>Sign up for the MCP Pro server: pantalytics.com/apps/odoo-mcp-server</li>
-      <li>Connect your AI tool (Claude, ChatGPT, Gemini, Copilot, ...) to the server.</li>
-      <li>Watch agent activity flow into the Agent Identities, API Call Log and Audit Log inside your Odoo.</li>
+      <li>Install this module from the Odoo App Store. OCA <code>auditlog</code> and OCA <code>base_user_role</code> are pulled in as required dependencies.</li>
+      <li>Define a role at Settings &rarr; Users &amp; Companies &rarr; User Roles. Pick the Odoo groups you want this agent to have &mdash; nothing more.</li>
+      <li>Assign the role to whichever user the integration logs in as (your own user is fine).</li>
+      <li>Create an API key for that user: Settings &rarr; Users &rarr; Account Security &rarr; Add API Key. Pick the role in the dropdown, click Generate.</li>
+      <li>Sign up for the MCP Pro server at pantalytics.com/apps/odoo-mcp-server and use the new key from your AI tool.</li>
+      <li>Watch calls flow into MCP Pro &rarr; Audit Log inside your Odoo, narrowed to the role's scope.</li>
     </ol>
   </div>
 </section>
