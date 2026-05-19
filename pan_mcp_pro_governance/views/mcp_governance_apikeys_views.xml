@@ -9,7 +9,9 @@
         <field name="model">res.users.apikeys.description</field>
         <field name="inherit_id" ref="base.form_res_users_key_description"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='duration']" position="before">
+            <!-- Insert before the parent's "Give a duration..." section so
+                 the order is: Name → Role → Duration. -->
+            <xpath expr="//h3[contains(., 'Give a duration')]" position="before">
                 <h3 class="fw-bold">Role <span class="text-muted fw-normal">(optional)</span></h3>
                 <p>
                     Pick a role to scope this key down to a narrower set of
@@ -19,7 +21,8 @@
                 <field name="x_available_role_ids" invisible="1"/>
                 <field name="x_role_id"
                        options="{'no_create': True, 'no_open': True}"
-                       domain="[('id', 'in', x_available_role_ids)]"/>
+                       domain="[('id', 'in', x_available_role_ids)]"
+                       placeholder="Select a role…"/>
                 <p invisible="x_role_id" class="text-muted">
                     <em>No role: this key will have the same access as your
                     user account.</em>
