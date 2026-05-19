@@ -1,8 +1,9 @@
 # ADR-010: API key bound to a single OCA user role (supersedes ADR-009)
 
-**Status:** Proposed (2026-05-18, revised 2026-05-19)
+**Status:** Accepted (proposed 2026-05-18, revised + built + verified 2026-05-19)
 **Supersedes:** [ADR-009](009-scoped-api-keys.md)
 **Depends on:** [ADR-005](005-odoo-per-user-billing-constraint.md), [ADR-006](006-per-api-key-attribution.md), [ADR-007](007-base-user-role-optional-dep.md) *promoted from optional to required dependency*
+**Implemented in:** v0.3.0 (initial); v0.4.0 (single-source narrowing via `_get_group_ids`)
 
 > **Revision 2026-05-19 — role is optional, not required.**
 > The original draft made `x_role_id` required and auto-suspended pre-existing

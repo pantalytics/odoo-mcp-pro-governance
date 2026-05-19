@@ -1,7 +1,14 @@
 # ADR-008: Context-tagging as no-patch fallback to per-API-key attribution
 
-**Status:** Proposed (2026-05-18)
+**Status:** Superseded by [ADR-010](010-api-key-bound-to-role.md) (2026-05-19)
 **Relates to:** [ADR-006](006-per-api-key-attribution.md)
+
+> **Superseded note (2026-05-19):** Never built. ADR-010 made the
+> stronger "API key bound to a role" mechanism the primary attribution
+> path. Context-tagging was attractive as a no-patch escape hatch but
+> the patch in ADR-010 turned out to be small and worth shipping
+> upfront. Kept here as history — if the patch becomes unmaintainable
+> against future Odoo versions, this is the documented fallback.
 
 ## Context
 

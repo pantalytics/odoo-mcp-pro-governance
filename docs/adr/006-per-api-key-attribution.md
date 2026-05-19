@@ -1,7 +1,8 @@
 # ADR-006: Per-API-key attribution via patched auth flow (v0.3 strategy)
 
-**Status:** Proposed (2026-05-18)
+**Status:** Accepted (proposed 2026-05-18, built and verified 2026-05-19)
 **Depends on:** [ADR-005](005-odoo-per-user-billing-constraint.md)
+**Implemented in:** v0.3.0; hardened against `/jsonrpc` bypass in v0.4.0
 
 ## Context
 

@@ -3,6 +3,114 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.0.4.0] - 2026-05-19
+
+### Security
+
+- Close the `/jsonrpc` narrowing bypass. The legacy endpoint runs
+  `dispatch_rpc()` inside `borrow_request()` which pops the request
+  from the local stack — writes to `request.session` during
+  `_check_credentials` did not survive to subsequent ACL checks, so a
+  narrow-role key got full user permissions through this route. Fixed
+  by also stashing the matched role on a thread-local.
+- Thread-local is cleared at the start of every request via
+  `ir.http._dispatch`, preventing leakage to UI sessions on the same
+  worker thread.
+
+### Changed
+
+- Narrow at the source: rewrote the narrowing layer so
+  `res.users._get_group_ids` and `_compute_all_group_ids` are the
+  single point of truth. Every Odoo path that asks "what groups does
+  this user have?" now gets the role's groups when an API-key role is
+  in scope. Removes the previous per-check overrides on `_has_group`
+  and `ir.model.access.check`.
+- Cache-bypass on `ir.model.access._get_allowed_models` (parent's
+  ormcache key has no role component) when a role is active.
+- `ir.rule._compute_domain` cache made role-aware by extending
+  `_compute_domain_keys` with `_mcp_api_key_role_id`, so each (uid,
+  role) gets a distinct cache entry.
+- Manifest description rewritten to lead with scoped API keys as the
+  primary value proposition. Agent identity moved to roadmap.
+- `mcp.governance.agent.identity` menu hidden behind
+  `base.group_no_one`; model and views stay in the codebase for
+  developer-mode access and future surfacing in v0.5.
+
+### Added
+
+- ADR-011: one role per API key (Many2one), not many — least-privilege
+  over OCA-style stacking.
+
+## [19.0.0.3.0] - 2026-05-19
+
+### Added
+
+- Depend on OCA `base_user_role` 19.0 (`server-backend` repo).
+- `res.users.apikeys` gains `x_role_id` (Many2one →
+  `res.users.role`), `x_state` (active / suspended / revoked),
+  `x_last_used`, `x_use_count`.
+- API key creation wizard adds an optional Role dropdown, filtered to
+  the roles assigned to the current user. Wizard's `make_key` stamps
+  the role onto the freshly generated key row.
+- `res.users.apikeys._check_credentials` override stashes the matched
+  key id and (optional) role id on the request session.
+- `res.users._has_group` override narrows menu/view-level group checks
+  to the role's groups when an API-key role is in scope.
+
+### Changed
+
+- "API Key Ready" modal warning rewritten — "provides full access to
+  your user account" was misleading once roles entered the picture.
+  New text points at the role as the actual security boundary.
+- API key wizard layout fixed: Role section now sits between the Name
+  and Duration sections (xpath was off by one element).
+- Role binding is *optional*: keys without a role behave like
+  standard Odoo keys (full user permissions). This matches OCA
+  `base_user_role`'s own posture for users.
+
+### Documented
+
+- ADR-005: Odoo per-user billing as a hard architectural constraint.
+- ADR-006: per-API-key attribution via patched auth flow.
+- ADR-007: `base_user_role` integration (superseded by 010 — promoted
+  from optional to required).
+- ADR-008: context-tagging fallback (superseded by 010).
+- ADR-009: parallel scope system (superseded by 010 — pivoted to
+  composing with OCA roles instead of inventing scope strings).
+- ADR-010: API key bound to a single OCA user role.
+
+## [19.0.0.2.0] - 2026-05-18
+
+### Changed
+
+- **License switch LGPL-3 → AGPL-3** (ADR-001). Required by the
+  dependency on OCA `auditlog` (AGPL-3).
+- Depend on OCA `auditlog` 19.0 (ADR-002). Our addon becomes a thin
+  configuration layer + AI-agent UI skin on top.
+
+### Removed
+
+- `mcp.governance.audit.log` and `mcp.governance.api.call.log` models
+  from v0.1 — never populated in production (ADR-003). Migration in
+  `migrations/19.0.0.2.0/pre-migration.py` drops the empty tables on
+  upgrade.
+
+### Added
+
+- `post_init_hook` (`hooks.py`) seeds draft `auditlog.rule` records
+  for sale.order, res.partner, account.move, crm.lead,
+  product.template, stock.picking — conditional on each model's
+  owning module being installed.
+- Smart-button "API Calls" on the agent identity form opens a
+  filtered `auditlog.http.request` view for that agent's user.
+- `group_mcp_governance_user` and `group_mcp_governance_manager` now
+  imply `auditlog.group_auditlog_user` / `_manager` respectively.
+
+### Verified
+
+- End-to-end on production `pantalytics.odoo.com`: MCP call →
+  `auditlog.log` row with linked `http_request_id` and `http_session_id`.
+
 ## [19.0.1.0.2] - 2026-05-08
 
 ### Changed

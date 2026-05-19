@@ -1,40 +1,51 @@
 # MCP Pro Governance
 
 Free €0 companion to **MCP Pro**, the AI connector for Odoo. Installs
-*inside* your Odoo and gives operators a first-class registry of every AI
-agent plus an audit trail of every inbound call. Built on OCA `auditlog`.
+*inside* your Odoo and gives operators **scoped API keys bound to user
+roles**, plus a full audit trail of every inbound call. Built on OCA
+`auditlog` and OCA `base_user_role`.
 
 **[Full documentation](https://pantalytics.gitbook.io/pantalytics-docs/)** (coming)
 
 ## Features
 
-**Agent identities** (`mcp.governance.agent.identity`):
-- First-class model for every AI agent that touches your data
-- Owner, provider, lifecycle state (draft / active / suspended / revoked)
-- Bound to a technical `res.users` so Odoo ACLs still apply
-- Smart-button link to every API call this agent has made
+**Scoped API keys** (`res.users.apikeys` + OCA `base_user_role`):
+- Bind each API key to a single OCA user role
+- During a request authenticated by that key, the user's effective
+  permissions are exactly the role's groups — never broader than the
+  owning user, never broader than the role
+- Works with both modern (`/json/2/*` bearer) and legacy (`/jsonrpc`)
+  endpoints
+- Suspended / revoked keys fail closed at authentication
+- Last-used timestamp and call counter per key
+- Optional: leave the role empty and the key inherits the user's full
+  permissions (standard Odoo behaviour)
 
-**API call log** (powered by OCA `auditlog`):
-- One row per inbound HTTP request from any audited user — path, status,
-  duration, request id
-- Per-record ORM change log correlated to the originating call
+**Audit log** (powered by OCA `auditlog`):
+- One row per inbound HTTP request from any audited user — path,
+  status, duration, request id, session id
+- Per-record ORM change log correlated to the originating call via
+  `http_request_id`
 - Pre-seeded draft rules for `sale.order`, `res.partner`, `account.move`,
   `crm.lead`, `product.template`, `stock.picking` — created only for
-  modules that are already installed
+  modules already installed in the database
+- Operator activates rules in Settings → Audit (OCA) or
+  MCP Pro → Configuration → Audit Rules
 
 **Security groups:**
 - MCP Pro User (read-only; implies `auditlog.group_auditlog_user`)
 - MCP Pro Manager (administration; implies `auditlog.group_auditlog_manager`)
 
 **On the roadmap:**
-- Scoped keys with expiry and rate limits (v0.3)
-- Lethal-trifecta policy engine (v0.3)
-- AI system card per agent, EU AI Act Art. 13 (v0.4)
-- Hash-chained audit, incident register, DPIA template (v0.5)
+- Agent identity registry surfaced in UI (model exists, hidden in
+  developer mode for now)
+- Per-agent policies, quotas, risk classification
+- Approval workflows for high-impact actions
+- EU AI Act compliance reporting
 
-See [ROADMAP.md](ROADMAP.md) for the full plan and
-[docs/research/08_api_call_logging_options.md](docs/research/08_api_call_logging_options.md)
-for the v0.2 architecture rationale.
+See [ROADMAP.md](ROADMAP.md) for the full plan and the
+[ADR folder](docs/adr/) for the architecture decisions behind every
+choice.
 
 ---
 
@@ -42,9 +53,11 @@ for the v0.2 architecture rationale.
 
 Standard Odoo was designed for humans clicking through forms. When an
 AI agent fires 5,000 actions per hour against the same user account,
-the gaps show — no first-class agent identity, API keys with full
-user permissions, audit depth that does not capture the prompt that
-drove the decision.
+the gaps show. API keys inherit the full permissions of their owning
+user — there is no built-in way to scope them. Audit trails record
+field changes, not which prompt or agent drove the decision. And
+Odoo's per-user billing makes "one technical user per agent" too
+expensive to recommend.
 
 This module fills those gaps with thin, well-bounded primitives. It
 does not replace Odoo's ACLs — it instruments around them.
@@ -62,21 +75,24 @@ for the full design rationale.
 
 ## Installation
 
-Pulls in OCA `auditlog` as a dependency. Either install both modules
-from the Odoo App Store, or add `OCA/server-tools` (branch `19.0`) to
-your addons path alongside this repo.
+Pulls in OCA `auditlog` and OCA `base_user_role` as required
+dependencies. Either install all three from the Odoo App Store, or add
+the two OCA repos to your addons path alongside this one.
 
 ### As Git submodule (Odoo.sh)
 
 1. In Odoo.sh, go to **Settings → Submodules**
-2. Add this repo and `OCA/server-tools` (branch `19.0`) as submodules
-3. Install **MCP Pro** from the Apps menu — Odoo pulls in `auditlog` automatically
+2. Add this repo, `OCA/server-tools` (branch `19.0`) and
+   `OCA/server-backend` (branch `19.0`) as submodules
+3. Install **MCP Pro** from the Apps menu — Odoo pulls in `auditlog`
+   and `base_user_role` automatically
 
 ```bash
 # Local: add submodules
 git submodule add git@github.com:pantalytics/odoo-mcp-pro-governance.git addons/pan_mcp_pro_governance
 git submodule add -b 19.0 https://github.com/OCA/server-tools.git addons/oca-server-tools
-git commit -m "Add MCP Pro Governance + OCA server-tools submodules"
+git submodule add -b 19.0 https://github.com/OCA/server-backend.git addons/oca-server-backend
+git commit -m "Add MCP Pro Governance + required OCA submodules"
 git push
 ```
 
@@ -85,28 +101,45 @@ git push
 ```bash
 git clone git@github.com:pantalytics/odoo-mcp-pro-governance.git
 git clone -b 19.0 https://github.com/OCA/server-tools.git
-# Add `pan_mcp_pro_governance/` and `server-tools/auditlog/` to your Odoo addons path.
+git clone -b 19.0 https://github.com/OCA/server-backend.git
+# Add `pan_mcp_pro_governance/`, `server-tools/auditlog/`, and
+# `server-backend/base_user_role/` to your Odoo addons path.
 ```
 
 Then in Odoo: **Apps → Update Apps List → install "MCP Pro"**.
 
-Requires Odoo 19.0, Python 3.11+, and OCA `auditlog` 19.0.
+Requires Odoo 19.0, Python 3.11+, OCA `auditlog` 19.0, OCA
+`base_user_role` 19.0.
 
 ---
 
 ## Setup
 
-After installing, open **MCP Pro** (top-level menu).
+After installing, define a role and create a scoped key.
 
-1. **Agent Identities** — register every AI agent that talks to this
-   Odoo instance. Pick the technical Odoo user the MCP server logs in
-   as — that binding is what links the agent to its API calls.
-2. **API Call Log** — read-only stream of inbound HTTP requests. Each
-   row links down to per-record ORM changes.
-3. **Configuration → Audit Rules** (manager only) — six draft rules are
-   created on install. Open each rule, optionally restrict `Users` to
-   the MCP technical user, and click **Subscribe** to confirm it. Until
-   subscribed, rules do nothing.
+1. **Define roles** at Settings → Users & Companies → User Roles. A
+   role is a named bundle of `res.groups`. For an AI agent that only
+   needs to read contacts, pick `Contact Creation` in the Groups tab
+   and nothing else. The transitive group expansion gives the role
+   exactly what it implies — nothing more.
+
+2. **Assign the role** to whichever user the integration logs in as
+   (could be your own admin user; you don't need a separate billable
+   user per agent). Settings → Users → user form → Roles tab.
+
+3. **Create the API key** with the role attached. Settings → Users →
+   user form → Account Security → Add API Key. The wizard shows a
+   "Role (optional)" dropdown filtered to the roles assigned to your
+   user. Pick one and click Generate.
+
+4. **Use the key** from your AI agent / cron / n8n / etc. as the
+   bearer token. The key's effective permissions during every call
+   will be exactly the role's groups, not your user's full permissions.
+
+5. **Audit Rules** (manager only): MCP Pro → Configuration → Audit
+   Rules. Six draft rules are pre-seeded for AI-action target models.
+   Open each, optionally restrict `Users` to the technical user, and
+   click Subscribe to confirm. Until subscribed, rules log nothing.
 
 ---
 
@@ -114,15 +147,24 @@ After installing, open **MCP Pro** (top-level menu).
 
 | Aspect | Implementation |
 |--------|----------------|
+| Permission narrowing | Role-bound key sees only role's groups. Enforced at `res.users._get_group_ids` (source of truth) plus cache-bypass overrides on `ir.model.access._get_allowed_models` and `ir.rule._compute_domain`. Covers `has_group`, model ACLs and record rules. |
+| Key state | active / suspended / revoked. Suspended and revoked keys fail closed at authentication. |
+| Auth paths | Both `/json/2/*` (modern bearer) and `/jsonrpc` (legacy) paths route through our `_check_credentials` override. |
+| Cross-request isolation | Thread-local cleared at the start of every request (via `ir.http._dispatch`), so a UI session that follows an API-key request on the same worker thread does not inherit the narrowed role. |
 | Audit log mutability | Provided by OCA `auditlog`. Logs are append-only by convention; cleanup is opt-in via auditlog's autovacuum cron. |
-| Agent lifecycle | draft / active / suspended / revoked; revocation is permanent |
-| Access control | Two groups (User, Manager) that imply the OCA `auditlog` groups. No record rules yet — both see all rows. Use Odoo native ACLs / multi-company for finer scoping. |
-| Data residency | No call-home, no telemetry, everything stays in your DB |
+| Data residency | No call-home, no telemetry, everything stays in your DB. |
+
+Known scope limit: code that reads `user.group_ids` directly (without
+going through `_get_group_ids` or `all_group_ids`) is not narrowed.
+Core Odoo and most addons go through the narrowed methods; a small
+number of third-party addons may not. `sudo()` remains Odoo's
+standard escape hatch and is not closed by this module.
 
 See [docs/research/](docs/research/) for the full research corpus —
 Microsoft reference architecture, standards and EU AI Act, Odoo
 internals, MCP ecosystem, real incidents, competitive landscape,
-synthesis.
+synthesis. See [docs/adr/](docs/adr/) for the 11 architecture
+decisions that shaped what's in this module today.
 
 ---
 
@@ -133,9 +175,11 @@ synthesis.
 - [odoo-mcp-pro-admin](https://github.com/pantalytics/odoo-mcp-pro-admin) —
   hosted admin panel (proprietary SaaS layer).
 - [OCA/server-tools `auditlog`](https://github.com/OCA/server-tools/tree/19.0/auditlog) —
-  required dependency; provides the HTTP request log and per-record audit trail.
-- OCA [`base_user_role`](https://github.com/OCA/server-auth/tree/19.0/base_user_role) —
-  role management; this module will integrate with, not replace.
+  required dependency; provides the HTTP request log and per-record
+  audit trail.
+- [OCA/server-backend `base_user_role`](https://github.com/OCA/server-backend/tree/19.0/base_user_role) —
+  required dependency; provides the role model that scoped keys bind
+  to.
 
 ---
 

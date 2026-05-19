@@ -20,11 +20,11 @@ Format follows [Michael Nygard's ADR template](https://cognitect.com/blog/2011/1
 | [003](003-drop-v01-log-models.md) | Drop v0.1 `audit_log` and `api_call_log` models | Accepted |
 | [004](004-keep-agent-identity-as-spine.md) | Keep `mcp.governance.agent.identity` as governance spine | Accepted |
 | [005](005-odoo-per-user-billing-constraint.md) | Constraint: Odoo per-user billing as architectural input | Accepted |
-| [006](006-per-api-key-attribution.md) | v0.3 strategy: per-API-key attribution via patched auth flow | Proposed |
+| [006](006-per-api-key-attribution.md) | v0.3 strategy: per-API-key attribution via patched auth flow | Accepted |
 | [007](007-base-user-role-optional-dep.md) | Optional integration with OCA `base_user_role` for RBAC | Superseded by 010 |
-| [008](008-context-tagging-fallback.md) | Context-tagging as no-patch fallback to per-API-key attribution | Proposed |
+| [008](008-context-tagging-fallback.md) | Context-tagging as no-patch fallback to per-API-key attribution | Superseded by 010 |
 | [009](009-scoped-api-keys.md) | Scoped API keys (Airtable-PAT-inspired): parallel scope system on `res.users.apikeys` | Superseded by 010 |
-| [010](010-api-key-bound-to-role.md) | API key bound to a single OCA `base_user_role` — narrow effective groups per request | Proposed |
+| [010](010-api-key-bound-to-role.md) | API key bound to a single OCA `base_user_role` — narrow effective groups per request | Accepted |
 | [011](011-one-role-per-api-key.md) | One role per API key (Many2one), not many — least-privilege over OCA-style stacking | Accepted |
 
 ## How to add a new ADR
