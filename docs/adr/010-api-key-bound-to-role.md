@@ -1,8 +1,18 @@
 # ADR-010: API key bound to a single OCA user role (supersedes ADR-009)
 
-**Status:** Proposed (2026-05-18)
+**Status:** Proposed (2026-05-18, revised 2026-05-19)
 **Supersedes:** [ADR-009](009-scoped-api-keys.md)
 **Depends on:** [ADR-005](005-odoo-per-user-billing-constraint.md), [ADR-006](006-per-api-key-attribution.md), [ADR-007](007-base-user-role-optional-dep.md) *promoted from optional to required dependency*
+
+> **Revision 2026-05-19 — role is optional, not required.**
+> The original draft made `x_role_id` required and auto-suspended pre-existing
+> role-less keys on install. That mirrors a "fail closed by default" instinct
+> but turned out to be stricter than OCA `base_user_role` itself — OCA's
+> `set_groups_from_roles` docstring says "If no role is defined on the user,
+> its groups are let untouched." Following OCA's posture: a key without a role
+> behaves like a standard Odoo API key (full user permissions). A key WITH a
+> role is narrowed. No install-time surprise; opt-in per key. The auto-suspend
+> migration is dropped.
 
 ## Context
 

@@ -10,19 +10,19 @@
         <field name="inherit_id" ref="base.form_res_users_key_description"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='duration']" position="before">
-                <h3 class="fw-bold">Role</h3>
+                <h3 class="fw-bold">Role <span class="text-muted fw-normal">(optional)</span></h3>
                 <p>
-                    Pick what this key is allowed to do. The role's groups
-                    define the key's effective permissions. You can only pick
-                    a role already assigned to your user.
+                    Pick a role to scope this key down to a narrower set of
+                    permissions. Leave empty to inherit your user's full
+                    permissions (the standard Odoo behaviour).
                 </p>
                 <field name="x_available_role_ids" invisible="1"/>
                 <field name="x_role_id"
                        options="{'no_create': True, 'no_open': True}"
                        domain="[('id', 'in', x_available_role_ids)]"/>
-                <p invisible="x_role_id">
-                    <em>No role selected yet. If your user has no roles,
-                    ask an administrator to assign one first.</em>
+                <p invisible="x_role_id" class="text-muted">
+                    <em>No role: this key will have the same access as your
+                    user account.</em>
                 </p>
             </xpath>
         </field>
