@@ -25,6 +25,7 @@ Format follows [Michael Nygard's ADR template](https://cognitect.com/blog/2011/1
 | [008](008-context-tagging-fallback.md) | Context-tagging as no-patch fallback to per-API-key attribution | Proposed |
 | [009](009-scoped-api-keys.md) | Scoped API keys (Airtable-PAT-inspired): parallel scope system on `res.users.apikeys` | Superseded by 010 |
 | [010](010-api-key-bound-to-role.md) | API key bound to a single OCA `base_user_role` — narrow effective groups per request | Proposed |
+| [011](011-one-role-per-api-key.md) | One role per API key (Many2one), not many — least-privilege over OCA-style stacking | Accepted |
 
 ## How to add a new ADR
 

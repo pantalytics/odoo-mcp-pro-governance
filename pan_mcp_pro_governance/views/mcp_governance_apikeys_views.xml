@@ -31,6 +31,25 @@
         </field>
     </record>
 
+    <!-- Inherit the "API Key Ready" show form: rewrite the misleading
+         "full access to your user account" warning. With this addon, a
+         key's effective permissions depend on whether a role was set. -->
+    <record id="view_apikey_show_form_inherit" model="ir.ui.view">
+        <field name="name">res.users.apikeys.show.form.mcp_pro</field>
+        <field name="model">res.users.apikeys.show</field>
+        <field name="inherit_id" ref="base.form_res_users_key_show"/>
+        <field name="arch" type="xml">
+            <xpath expr="//p[contains(@class, 'alert-warning')]" position="replace">
+                <p class="alert alert-warning" role="alert">
+                    <strong>Important:</strong>
+                    The key cannot be retrieved later. Store it securely.
+                    Its effective permissions are determined by the role you
+                    assigned — review and revoke from Settings → Users.
+                </p>
+            </xpath>
+        </field>
+    </record>
+
     <!-- Inherit the kanban view of existing keys: surface role + state. -->
     <record id="view_apikey_kanban_inherit" model="ir.ui.view">
         <field name="name">res.users.apikeys.kanban.mcp_pro</field>

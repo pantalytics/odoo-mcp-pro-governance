@@ -49,25 +49,15 @@ class ResUsersApikeysDescription(models.TransientModel):
                 ))
             role_id = self.x_role_id.id
 
-        # super().make_key() generates the key, unlinks self, and returns a
-        # form action showing the raw key. The raw key is on the show-form's
-        # context; we'll fish it out to identify the newly-inserted row.
+        # super().make_key() generates exactly one key for this user and
+        # unlinks the wizard. The newest key for this user is therefore the
+        # one we just created.
         action = super().make_key()
-        raw_key = (action.get("context") or {}).get("default_key")
-        if not raw_key:
-            # Fallback: search by user+name, most recent. Risky if duplicate
-            # names exist but acceptable as a last resort.
-            new_key = self.env["res.users.apikeys"].sudo().search(
-                [("user_id", "=", self.env.user.id)],
-                order="id desc",
-                limit=1,
-            )
-        else:
-            # The DB stores `index` as the first 8 hex chars of the raw key.
-            new_key = self.env["res.users.apikeys"].sudo().search(
-                [("user_id", "=", self.env.user.id), ("index", "=", raw_key[:8])],
-                limit=1,
-            )
+        new_key = self.env["res.users.apikeys"].sudo().search(
+            [("user_id", "=", self.env.user.id)],
+            order="id desc",
+            limit=1,
+        )
         if new_key:
             vals = {"x_state": "active"}
             if role_id:
