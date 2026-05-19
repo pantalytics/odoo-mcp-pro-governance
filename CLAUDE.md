@@ -102,10 +102,20 @@ Each addon repo has its own `.local/` (gitignored) with `docker-compose.yml` + `
 ~/Documents/GitHub/
 ├── .docker/Dockerfile               ← Shared image (Enterprise + deps)
 ├── odoo-enterprise/                  ← Odoo 19 Enterprise source
+├── server-tools/                     ← OCA — provides `auditlog`
+├── server-backend/                   ← OCA — provides `base_user_role`
 └── odoo-mcp-pro-governance/
     └── .local/                       ← This repo's dev config (gitignored)
-        ├── docker-compose.yml
+        ├── docker-compose.yml        ← bind-mounts the two OCA addons above
         └── odoo.conf
+```
+
+Clone the OCA repos once (shallow is fine, 19.0 branch only):
+
+```bash
+cd ~/Documents/GitHub
+git clone --depth 1 --branch 19.0 https://github.com/OCA/server-tools.git
+git clone --depth 1 --branch 19.0 https://github.com/OCA/server-backend.git
 ```
 
 Container filesystem:

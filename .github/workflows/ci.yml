@@ -69,6 +69,22 @@ jobs:
           # Shallow clone is fine — we only need the source tree to import.
           fetch-depth: 1
 
+      - name: Checkout OCA server-tools (provides auditlog)
+        uses: actions/checkout@v4
+        with:
+          repository: OCA/server-tools
+          ref: "19.0"
+          path: oca-server-tools
+          fetch-depth: 1
+
+      - name: Checkout OCA server-backend (provides base_user_role)
+        uses: actions/checkout@v4
+        with:
+          repository: OCA/server-backend
+          ref: "19.0"
+          path: oca-server-backend
+          fetch-depth: 1
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -102,6 +118,10 @@ jobs:
           mkdir -p extra-addons
           ln -s "$GITHUB_WORKSPACE/pan_mcp_pro_governance_repo/pan_mcp_pro_governance" \
                 "$GITHUB_WORKSPACE/extra-addons/pan_mcp_pro_governance"
+          ln -s "$GITHUB_WORKSPACE/oca-server-tools/auditlog" \
+                "$GITHUB_WORKSPACE/extra-addons/auditlog"
+          ln -s "$GITHUB_WORKSPACE/oca-server-backend/base_user_role" \
+                "$GITHUB_WORKSPACE/extra-addons/base_user_role"
 
       - name: Install module + run tests
         env:
