@@ -215,7 +215,27 @@ The dotted bit (alt block) is the only invasive piece: the same user, asking the
 
 ## Open questions (must resolve before promoting Proposed → Accepted)
 
-1. ~~**Feasibility of per-request group override.**~~ **Resolved 2026-05-18.** Two complementary overrides cover the two main paths:
+1. ~~**Feasibility of per-request group override.**~~ **Resolved 2026-05-19** (revised approach). Narrowing is now done at the source — ``res.users._get_group_ids`` and ``res.users._compute_all_group_ids`` return the role's groups when an API-key role is in scope. From there, every Odoo path that reads user groups gets the narrowed answer automatically:
+
+   - ``_has_group`` calls ``_get_group_ids`` → narrowed
+   - ``ir.model.access._get_allowed_models`` calls ``_get_group_ids`` → narrowed (we override the method to bypass its own ormcache when a role is active, because the parent cache key has no role component)
+   - ``ir.rule._get_rules`` SQL reads ``_get_group_ids`` → narrowed
+   - ``ir.rule._compute_domain`` uses ``user.all_group_ids`` for rule-group intersection → narrowed via the ``_compute_all_group_ids`` override
+   - ``ir.rule._compute_domain`` ormcache is made role-aware by adding ``_mcp_api_key_role_id`` to ``_compute_domain_keys``, so each (uid, role) gets a distinct cache entry
+
+   ``ir.model.access._make_access_error`` is also overridden to produce a role-specific error message (operators otherwise see "you need group X" which is misleading when the real fix is at the role layer).
+
+   Verified locally on Odoo 19.0 with mcp_fresh_test:
+   - Role "Partner Manager Only" (only ``group_partner_manager``) bound to admin's API key
+   - ``/json/2/res.partner/search_count`` → ALLOWED (2)
+   - ``/json/2/ir.module.module/search_count`` → DENIED with role-specific message
+   - ``/jsonrpc`` (legacy) with same key → same answers (DENIED for ir.module.module, ALLOWED for res.partner)
+   - UI session as admin right after a narrow API call → 1401 modules (no thread-local leak)
+   - 20/20 module tests pass on fresh install
+
+   This earlier ADR section described two overrides on ``_has_group`` and ``ir.model.access.check``. That implementation worked but duplicated logic across two layers. The revised approach narrows at the bottom layer (``_get_group_ids``) so every consumer gets the narrowing for free, and only the cached methods on top need a per-method bypass.
+
+   Originally proposed in this ADR (left for history):
    - `res.users._has_group()` — handles menu visibility, view-level groups, button gates. When the request authenticated via an API key with a bound role, returns answers based on the role's groups (role.group_id ∪ role.implied_ids ∪ transitive implied groups).
    - `ir.model.access.check()` — handles ORM-level CRUD (search/read/write/create/unlink on models). Same narrowing logic; uses the same role-groups set against `ir_model_access` SQL.
    - `ir.model.access._make_access_error()` — overridden to surface a role-specific error message instead of Odoo's generic "you need group X" pointer (which is misleading when the actual fix is to broaden the role or pick a different one).

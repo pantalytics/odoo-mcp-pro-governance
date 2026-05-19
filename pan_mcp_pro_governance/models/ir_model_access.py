@@ -1,87 +1,61 @@
-"""Narrow `ir.model.access` ACL checks to the API key's role.
+"""Narrow ACL checks and rewrite the error message when an API-key role
+is in scope.
 
-When a request authenticates via an API key bound to a role, the question
-"is this user allowed to read/write/create/unlink model X?" is answered
-using **the role's groups**, not the full set of groups the underlying user
-has. The DB user record is untouched.
+Two pieces:
 
-This complements the `_has_group` override in `res_users.py`. Together they
-cover the two main paths through Odoo's permission machinery:
-- has_group() — used for menus, view-level groups, button gates
-- ir.model.access.check() — used for ORM-level CRUD on models
+1. ``_get_allowed_models`` — parent is ``@tools.ormcache(self.env.uid, mode)``.
+   The cache key has no role, so a single uid's first call would cache
+   the answer for all subsequent role contexts. We override to bypass
+   the cache and re-run the query with ``user._get_group_ids()`` (which
+   is itself narrowed via the override in ``res_users.py``).
 
-Record rules (`ir.rule`) are a separate axis and are addressed in a
-follow-up.
+2. ``_make_access_error`` — Odoo's default message says "you need
+   group X" which is misleading when the real fix is at the role
+   layer. Override to surface the role-specific context.
+
+We no longer override ``check()`` itself: parent's ``check`` reads from
+``_get_allowed_models``, which we now narrow at the source.
 """
 
-import logging
-
-from odoo import _, api, models
+from odoo import _, models
 from odoo.exceptions import AccessError
 from odoo.tools import SQL
-
-_logger = logging.getLogger(__name__)
 
 
 class IrModelAccess(models.Model):
     _inherit = "ir.model.access"
 
-    @api.model
-    def check(self, model, mode="read", raise_exception=True):
-        if self.env.su:
-            return True
-
-        role = self.env.user._get_api_key_role()
+    def _get_allowed_models(self, mode="read"):
+        role = self.env.user._get_api_key_role() if hasattr(self.env.user, "_get_api_key_role") else None
         if not role:
-            return super().check(model, mode, raise_exception)
+            return super()._get_allowed_models(mode)
 
-        # Defensive: validate mode like the parent does.
-        assert mode in ("read", "write", "create", "unlink"), (
-            f"Invalid access mode {mode!r}"
-        )
-        assert isinstance(model, str), f"Not a model name: {model}"
-
-        allowed_group_ids = self._mcp_role_group_ids(role)
-        if not allowed_group_ids:
-            allowed_group_ids = (None,)  # makes IN-clause valid; no rows will match
-
+        # Live compute, bypassing the parent's ormcache (which is keyed
+        # on uid only and would poison across role contexts). _get_group_ids
+        # is itself role-narrowed via res_users.py.
+        assert mode in ("read", "write", "create", "unlink"), f"Invalid mode {mode!r}"
+        group_ids = self.env.user._get_group_ids()
         self.flush_model()
-        self.env.cr.execute(
+        rows = self.env.execute_query(
             SQL(
                 """
-                SELECT 1
+                SELECT m.model
                   FROM ir_model_access a
-                  JOIN ir_model m ON m.id = a.model_id
-                 WHERE a.perm_%s
-                   AND a.active
-                   AND m.model = %s
+                  JOIN ir_model m ON (m.id = a.model_id)
+                 WHERE a.perm_%s AND a.active
                    AND (a.group_id IS NULL OR a.group_id IN %s)
-                 LIMIT 1
+                GROUP BY m.model
                 """,
                 SQL(mode),
-                model,
-                tuple(allowed_group_ids),
+                tuple(group_ids) or (None,),
             )
         )
-        has_access = bool(self.env.cr.fetchone())
-
-        if not has_access:
-            _logger.info(
-                "MCP Pro Governance: ACL denied for role=%s mode=%s model=%s "
-                "(user=%s, request authenticated via role-bound API key)",
-                role.display_name, mode, model, self.env.user.login,
-            )
-            if raise_exception:
-                raise self._make_access_error(model, mode)
-        return has_access
+        return frozenset(v[0] for v in rows)
 
     def _make_access_error(self, model: str, mode: str):
-        """Override the standard access-error message when a role-bound API
-        key authenticated the request. The default message says "you need
-        group X" which is misleading — the actual fix is to broaden the role
-        or pick a different one when creating the key.
-        """
-        role = self.env.user._get_api_key_role() if hasattr(self.env.user, "_get_api_key_role") else None
+        role = None
+        if hasattr(self.env.user, "_get_api_key_role"):
+            role = self.env.user._get_api_key_role()
         if not role:
             return super()._make_access_error(model, mode)
 
@@ -102,19 +76,3 @@ class IrModelAccess(models.Model):
                 role=role.display_name, operation=op_label, model=model,
             )
         )
-
-    @staticmethod
-    def _mcp_role_group_ids(role):
-        """Return the set of res.groups ids effective for this role.
-
-        Includes the role's own primary group, the groups it explicitly
-        implies, and groups transitively implied by those.
-        """
-        groups = role.group_id | role.implied_ids
-        # `all_implied_ids` is the transitive closure on res.groups; fall back to
-        # implied_ids if some Odoo branch hasn't shipped it.
-        if "all_implied_ids" in groups._fields:
-            groups |= groups.mapped("all_implied_ids")
-        else:
-            groups |= groups.mapped("implied_ids")
-        return groups.ids
