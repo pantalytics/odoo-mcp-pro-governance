@@ -3,6 +3,36 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.0.5.0] - 2026-05-20
+
+### Changed
+- **Vendor OCA dependencies into the repo.** OCA `auditlog`
+  (`19.0.1.0.1`) and OCA `base_user_role` (`19.0.1.0.2`) are now
+  bundled as sibling addons at the repository root. Customers
+  installing via apps.odoo.com get all three modules in a single
+  upload; customers who already have the OCA originals on their
+  addons path can continue using those.
+- `auditlog` and `base_user_role` restored to `__manifest__.py`
+  `depends`. Runtime functionality returns to what v0.4.0 shipped.
+- Listing version stamp bumped to v0.5.0.
+
+### Added
+- `NOTICE.md` at repo root — explicit attribution, origin URLs,
+  copyright holders, licences, and a "how to refresh" procedure for
+  the vendored folders.
+- ADR-012: vendor OCA dependencies into the repo. Documents the
+  apps.odoo.com publisher-portal behaviour that forced this choice,
+  alternatives considered, and the operational policy that vendored
+  folders are never edited locally.
+
+### Notes
+- Vendored folders are verbatim copies of the upstream OCA sources.
+  No modifications. Refreshing on a new OCA release is wholesale
+  folder replacement, never diff-patching.
+- License compatibility: `pan_mcp_pro_governance` AGPL-3 +
+  `auditlog` AGPL-3 + `base_user_role` LGPL-3. Combined distribution
+  remains AGPL-3.
+
 ## [19.0.0.4.3] - 2026-05-20
 
 ### Changed

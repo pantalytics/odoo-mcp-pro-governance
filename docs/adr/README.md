@@ -26,6 +26,7 @@ Format follows [Michael Nygard's ADR template](https://cognitect.com/blog/2011/1
 | [009](009-scoped-api-keys.md) | Scoped API keys (Airtable-PAT-inspired): parallel scope system on `res.users.apikeys` | Superseded by 010 |
 | [010](010-api-key-bound-to-role.md) | API key bound to a single OCA `base_user_role` — narrow effective groups per request | Accepted |
 | [011](011-one-role-per-api-key.md) | One role per API key (Many2one), not many — least-privilege over OCA-style stacking | Accepted |
+| [012](012-vendor-oca-dependencies.md) | Vendor OCA `auditlog` + `base_user_role` into this repo as bundled sibling addons — apps.odoo.com refuses listings whose `depends` includes modules not in its own index | Accepted |
 
 ## How to add a new ADR
 

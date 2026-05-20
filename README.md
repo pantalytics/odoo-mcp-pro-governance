@@ -75,41 +75,49 @@ for the full design rationale.
 
 ## Installation
 
-Pulls in OCA `auditlog` and OCA `base_user_role` as required
-dependencies. Either install all three from the Odoo App Store, or add
-the two OCA repos to your addons path alongside this one.
+From v0.5.0 onwards this repository ships its two OCA dependencies
+**bundled** at the root: `auditlog/` (OCA `server-tools` 19.0.1.0.1) and
+`base_user_role/` (OCA `server-backend` 19.0.1.0.2). One install, all
+three addons appear in your Apps menu. See [NOTICE.md](NOTICE.md) for
+attribution and [ADR-012](docs/adr/012-vendor-oca-dependencies.md) for
+why the vendoring is necessary on apps.odoo.com.
+
+### Via apps.odoo.com (default)
+
+Search **MCP Pro** → **Install on Odoo.sh** (or download the tarball
+and install via your usual route). Odoo auto-installs `auditlog` and
+`base_user_role` from the same package because they sit alongside in
+the upload.
 
 ### As Git submodule (Odoo.sh)
 
-1. In Odoo.sh, go to **Settings → Submodules**
-2. Add this repo, `OCA/server-tools` (branch `19.0`) and
-   `OCA/server-backend` (branch `19.0`) as submodules
-3. Install **MCP Pro** from the Apps menu — Odoo pulls in `auditlog`
-   and `base_user_role` automatically
-
 ```bash
-# Local: add submodules
-git submodule add git@github.com:pantalytics/odoo-mcp-pro-governance.git addons/pan_mcp_pro_governance
-git submodule add -b 19.0 https://github.com/OCA/server-tools.git addons/oca-server-tools
-git submodule add -b 19.0 https://github.com/OCA/server-backend.git addons/oca-server-backend
-git commit -m "Add MCP Pro Governance + required OCA submodules"
+git submodule add -b 19.0 git@github.com:pantalytics/odoo-mcp-pro-governance.git addons/pan_mcp_pro_governance_repo
+# The repo contains three sibling module folders; point Odoo.sh's
+# addons_path at the repo root so all three are picked up.
+git commit -m "Add MCP Pro Governance bundle (3 addons)"
 git push
 ```
 
 ### Standalone
 
 ```bash
-git clone git@github.com:pantalytics/odoo-mcp-pro-governance.git
-git clone -b 19.0 https://github.com/OCA/server-tools.git
-git clone -b 19.0 https://github.com/OCA/server-backend.git
-# Add `pan_mcp_pro_governance/`, `server-tools/auditlog/`, and
-# `server-backend/base_user_role/` to your Odoo addons path.
+git clone -b 19.0 git@github.com:pantalytics/odoo-mcp-pro-governance.git
+# Add the repo root to your Odoo addons path. The three sibling
+# folders (auditlog, base_user_role, pan_mcp_pro_governance) all
+# become installable.
 ```
 
 Then in Odoo: **Apps → Update Apps List → install "MCP Pro"**.
 
-Requires Odoo 19.0, Python 3.11+, OCA `auditlog` 19.0, OCA
-`base_user_role` 19.0.
+Requires Odoo 19.0 and Python 3.11+. No separate OCA install required.
+
+### Using your own OCA copies instead
+
+If you already have the OCA originals on a different addons-path entry
+(e.g. via your own Odoo.sh submodule of `OCA/server-tools`), Odoo's
+first-match resolution uses those — you can ignore our bundled copies
+or even remove them after install.
 
 ---
 
