@@ -7,15 +7,18 @@
             <form string="HTTP Request">
                 <sheet>
                     <group string="HTTP Request">
-                        <field name="root_url" />
-                        <field name="name" />
-                        <field name="create_date" />
-                        <field name="user_context" />
-                        <field name="http_session_id" />
+                        <group>
+                            <field name="root_url" />
+                            <field name="name" />
+                            <field name="user_context" />
+                        </group>
+                        <group>
+                            <field name="create_date" />
+                            <field name="http_session_id" />
+                        </group>
                     </group>
-                    <group string="Logs">
-                        <field name="log_ids" nolabel="1" />
-                    </group>
+                    <separator string="Logs" />
+                    <field name="log_ids" nolabel="1" />
                 </sheet>
             </form>
         </field>
