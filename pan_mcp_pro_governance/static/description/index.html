@@ -1,7 +1,7 @@
 <section class="oe_container">
   <div class="oe_row oe_spaced">
     <h2 class="oe_slogan">Connect your Odoo with Claude, ChatGPT, Gemini and Copilot.</h2>
-    <h3 class="oe_slogan">The MCP server that brings your favourite AI app inside your Odoo &mdash; with scoped API keys and a full audit trail of every action.</h3>
+    <h3 class="oe_slogan">The MCP server that brings your favourite AI app inside your Odoo &mdash; with scoped API keys and a full audit trail of every action. Also great for n8n, cron jobs and any API integration.</h3>
     <p class="oe_mt32">
       Pull open quotes, follow up with customers, create sales orders, reconcile invoices &mdash; straight from chat. Works on desktop and mobile. Works on Odoo Online, Odoo.sh and on-premise.
     </p>
@@ -29,12 +29,15 @@
     <p class="oe_mt32">
       Claude, ChatGPT, Gemini, Microsoft Copilot, Mistral &mdash; or any other MCP-compatible AI client. One connector, every model.
     </p>
+    <p class="oe_mt32">
+      <i>Where you host the MCP server matters &mdash; local, embedded, self-hosted VPS, or hosted service each have real trade-offs. Read the comparison: pantalytics.com/post/where-to-host-your-odoo-mcp-server</i>
+    </p>
   </div>
 </section>
 
 <section class="oe_container">
   <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan text-center">What customers say</h2>
+    <h2 class="oe_slogan text-center">What MCP Pro customers say</h2>
     <div class="row oe_mt32">
       <div class="col-md-4">
         <p>
@@ -102,8 +105,11 @@
     <p class="text-center oe_mt32">
       Every API key can be bound to a single OCA user role &mdash; a named bundle of Odoo groups. During every request that authenticates with the key, the user's effective permissions are narrowed to that role's groups. Never broader than the role, never broader than the owning user.
     </p>
+    <p class="text-center oe_mt32">
+      Works for any API integration, not just AI: <b>AI assistants</b> (Claude, ChatGPT via MCP Pro), <b>automation tools</b> (n8n, Make, Zapier), <b>cron sync scripts</b> (Python, Node, anything that hits Odoo via XML-RPC or JSON-RPC), <b>website forms and webhooks</b>, <b>external applications</b>.
+    </p>
     <ul class="oe_mt32">
-      <li><b>One paid Odoo user, multiple agents.</b> Bind separate keys to the same user, each with its own role. No extra Internal User licences for headless integrations.</li>
+      <li><b>One paid Odoo user, multiple integrations.</b> Bind separate keys to the same user, each with its own role. No extra Internal User licences for headless workloads.</li>
       <li><b>Least privilege by design.</b> A cron-sync key only sees its target models. A read-only assistant cannot accidentally write. A delete-bot scope is impossible because you didn't grant it.</li>
       <li><b>Suspended &amp; revoked keys fail closed</b> at authentication &mdash; no race window where a revoked key still works.</li>
       <li><b>Last-used timestamp and call counter</b> on every key. Spot dormant integrations and unexpected spikes at a glance.</li>
@@ -124,7 +130,7 @@
     <ul class="oe_mt32">
       <li><b>One row per call</b> &mdash; path, HTTP status, duration, request id, session id, acting user.</li>
       <li><b>Drill down to records</b>. From a request, click through to the create / write / unlink lines and see exactly which records the call changed, with old and new values per field.</li>
-      <li><b>Pre-seeded rules</b> for the models AI agents touch most: <code>sale.order</code>, <code>res.partner</code>, <code>account.move</code>, <code>crm.lead</code>, <code>product.template</code>, <code>stock.picking</code>. Created on install, only for modules already present in your database.</li>
+      <li><b>Pre-seeded rules</b> for the models integrations touch most: <code>sale.order</code>, <code>res.partner</code>, <code>account.move</code>, <code>crm.lead</code>, <code>product.template</code>, <code>stock.picking</code>. Created on install, only for modules already present in your database.</li>
       <li><b>Cleanup cron included</b> via OCA's autovacuum. Configure retention to your compliance needs.</li>
     </ul>
   </div>
@@ -132,18 +138,23 @@
 
 <section class="oe_container">
   <div class="oe_row oe_spaced">
-    <h2 class="oe_slogan">Why governance matters</h2>
+    <h2 class="oe_slogan">Why this matters</h2>
     <p class="oe_mt32">
-      Standard Odoo was designed for humans clicking through forms. When an AI agent fires thousands of actions per hour against the same user account, the gaps show:
+      Standard Odoo was designed for humans clicking through forms. Anything that talks to Odoo via an API key &mdash; a cron job, an n8n workflow, an AI tool, a custom script &mdash; inherits the full permissions of the user that owns the key. There is no native way to make a key narrower than its user.
+    </p>
+    <p>
+      That's fine when there are two of those integrations. It becomes a problem when there are ten, each doing something different. The gaps show:
     </p>
     <ul>
-      <li>Native API keys inherit the full permissions of their owning user. There is no built-in way to scope a key narrower than the user. <b>This module fixes that.</b></li>
-      <li>Native audit recording is scattered across many models and not consolidated for inbound RPC traffic. <b>This module surfaces a single auditable timeline via OCA <code>auditlog</code>.</b></li>
-      <li>Per-user billing makes "one technical user per AI agent" economically unviable. <b>This module lets one paid user host many distinctly-scoped agents.</b></li>
-      <li>EU AI Act Art. 12 / 13 / 26 / 50 record-keeping obligations apply from August 2026.</li>
+      <li>You can't tell from the audit log what each integration did, only what their shared user did. <b>This module gives you per-call attribution and a single auditable timeline via OCA <code>auditlog</code>.</b></li>
+      <li>You can't restrict a write-only cron to its target models without spinning up a dedicated Odoo Internal User per integration. Odoo bills per Internal User &mdash; that doesn't scale. <b>This module lets one paid user host many distinctly-scoped keys.</b></li>
+      <li>You can't revoke one integration's access without rotating credentials shared with all of them. <b>This module gives every key its own lifecycle: active / suspended / revoked.</b></li>
     </ul>
     <p>
-      The module fills these gaps with thin, well-bounded primitives. It does not replace Odoo's ACLs &mdash; it composes with them.
+      The module fills these gaps with thin, well-bounded primitives on top of two mature OCA modules. It does not replace Odoo's ACLs &mdash; it composes with them.
+    </p>
+    <p class="oe_mt32" style="font-size: 0.85em; color: #888;">
+      <i>Note for EU operators: the per-call audit timeline also lays the groundwork for EU AI Act Art. 12 / 13 / 26 record-keeping obligations that apply from August 2026. Not the primary reason most teams adopt this, but it's there if you need it.</i>
     </p>
   </div>
 </section>
@@ -165,10 +176,10 @@
     <h2 class="oe_slogan text-center">Get started</h2>
     <ol class="oe_mt32">
       <li>Install this module from the Odoo App Store. OCA <code>auditlog</code> and OCA <code>base_user_role</code> are pulled in as required dependencies.</li>
-      <li>Define a role at Settings &rarr; Users &amp; Companies &rarr; User Roles. Pick the Odoo groups you want this agent to have &mdash; nothing more.</li>
+      <li>Define a role at Settings &rarr; Users &amp; Companies &rarr; User Roles. Pick the Odoo groups you want this integration to have &mdash; nothing more.</li>
       <li>Assign the role to whichever user the integration logs in as (your own user is fine).</li>
       <li>Create an API key for that user: Settings &rarr; Users &rarr; Account Security &rarr; Add API Key. Pick the role in the dropdown, click Generate.</li>
-      <li>Sign up for the MCP Pro server at pantalytics.com/apps/odoo-mcp-server and use the new key from your AI tool.</li>
+      <li>Use the key from your AI tool, n8n workflow, cron script or any other API integration. For AI access via Claude / ChatGPT / Gemini / Copilot, sign up for the MCP Pro server at pantalytics.com/apps/odoo-mcp-server.</li>
       <li>Watch calls flow into MCP Pro &rarr; Audit Log inside your Odoo, narrowed to the role's scope.</li>
     </ol>
   </div>
