@@ -3,6 +3,18 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.3.0] - 2026-05-20
+
+### Added
+- **Link audit log entries to the API key that produced them.**
+  `auditlog.http.request` now has an `x_api_key_id` field, filled at
+  request-ingest time from `request.session["x_mcp_api_key_id"]` (set
+  by `pan_mcp_pro_governance`'s `res.users.apikeys` auth hook). A
+  stored related field on `auditlog.log` exposes the key on every log
+  row, so operators can answer "which API key made this change?"
+  directly from the Logs list / form / search view. Empty for
+  cookie-based browser sessions.
+
 ## [19.0.1.2.0] - 2026-05-20
 
 ### Changed
