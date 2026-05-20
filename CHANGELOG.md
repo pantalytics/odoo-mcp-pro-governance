@@ -3,6 +3,14 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.0.4.1] - 2026-05-20
+
+### Changed
+- Version bump only. Triggers an apps.odoo.com rescan so the v0.4
+  listing copy (rewritten manifest description, new screenshots,
+  broader positioning) replaces the v0.1 content currently shown
+  on the live store page.
+
 ## [19.0.0.4.0] - 2026-05-19
 
 ### Security
