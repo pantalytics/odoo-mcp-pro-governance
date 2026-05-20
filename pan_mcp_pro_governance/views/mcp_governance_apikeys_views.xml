@@ -75,17 +75,20 @@
         <field name="model">res.users.apikeys</field>
         <field name="inherit_id" ref="base.res_users_apikeys_view_kanban"/>
         <field name="arch" type="xml">
+            <!-- Make our fields available without rendering inline at the
+                 create_date position (which would concatenate them into
+                 unreadable text). Render-only via the <small> blocks below. -->
             <xpath expr="//field[@name='create_date']" position="after">
-                <field name="x_role_id"/>
-                <field name="x_state"/>
-                <field name="x_last_used"/>
-                <field name="x_use_count"/>
+                <field name="x_role_id" invisible="1"/>
+                <field name="x_state" invisible="1"/>
+                <field name="x_last_used" invisible="1"/>
+                <field name="x_use_count" invisible="1"/>
             </xpath>
             <xpath expr="//small[contains(., 'Scope:')]" position="after">
-                <small invisible="not x_role_id">
+                <small invisible="not x_role_id" class="d-block">
                     Role: <field name="x_role_id"/>
                 </small>
-                <small>
+                <small class="d-block">
                     State: <field name="x_state"/>
                     <span invisible="not x_last_used">
                         · last used <field name="x_last_used"/>
