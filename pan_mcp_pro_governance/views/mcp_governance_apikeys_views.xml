@@ -57,6 +57,11 @@
         <field name="name">res.users.apikeys.show.form.mcp_pro</field>
         <field name="model">res.users.apikeys.show</field>
         <field name="inherit_id" ref="base.form_res_users_key_show"/>
+        <!-- priority &gt;= 99 silences OCA's xml-view-dangerous-replace-low-priority
+             warning. We intentionally replace the full paragraph because the
+             original text wrongly promises "full access" — there is no attribute
+             or invisible toggle that achieves the same. -->
+        <field name="priority">99</field>
         <field name="arch" type="xml">
             <xpath expr="//p[contains(@class, 'alert-warning')]" position="replace">
                 <p class="alert alert-warning" role="alert">

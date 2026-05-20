@@ -72,8 +72,8 @@ class ResUsersApikeys(models.Model):
         ondelete="restrict",
         index=True,
         help="The OCA user role this key represents. The key's effective "
-             "permissions during any request are exactly this role's groups — "
-             "never broader than the owning user, and never broader than this role.",
+        "permissions during any request are exactly this role's groups — "
+        "never broader than the owning user, and never broader than this role.",
     )
     x_state = fields.Selection(
         selection=[
@@ -99,9 +99,12 @@ class ResUsersApikeys(models.Model):
             user_role_ids = rec.user_id.sudo().role_line_ids.mapped("role_id").ids
             if rec.x_role_id.id not in user_role_ids:
                 raise ValidationError(
-                    _("Role %(role)s is not assigned to user %(user)s. "
-                      "Assign the role to the user first.",
-                      role=rec.x_role_id.display_name, user=rec.user_id.login)
+                    _(
+                        "Role %(role)s is not assigned to user %(user)s. "
+                        "Assign the role to the user first.",
+                        role=rec.x_role_id.display_name,
+                        user=rec.user_id.login,
+                    )
                 )
 
     def _check_credentials(self, *, scope, key):
@@ -130,8 +133,7 @@ class ResUsersApikeys(models.Model):
             rows = self.env.cr.fetchall()
         except Exception:
             _logger.exception(
-                "MCP Pro Governance: failed to resolve API key id; "
-                "denying request to fail closed."
+                "MCP Pro Governance: failed to resolve API key id; denying request to fail closed."
             )
             return None  # fail closed
 
@@ -139,7 +141,9 @@ class ResUsersApikeys(models.Model):
             _logger.warning(
                 "MCP Pro Governance: expected 1 matching key for "
                 "user_id=%s index=%s, found %d. Denying request.",
-                user_id, index, len(rows),
+                user_id,
+                index,
+                len(rows),
             )
             return None  # fail closed
 
@@ -148,7 +152,8 @@ class ResUsersApikeys(models.Model):
         if state != "active":
             _logger.warning(
                 "MCP Pro Governance: API key id=%s is %s; denying request.",
-                api_key_id, state,
+                api_key_id,
+                state,
             )
             return None  # fail closed
 

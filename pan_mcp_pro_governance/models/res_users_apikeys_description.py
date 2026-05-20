@@ -21,8 +21,8 @@ class ResUsersApikeysDescription(models.TransientModel):
         required=False,
         ondelete="restrict",
         help="Optional. If set, the key only sees this role's groups during "
-             "requests. If empty, the key inherits the user's full permissions "
-             "— the standard Odoo behaviour.",
+        "requests. If empty, the key inherits the user's full permissions "
+        "— the standard Odoo behaviour.",
     )
     x_available_role_ids = fields.Many2many(
         comodel_name="res.users.role",
@@ -43,20 +43,27 @@ class ResUsersApikeysDescription(models.TransientModel):
         if self.x_role_id:
             user_role_ids = self.env.user.sudo().role_line_ids.mapped("role_id").ids
             if self.x_role_id.id not in user_role_ids:
-                raise UserError(_(
-                    "Role %s is not assigned to your user. Ask an administrator "
-                    "to assign it first.", self.x_role_id.display_name,
-                ))
+                raise UserError(
+                    _(
+                        "Role %s is not assigned to your user. Ask an administrator "
+                        "to assign it first.",
+                        self.x_role_id.display_name,
+                    )
+                )
             role_id = self.x_role_id.id
 
         # super().make_key() generates exactly one key for this user and
         # unlinks the wizard. The newest key for this user is therefore the
         # one we just created.
         action = super().make_key()
-        new_key = self.env["res.users.apikeys"].sudo().search(
-            [("user_id", "=", self.env.user.id)],
-            order="id desc",
-            limit=1,
+        new_key = (
+            self.env["res.users.apikeys"]
+            .sudo()
+            .search(
+                [("user_id", "=", self.env.user.id)],
+                order="id desc",
+                limit=1,
+            )
         )
         if new_key:
             vals = {"x_state": "active"}

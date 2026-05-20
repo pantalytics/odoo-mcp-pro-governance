@@ -24,11 +24,13 @@ class TestApiKeyRoleBinding(TransactionCase):
         cls.ApiKey = cls.env["res.users.apikeys"].sudo()
         cls.Role = cls.env["res.users.role"]
         cls.role = cls.Role.create({"name": "MCP Test Role"})
-        cls.user = cls.env["res.users"].create({
-            "name": "MCP Key Owner",
-            "login": "mcp_key_owner",
-            "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
-        })
+        cls.user = cls.env["res.users"].create(
+            {
+                "name": "MCP Key Owner",
+                "login": "mcp_key_owner",
+                "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
+            }
+        )
 
     def _make_key(self):
         """Generate one key for self.user and return its ORM record.
@@ -40,10 +42,14 @@ class TestApiKeyRoleBinding(TransactionCase):
         self.ApiKey.with_user(self.user)._generate("rpc", "test key", future)
         # _generate returns the raw key string, not the record. Fetch by
         # user+name (the test fixture creates exactly one).
-        return self.ApiKey.search([
-            ("user_id", "=", self.user.id),
-            ("name", "=", "test key"),
-        ], order="id desc", limit=1)
+        return self.ApiKey.search(
+            [
+                ("user_id", "=", self.user.id),
+                ("name", "=", "test key"),
+            ],
+            order="id desc",
+            limit=1,
+        )
 
     def test_defaults_active(self):
         key = self._make_key()

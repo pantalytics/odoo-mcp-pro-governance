@@ -38,9 +38,7 @@ def post_init_hook(env):
                 model_name,
             )
             continue
-        if AuditlogRule.search_count(
-            [("model_id", "=", model.id), ("name", "=", rule_name)]
-        ):
+        if AuditlogRule.search_count([("model_id", "=", model.id), ("name", "=", rule_name)]):
             continue
         AuditlogRule.create(
             {

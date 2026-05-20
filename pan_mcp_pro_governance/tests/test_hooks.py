@@ -28,9 +28,7 @@ class TestPostInitHook(TransactionCase):
                 [("model_id", "=", model.id), ("name", "=", rule_name)],
                 limit=1,
             )
-            self.assertTrue(
-                rule, f"Expected seeded auditlog rule for {model_name}"
-            )
+            self.assertTrue(rule, f"Expected seeded auditlog rule for {model_name}")
             self.assertEqual(rule.state, "draft")
             self.assertTrue(rule.log_create)
             self.assertTrue(rule.log_write)
@@ -41,13 +39,17 @@ class TestPostInitHook(TransactionCase):
 
     def test_hook_is_idempotent(self):
         """Running the hook twice should not create duplicates."""
-        before = self.AuditlogRule.search_count([
-            ("name", "like", "MCP Pro —%"),
-        ])
+        before = self.AuditlogRule.search_count(
+            [
+                ("name", "like", "MCP Pro —%"),
+            ]
+        )
         post_init_hook(self.env)
-        after = self.AuditlogRule.search_count([
-            ("name", "like", "MCP Pro —%"),
-        ])
+        after = self.AuditlogRule.search_count(
+            [
+                ("name", "like", "MCP Pro —%"),
+            ]
+        )
         self.assertEqual(before, after)
 
     def test_unknown_model_is_skipped_silently(self):
@@ -59,6 +61,4 @@ class TestPostInitHook(TransactionCase):
             model = self.IrModel.search([("model", "=", model_name)], limit=1)
             self.assertFalse(model)  # confirms the precondition
             # If model is falsy, the hook's loop continues — no rule created.
-            self.assertFalse(
-                self.AuditlogRule.search([("name", "=", rule_name)])
-            )
+            self.assertFalse(self.AuditlogRule.search([("name", "=", rule_name)]))

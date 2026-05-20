@@ -23,10 +23,12 @@ class TestMenuContract(TransactionCase):
 
     def test_exactly_one_top_level_menu(self):
         """docs/design.md: 'Eén top-level app: MCP Pro. Geen tweede.'"""
-        own_menu_data = self.IrModelData.search([
-            ("module", "=", "pan_mcp_pro_governance"),
-            ("model", "=", "ir.ui.menu"),
-        ])
+        own_menu_data = self.IrModelData.search(
+            [
+                ("module", "=", "pan_mcp_pro_governance"),
+                ("model", "=", "ir.ui.menu"),
+            ]
+        )
         top_level_xmlids = []
         for row in own_menu_data:
             menu = self.IrUiMenu.browse(row.res_id)
@@ -35,8 +37,7 @@ class TestMenuContract(TransactionCase):
         self.assertEqual(
             top_level_xmlids,
             ["menu_mcp_governance_root"],
-            f"Expected one top-level menu, found {top_level_xmlids}. "
-            "See docs/design.md.",
+            f"Expected one top-level menu, found {top_level_xmlids}. See docs/design.md.",
         )
 
     def test_root_menu_named_mcp_pro(self):
@@ -46,18 +47,15 @@ class TestMenuContract(TransactionCase):
     def test_configuration_is_manager_only(self):
         """docs/design.md: Configuration is for managers, not users."""
         config = self._menu("menu_mcp_governance_config")
-        manager_group = self.env.ref(
-            "pan_mcp_pro_governance.group_mcp_governance_manager"
-        )
+        manager_group = self.env.ref("pan_mcp_pro_governance.group_mcp_governance_manager")
         self.assertIn(
-            manager_group, config.group_ids,
+            manager_group,
+            config.group_ids,
             "Configuration menu must be gated to the Manager group.",
         )
 
     def test_root_menu_visible_to_user_group(self):
         """The user group must be able to see the app at all."""
         root = self._menu("menu_mcp_governance_root")
-        user_group = self.env.ref(
-            "pan_mcp_pro_governance.group_mcp_governance_user"
-        )
+        user_group = self.env.ref("pan_mcp_pro_governance.group_mcp_governance_user")
         self.assertIn(user_group, root.group_ids)

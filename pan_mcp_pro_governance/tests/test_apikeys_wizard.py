@@ -16,23 +16,20 @@ class TestApiKeyWizardValidation(TransactionCase):
         cls.Role = cls.env["res.users.role"]
         cls.role = cls.Role.create({"name": "MCP Wizard Role"})
         cls.other_role = cls.Role.create({"name": "Not Mine"})
-        cls.user = cls.env["res.users"].create({
-            "name": "Wizard User",
-            "login": "wizard_user",
-            "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
-        })
+        cls.user = cls.env["res.users"].create(
+            {
+                "name": "Wizard User",
+                "login": "wizard_user",
+                "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
+            }
+        )
 
     def _wizard(self, **overrides):
         values = {"name": "wizard test key", "duration": "30"}
         values.update(overrides)
         # sudo to bypass the wizard's own ACL; with_user to make
         # env.user.role_ids the test user's roles (what the compute reads).
-        return (
-            self.env["res.users.apikeys.description"]
-            .with_user(self.user)
-            .sudo()
-            .create(values)
-        )
+        return self.env["res.users.apikeys.description"].with_user(self.user).sudo().create(values)
 
     def test_available_roles_are_users_roles(self):
         wiz = self._wizard()

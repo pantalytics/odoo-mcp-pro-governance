@@ -26,7 +26,11 @@ class IrModelAccess(models.Model):
     _inherit = "ir.model.access"
 
     def _get_allowed_models(self, mode="read"):
-        role = self.env.user._get_api_key_role() if hasattr(self.env.user, "_get_api_key_role") else None
+        role = (
+            self.env.user._get_api_key_role()
+            if hasattr(self.env.user, "_get_api_key_role")
+            else None
+        )
         if not role:
             return super()._get_allowed_models(mode)
 
@@ -73,6 +77,8 @@ class IrModelAccess(models.Model):
                 "To fix: either add the required groups to this role in "
                 "Settings → Users & Companies → User Roles, or use an API key "
                 "bound to a broader role.",
-                role=role.display_name, operation=op_label, model=model,
+                role=role.display_name,
+                operation=op_label,
+                model=model,
             )
         )

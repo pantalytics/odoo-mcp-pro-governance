@@ -29,11 +29,15 @@ class IrRule(models.Model):
 
     @api.model
     def _compute_domain(self, model_name, mode="read"):
-        role = self.env.user._get_api_key_role() if hasattr(self.env.user, "_get_api_key_role") else None
+        role = (
+            self.env.user._get_api_key_role()
+            if hasattr(self.env.user, "_get_api_key_role")
+            else None
+        )
         if not role:
             return super()._compute_domain(model_name, mode)
         # Thread the role id through the env context so the cache key
         # captures it; parent then computes correctly via narrowed group reads.
-        return super(IrRule, self.with_context(
-            **{_MCP_ROLE_CTX_KEY: role.id}
-        ))._compute_domain(model_name, mode)
+        return super(IrRule, self.with_context(**{_MCP_ROLE_CTX_KEY: role.id}))._compute_domain(
+            model_name, mode
+        )
