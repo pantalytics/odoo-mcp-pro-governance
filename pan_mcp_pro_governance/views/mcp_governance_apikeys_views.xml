@@ -84,7 +84,7 @@
              or invisible toggle that achieves the same. -->
         <field name="priority">99</field>
         <field name="arch" type="xml">
-            <xpath expr="//p[contains(@class, 'alert-warning')]" position="replace">
+            <xpath expr="//p[hasclass('alert-warning')]" position="replace">
                 <p class="alert alert-warning" role="alert">
                     <strong>Important:</strong>
                     The key cannot be retrieved later. Store it securely.
