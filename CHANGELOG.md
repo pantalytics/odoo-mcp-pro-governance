@@ -3,6 +3,19 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.0.4.3] - 2026-05-20
+
+### Changed
+- **Diagnostic, step 2**: also removed `base_user_role` from `depends`.
+  Step 1 (v0.4.2, dropping just `auditlog`) caused the publisher
+  portal to shift its warning to `base_user_role` rather than accept
+  the update — confirming that any single OCA dep blocks the
+  listing refresh. With both removed, the manifest now has zero
+  OCA dependencies; if the live page picks up the v0.4.3 stamp
+  this revision, the hypothesis is fully proven and we move on to
+  the vendor-in-repo plan.
+- Version stamp updated in `static/description/index.html`.
+
 ## [19.0.0.4.2] - 2026-05-20
 
 ### Changed
