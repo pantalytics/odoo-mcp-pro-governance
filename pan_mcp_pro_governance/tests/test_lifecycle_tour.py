@@ -5,7 +5,7 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestLifecycleTour(HttpCase):
-    """End-to-end check that the lifecycle buttons behave per docs/design.md:
+    """End-to-end check that the lifecycle buttons behave per docs/dev/design.md:
     draft → active → suspended → active → revoked, with the right buttons
     visible in each state (progressive disclosure of actions)."""
 

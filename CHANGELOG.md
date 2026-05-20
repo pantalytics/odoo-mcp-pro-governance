@@ -3,6 +3,47 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.2.0] - 2026-05-20
+
+### Changed
+- **Rename bundled OCA modules to `pan_mcp_auditlog` and
+  `pan_mcp_user_role`.** apps.odoo.com refuses to accept uploads under
+  the canonical OCA names `auditlog` and `base_user_role` because they
+  are already registered there for older Odoo series (17.0, 18.0) by
+  OCA themselves, and OCA has not published a 19.0 version. The rename
+  lets us publish the bundle without name conflicts. Python model
+  names (`auditlog.rule`, `res.users.role`, …) are unchanged — only
+  the module folder + manifest `name` field move.
+- `pan_mcp_pro_governance/__manifest__.py` `depends` now lists
+  `pan_mcp_auditlog` and `pan_mcp_user_role`.
+- XML records inside the renamed bundles that referenced their own
+  records with full module qualification (`ref('auditlog.x')` /
+  `ref('base_user_role.x')`) updated to the new module prefix.
+- `pan_mcp_pro_governance` XML group + action refs updated to the new
+  module prefix.
+
+### Added
+- ADR-013: rename bundled OCA modules. Documents the apps.odoo.com
+  name-uniqueness constraint discovered during publish + the
+  coexistence trade-off with the OCA originals.
+
+### Notes
+- ADR-012 (bundle as sibling addons under OCA's original names)
+  superseded by ADR-013.
+- Customers already running OCA's official `auditlog` or
+  `base_user_role` cannot install the Pantalytics bundle in the same
+  database — see [`NOTICE.md`](NOTICE.md) for the two ways to
+  resolve. Fresh installs ("Deploy on Odoo.sh") are unaffected.
+- Listing version stamp bumped to v1.2.0.
+
+## [19.0.1.0.0] - 2026-05-20
+
+### Changed
+- **v1.0 milestone.** Stable release of the scoped-API-keys + audit-log
+  bundle. No code changes from v0.5.0 — version bump only, marking the
+  module as production-ready for apps.odoo.com.
+- Listing version stamp bumped to v1.0.0.
+
 ## [19.0.0.5.0] - 2026-05-20
 
 ### Changed

@@ -33,8 +33,8 @@ roles**, plus a full audit trail of every inbound call. Built on OCA
   MCP Pro → Configuration → Audit Rules
 
 **Security groups:**
-- MCP Pro User (read-only; implies `auditlog.group_auditlog_user`)
-- MCP Pro Manager (administration; implies `auditlog.group_auditlog_manager`)
+- MCP Pro User (read-only; implies `pan_mcp_auditlog.group_auditlog_user`)
+- MCP Pro Manager (administration; implies `pan_mcp_auditlog.group_auditlog_manager`)
 
 **On the roadmap:**
 - Agent identity registry surfaced in UI (model exists, hidden in
@@ -75,19 +75,21 @@ for the full design rationale.
 
 ## Installation
 
-From v0.5.0 onwards this repository ships its two OCA dependencies
-**bundled** at the root: `auditlog/` (OCA `server-tools` 19.0.1.0.1) and
-`base_user_role/` (OCA `server-backend` 19.0.1.0.2). One install, all
-three addons appear in your Apps menu. See [NOTICE.md](NOTICE.md) for
-attribution and [ADR-012](docs/adr/012-vendor-oca-dependencies.md) for
-why the vendoring is necessary on apps.odoo.com.
+From v1.2.0 onwards this repository ships its two OCA dependencies
+**bundled** at the root under Pantalytics-prefixed slugs:
+`pan_mcp_auditlog/` (renamed copy of OCA `server-tools/auditlog`
+19.0.1.0.1) and `pan_mcp_user_role/` (renamed copy of OCA
+`server-backend/base_user_role` 19.0.1.0.2). One install, all three
+addons appear in your Apps menu. See [NOTICE.md](NOTICE.md) for
+attribution and [ADR-013](docs/adr/013-rename-vendored-modules.md) for
+why the rename was necessary on apps.odoo.com.
 
 ### Via apps.odoo.com (default)
 
 Search **MCP Pro** → **Install on Odoo.sh** (or download the tarball
-and install via your usual route). Odoo auto-installs `auditlog` and
-`base_user_role` from the same package because they sit alongside in
-the upload.
+and install via your usual route). Odoo auto-installs
+`pan_mcp_auditlog` and `pan_mcp_user_role` from the same package
+because they sit alongside in the upload.
 
 ### As Git submodule (Odoo.sh)
 
@@ -104,20 +106,24 @@ git push
 ```bash
 git clone -b 19.0 git@github.com:pantalytics/odoo-mcp-pro-governance.git
 # Add the repo root to your Odoo addons path. The three sibling
-# folders (auditlog, base_user_role, pan_mcp_pro_governance) all
-# become installable.
+# folders (pan_mcp_auditlog, pan_mcp_user_role, pan_mcp_pro_governance)
+# all become installable.
 ```
 
 Then in Odoo: **Apps → Update Apps List → install "MCP Pro"**.
 
 Requires Odoo 19.0 and Python 3.11+. No separate OCA install required.
 
-### Using your own OCA copies instead
+### Already running OCA `auditlog` or `base_user_role`?
 
-If you already have the OCA originals on a different addons-path entry
-(e.g. via your own Odoo.sh submodule of `OCA/server-tools`), Odoo's
-first-match resolution uses those — you can ignore our bundled copies
-or even remove them after install.
+Our bundle ships the OCA code under renamed slugs
+(`pan_mcp_auditlog`, `pan_mcp_user_role`) but keeps the upstream
+Python model names. If you already have the OCA originals installed
+in the same Odoo database, the bundle will refuse to install with a
+model-registration conflict. Either uninstall the OCA originals
+first, or remove our bundled folders from the addons path and edit
+`pan_mcp_pro_governance/__manifest__.py` to depend on the upstream
+slugs. See [NOTICE.md](NOTICE.md) for the full rationale.
 
 ---
 

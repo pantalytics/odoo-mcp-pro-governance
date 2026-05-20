@@ -12,8 +12,9 @@ For the full three-repo family map see [docs/research/07_related_repos.md](docs/
 
 ## Design & Feedback
 
-- **UI design rules** for this module: [docs/design.md](docs/design.md). Bound to Pantalytics design philosophy at [brand.pantalytics.com/en/design-philosophy](https://brand.pantalytics.com/en/design-philosophy). Touching menus/views/forms? Read it first.
-- **Feedback loops** for "how do I know my change is good?": [docs/FEEDBACK.md](docs/FEEDBACK.md). Lists every loop from pre-commit (<2s) to CI (~6 min) and which to use when.
+- **UI design rules** for this module: [docs/dev/design.md](docs/dev/design.md). Bound to Pantalytics design philosophy at [brand.pantalytics.com/en/design-philosophy](https://brand.pantalytics.com/en/design-philosophy). Touching menus/views/forms? Read it first.
+- **Feedback loops** for "how do I know my change is good?": [docs/dev/FEEDBACK.md](docs/dev/FEEDBACK.md). Lists every loop from pre-commit (<2s) to CI (~6 min) and which to use when.
+- **Documentation workflow**: [docs/README.md](docs/README.md). `docs/user/` is the master for end-user help (one-way sync → Odoo Knowledge); `docs/dev/` stays GitHub-only. No docs on pantalytics.com.
 
 ## What this module actually does
 
@@ -35,8 +36,10 @@ overrides on existing Odoo / OCA models, not new models.
   legacy path; `ir.http._dispatch` clears it per request.
 
 **Surface 2 — audit log** (added in v0.2):
-- Reuses OCA `auditlog`: `auditlog.http.request`, `auditlog.http.session`,
-  `auditlog.log`, `auditlog.log.line`.
+- Reuses OCA `auditlog` (vendored as `pan_mcp_auditlog/` since v1.2.0
+  — see ADR-013): `auditlog.http.request`, `auditlog.http.session`,
+  `auditlog.log`, `auditlog.log.line`. Model technical names unchanged
+  from upstream; only the module slug was renamed for the App Store.
 - `post_init_hook` in [hooks.py](pan_mcp_pro_governance/hooks.py) seeds
   draft `auditlog.rule` records for sale.order, res.partner,
   account.move, crm.lead, product.template, stock.picking — only for
@@ -113,7 +116,7 @@ When a field's semantic meaning is *new* to the domain (e.g. "the technical user
 | `views/mcp_governance_api_call_log_views.xml` | Window action over `auditlog.http.request` re-using OCA's views. |
 | `views/mcp_governance_agent_identity_views.xml` | Tree/form/search/action for the parked agent identity model. |
 | `views/mcp_governance_menus.xml` | Top-level "MCP Pro" + Audit Log + API Keys (+ hidden Agent Identities) + Configuration → Audit Rules. |
-| `security/mcp_pro_governance_groups.xml` | User / Manager groups; imply `auditlog.group_auditlog_*`. |
+| `security/mcp_pro_governance_groups.xml` | User / Manager groups; imply `pan_mcp_auditlog.group_auditlog_*`. |
 | `security/ir.model.access.csv` | ACL rows for `mcp.governance.agent.identity` only. |
 | `tests/test_*.py` | Unit tests (TransactionCase) + web tours. |
 | `static/description/index.html` | App Store listing HTML (no external links allowed). |
@@ -127,21 +130,21 @@ Each addon repo has its own `.local/` (gitignored) with `docker-compose.yml` + `
 ~/Documents/GitHub/
 ├── .docker/Dockerfile                ← Shared image (Enterprise + deps)
 ├── odoo-enterprise/                  ← Odoo 19 Enterprise source
-├── oca-server-tools/                 ← OCA — provides `auditlog` (required)
-├── oca-server-backend/               ← OCA — provides `base_user_role` (required)
-└── odoo-mcp-pro-governance/
+└── odoo-mcp-pro-governance/          ← Bundle: 3 sibling addon folders
+    ├── pan_mcp_auditlog/             ← Vendored OCA auditlog (renamed)
+    ├── pan_mcp_user_role/            ← Vendored OCA base_user_role (renamed)
+    ├── pan_mcp_pro_governance/       ← The governance addon proper
     └── .local/                       ← This repo's dev config (gitignored)
-        ├── docker-compose.yml        ← bind-mounts the two OCA addons above
+        ├── docker-compose.yml        ← bind-mounts the repo root
         └── odoo.conf
 ```
 
-Clone the OCA repos once (shallow is fine, 19.0 branch only):
-
-```bash
-cd ~/Documents/GitHub
-git clone --depth 1 --branch 19.0 https://github.com/OCA/server-tools.git
-git clone --depth 1 --branch 19.0 https://github.com/OCA/server-backend.git
-```
+No separate OCA clones needed since v1.2.0 — the two OCA addons are
+bundled in this repo as `pan_mcp_auditlog/` and `pan_mcp_user_role/`.
+If you previously had `oca-server-tools` and `oca-server-backend`
+cloned as bind mounts, remove them from `docker-compose.yml` to avoid
+model-name conflicts (the bundled folders and OCA originals both
+declare `auditlog.rule`, `res.users.role`, etc.).
 
 Container filesystem:
 

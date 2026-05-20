@@ -1,13 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Top-level action shown in the MCP Pro menu. The base record rule on
-         res.users.apikeys already restricts users to their own keys; managers
-         go through Settings → Users to see everyone's keys. -->
+    <!-- Standard list view: user, name, role, state and usage metadata in
+         columns. The base record rule on res.users.apikeys restricts regular
+         users to their own keys; managers go through Settings → Users to see
+         everyone's keys. The User column is therefore self-referential for
+         regular users but still useful to admins reading their own keys. -->
+    <record id="view_apikey_list_mcp_pro" model="ir.ui.view">
+        <field name="name">res.users.apikeys.list.mcp_pro</field>
+        <field name="model">res.users.apikeys</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false">
+                <field name="user_id"/>
+                <field name="name" string="Name"/>
+                <field name="x_role_id"/>
+                <field name="x_state"/>
+                <field name="x_last_used"/>
+                <field name="x_use_count"/>
+                <field name="create_date"/>
+                <button type="object" name="remove" title="Delete API key" icon="fa-trash"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Top-level action shown in the MCP Pro menu. -->
     <record id="action_mcp_governance_apikeys" model="ir.actions.act_window">
         <field name="name">API Keys</field>
         <field name="res_model">res.users.apikeys</field>
-        <field name="view_mode">kanban</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_apikey_list_mcp_pro"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No API keys yet.
@@ -74,34 +95,8 @@
         </field>
     </record>
 
-    <!-- Inherit the kanban view of existing keys: surface role + state. -->
-    <record id="view_apikey_kanban_inherit" model="ir.ui.view">
-        <field name="name">res.users.apikeys.kanban.mcp_pro</field>
-        <field name="model">res.users.apikeys</field>
-        <field name="inherit_id" ref="base.res_users_apikeys_view_kanban"/>
-        <field name="arch" type="xml">
-            <!-- Make our fields available without rendering inline at the
-                 create_date position (which would concatenate them into
-                 unreadable text). Render-only via the <small> blocks below. -->
-            <xpath expr="//field[@name='create_date']" position="after">
-                <field name="x_role_id" invisible="1"/>
-                <field name="x_state" invisible="1"/>
-                <field name="x_last_used" invisible="1"/>
-                <field name="x_use_count" invisible="1"/>
-            </xpath>
-            <xpath expr="//small[contains(., 'Scope:')]" position="after">
-                <small invisible="not x_role_id" class="d-block">
-                    Role: <field name="x_role_id"/>
-                </small>
-                <small class="d-block">
-                    State: <field name="x_state"/>
-                    <span invisible="not x_last_used">
-                        · last used <field name="x_last_used"/>
-                        (<field name="x_use_count"/> calls)
-                    </span>
-                </small>
-            </xpath>
-        </field>
-    </record>
+    <!-- Kanban inherit removed: action_mcp_governance_apikeys uses the list
+         view exclusively. If we ever bring back a card-style view, surface
+         x_role_id / x_state / x_last_used / x_use_count there. -->
 
 </odoo>

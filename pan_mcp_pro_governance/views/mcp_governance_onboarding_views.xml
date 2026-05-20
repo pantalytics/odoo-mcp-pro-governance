@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        "Get Started" landing page. Backed by an empty TransientModel
+        (mcp.governance.get_started) so the form view always renders,
+        independent of whether the user has any API keys yet.
+
+        Why TransientModel: a form view needs *some* record to render. The
+        transient lives just long enough for Odoo to draw the page; nothing
+        is persisted. Earlier iteration used the nocontent help on the API
+        Keys kanban, but that only shows on empty state.
+    -->
+    <record id="view_get_started_form" model="ir.ui.view">
+        <field name="name">mcp.governance.get_started.form</field>
+        <field name="model">mcp.governance.get_started</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false" duplicate="false">
+                <sheet>
+                    <div class="mx-auto" style="max-width: 720px;">
+                        <h1 class="text-center mb-4">Welcome to MCP Pro.</h1>
+                        <p class="text-center text-muted mb-5">
+                            Follow the steps below to connect Claude, ChatGPT
+                            or another AI assistant to this Odoo.
+                        </p>
+
+                        <h4 class="mb-2">1. Sign up for MCP Pro</h4>
+                        <p class="mb-2 text-muted">
+                            Create your free Pantalytics account — sign in
+                            with Google or Microsoft, no separate
+                            registration needed.
+                        </p>
+                        <a class="btn btn-primary"
+                           href="https://pantalytics.com/apps/odoo-mcp-server"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            Sign up
+                        </a>
+
+                        <h4 class="mt-4 mb-2">2. Create an Odoo API key</h4>
+                        <p class="mb-2 text-muted">
+                            Click your avatar (top right) → Preferences →
+                            Account Security → New API Key. Copy the
+                            generated key — you will only see it once.
+                        </p>
+
+                        <h4 class="mt-4 mb-2">3. Connect Odoo in MCP Pro</h4>
+                        <p class="mb-2 text-muted">
+                            Paste your Odoo URL and the API key into the
+                            MCP Pro setup screen. MCP Pro validates the
+                            connection.
+                        </p>
+                        <a class="btn btn-primary"
+                           href="https://mcp.pantalytics.com/admin/setup"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            Open MCP Pro
+                        </a>
+
+                        <h4 class="mt-4 mb-2">
+                            4. Limit the key with a user role
+                            <small class="text-muted">(optional)</small>
+                        </h4>
+                        <p class="mb-2 text-muted">
+                            Open the <strong>API Keys</strong> menu and
+                            assign a Role to your key, narrowing the AI's
+                            permissions below your full account.
+                        </p>
+
+                        <h4 class="mt-4 mb-2">
+                            5. Review the audit log
+                            <small class="text-muted">(optional)</small>
+                        </h4>
+                        <p class="mb-2 text-muted">
+                            Every inbound AI call appears under the
+                            <strong>Audit Log</strong> menu — see who did
+                            what, when, and on which record.
+                        </p>
+
+                        <hr class="mt-5 mb-4"/>
+                        <h4 class="mb-2">Need help?</h4>
+                        <p class="mb-2 text-muted">
+                            Step-by-step articles, troubleshooting and
+                            FAQs live in the MCP Pro help hub.
+                        </p>
+                        <a class="btn btn-secondary"
+                           href="https://pantalytics.odoo.com/knowledge/article/69"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            Open help &amp; docs
+                        </a>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mcp_governance_get_started" model="ir.actions.act_window">
+        <field name="name">Get Started</field>
+        <field name="res_model">mcp.governance.get_started</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_get_started_form"/>
+        <field name="target">current</field>
+        <!-- Skip the "load existing or create new" prompt; we always want a
+             fresh transient record so the form renders immediately. -->
+        <field name="context">{}</field>
+    </record>
+
+</odoo>

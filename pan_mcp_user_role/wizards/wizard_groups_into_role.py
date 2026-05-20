@@ -32,6 +32,6 @@ class GroupGroupsIntoRole(models.TransientModel):
             "res_id": role.id,
             "target": "current",
             "context": {
-                "form_view_ref": "base_user_role.view_res_users_role_form",
+                "form_view_ref": "pan_mcp_user_role.view_res_users_role_form",
             },
         }

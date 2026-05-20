@@ -1,3 +1,10 @@
+# Vendored OCA addons live in pan_mcp_auditlog/ and pan_mcp_user_role/.
+# Per ADR-013 they are kept close to upstream — only the folder name,
+# manifest display name, and self-qualified XML refs are modified by us.
+# Skipping lint over these folders preserves the verbatim-from-OCA policy
+# and keeps re-vendoring on a new OCA release a simple folder swap.
+exclude: ^(pan_mcp_auditlog|pan_mcp_user_role)/
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0

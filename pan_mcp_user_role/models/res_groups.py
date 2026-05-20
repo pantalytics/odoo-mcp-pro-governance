@@ -66,7 +66,7 @@ class ResGroups(models.Model):
     def action_view_roles(self):
         self.ensure_one()
         action = self.env["ir.actions.act_window"]._for_xml_id(
-            "base_user_role.action_res_users_role_tree"
+            "pan_mcp_user_role.action_res_users_role_tree"
         )
         action["context"] = {}
         if len(self.role_ids) > 1:

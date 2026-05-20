@@ -55,24 +55,25 @@
         ------------
         - Odoo 19.0
         - Python 3.11+
-        - OCA `auditlog` 19.0 (installed automatically as a dependency)
+        - `pan_mcp_auditlog` and `pan_mcp_user_role` (bundled in this
+          package, installed automatically as dependencies)
     """,
     "author": "Pantalytics B.V. by Rutger Hofste",
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.0.5.0",
+    "version": "19.0.1.2.0",
     "license": "AGPL-3",
     "depends": [
         "base",
         "mail",
-        # auditlog + base_user_role are vendored into this repo as
-        # bundled sibling addons (see /auditlog and /base_user_role).
-        # Reason: apps.odoo.com refuses to refresh a listing whose
-        # depends contain modules not present in its module index, and
-        # neither OCA module is on apps.odoo.com for 19.0. See ADR-012.
-        "auditlog",
-        "base_user_role",
+        # OCA auditlog + base_user_role are vendored into this repo
+        # under renamed module names. The original OCA names are
+        # claimed by older Odoo series on apps.odoo.com and cannot be
+        # re-uploaded for 19.0 by a different publisher. See ADR-013
+        # (which supersedes ADR-012's bundled-sibling approach).
+        "pan_mcp_auditlog",
+        "pan_mcp_user_role",
     ],
     "data": [
         "security/mcp_pro_governance_groups.xml",
@@ -80,6 +81,7 @@
         "views/mcp_governance_agent_identity_views.xml",
         "views/mcp_governance_api_call_log_views.xml",
         "views/mcp_governance_apikeys_views.xml",
+        "views/mcp_governance_onboarding_views.xml",
         "views/mcp_governance_menus.xml",
     ],
     "post_init_hook": "post_init_hook",

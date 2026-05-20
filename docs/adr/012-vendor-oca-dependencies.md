@@ -1,8 +1,17 @@
 # ADR-012: Vendor OCA dependencies into the repo
 
-**Status:** Accepted (2026-05-20)
+**Status:** Superseded by [ADR-013](013-rename-vendored-modules.md) (2026-05-20)
 **Supersedes:** the implicit assumption in [ADR-002](002-depend-on-oca-auditlog.md) and [ADR-010](010-api-key-bound-to-role.md) that customers would resolve OCA dependencies via their own addons path.
-**Implemented in:** v0.5.0
+**Implemented in:** v0.5.0 → v1.0.0. **Replaced by the renamed-bundle approach in v1.2.0.**
+
+> **Why superseded:** the diagnostic in this ADR proved that
+> apps.odoo.com refreshes a listing whose `depends` references unknown
+> modules. It did **not** test what happens when we actually try to
+> upload the bundle. When v1.0.0 went up, apps.odoo.com rejected the
+> upload: "Module auditlog already exists for another serie. Please
+> select a free module name or use the right user account." The names
+> are claimed by OCA for older Odoo series, so we cannot upload under
+> them. The fix is in [ADR-013](013-rename-vendored-modules.md).
 
 ## Context
 
