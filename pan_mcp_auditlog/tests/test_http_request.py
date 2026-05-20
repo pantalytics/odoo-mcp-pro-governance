@@ -20,7 +20,7 @@ class TestAuditlogHTTPRequest(common.TransactionCase):
 
     def test_no_request_returns_false(self):
         """When no HTTP request object exists, should return False."""
-        with patch("odoo.addons.auditlog.models.auditlog_http_request.request", None):
+        with patch("odoo.addons.pan_mcp_auditlog.models.auditlog_http_request.request", None):
             result = self.request_model.current_http_request()
             self.assertFalse(
                 result,
@@ -34,7 +34,7 @@ class TestAuditlogHTTPRequest(common.TransactionCase):
         mock_request.env = self.env
 
         with patch(
-            "odoo.addons.auditlog.models.auditlog_http_request.request", mock_request
+            "odoo.addons.pan_mcp_auditlog.models.auditlog_http_request.request", mock_request
         ):
             result = self.request_model.current_http_request()
             self.assertFalse(
@@ -70,7 +70,7 @@ class TestAuditlogHTTPRequest(common.TransactionCase):
         # Patch DB fetch to simulate record exists
         with (
             patch(
-                "odoo.addons.auditlog.models.auditlog_http_request.request",
+                "odoo.addons.pan_mcp_auditlog.models.auditlog_http_request.request",
                 mock_request,
             ),
             patch.object(self.env.cr, "fetchone", return_value=(existing.id,)),
@@ -100,11 +100,11 @@ class TestAuditlogHTTPRequest(common.TransactionCase):
 
         with (
             patch(
-                "odoo.addons.auditlog.models.auditlog_http_request.request",
+                "odoo.addons.pan_mcp_auditlog.models.auditlog_http_request.request",
                 mock_request,
             ),
             patch(
-                "odoo.addons.auditlog.models.auditlog_http_session.AuditlogHTTPSession.current_http_session",
+                "odoo.addons.pan_mcp_auditlog.models.auditlog_http_session.AuditlogHTTPSession.current_http_session",
                 return_value=None,
             ),
         ):
@@ -159,11 +159,11 @@ class TestAuditlogHTTPRequest(common.TransactionCase):
 
         with (
             patch(
-                "odoo.addons.auditlog.models.auditlog_http_request.request",
+                "odoo.addons.pan_mcp_auditlog.models.auditlog_http_request.request",
                 mock_request,
             ),
             patch(
-                "odoo.addons.auditlog.models.auditlog_http_session.AuditlogHTTPSession.current_http_session",
+                "odoo.addons.pan_mcp_auditlog.models.auditlog_http_session.AuditlogHTTPSession.current_http_session",
                 return_value=session.id,
             ),
         ):
