@@ -3,6 +3,18 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.0.4.2] - 2026-05-20
+
+### Changed
+- **Diagnostic**: removed `auditlog` from `depends` to test the hypothesis
+  that apps.odoo.com's rescan is silently rejecting the v0.4 listing
+  due to the unmet OCA dependency. Runtime is intentionally broken in
+  this revision; expected to be restored to v0.4.x once the publisher
+  portal accepts the updated listing.
+- Added a visible version stamp at the bottom of `static/description
+  /index.html` so the live apps.odoo.com page can be inspected for
+  which revision is currently published.
+
 ## [19.0.0.4.1] - 2026-05-20
 
 ### Changed

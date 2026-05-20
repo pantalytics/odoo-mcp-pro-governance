@@ -61,12 +61,15 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.0.4.1",
+    "version": "19.0.0.4.2",
     "license": "AGPL-3",
     "depends": [
         "base",
         "mail",
-        "auditlog",
+        # auditlog (OCA) temporarily removed to diagnose apps.odoo.com
+        # rescan failure ("unmet dependency auditlog for series 19.0").
+        # Runtime is intentionally broken in this revision. To be restored
+        # once the publisher portal accepts the listing update.
         "base_user_role",
     ],
     "data": [
