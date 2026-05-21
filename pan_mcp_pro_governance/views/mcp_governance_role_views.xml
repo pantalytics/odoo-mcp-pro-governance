@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Render the role's groups using Odoo's standard Access Rights widget
+        (`res_user_group_ids`) instead of the OCA default flat `many2many_tags`.
+
+        The widget is designed to work on `implied_ids` of `res.groups`
+        (per its own docstring). `res.users.role` has
+        `_inherits = {"res.groups": "group_id"}`, so it exposes `implied_ids`
+        and `view_group_hierarchy` directly — no Python or JS needed.
+
+        See docs/dev/role-form-access-rights-widget.md for the upgrade note.
+    -->
+    <record id="view_res_users_role_form_access_rights" model="ir.ui.view">
+        <field name="name">res.users.role.form.access-rights-widget</field>
+        <field name="model">res.users.role</field>
+        <field name="inherit_id" ref="pan_mcp_user_role.view_res_users_role_form" />
+        <field name="arch" type="xml">
+            <field name="implied_ids" position="attributes">
+                <attribute name="widget">res_user_group_ids</attribute>
+                <attribute name="options" />
+            </field>
+        </field>
+    </record>
+</odoo>

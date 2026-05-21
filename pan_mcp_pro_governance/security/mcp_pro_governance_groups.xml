@@ -12,25 +12,24 @@
         <field name="category_id" ref="module_category_mcp_governance"/>
     </record>
 
-    <record id="group_mcp_governance_user" model="res.groups">
-        <field name="name">User</field>
+    <record id="group_mcp_governance_manager" model="res.groups">
+        <field name="name">Administrator</field>
         <field name="privilege_id" ref="res_groups_privilege_mcp_governance"/>
-        <field name="implied_ids" eval="[Command.link(ref('pan_mcp_auditlog.group_auditlog_user'))]"/>
+        <field name="implied_ids" eval="[Command.link(ref('pan_mcp_auditlog.group_auditlog_manager'))]"/>
         <field name="comment">
-            Read-only access to agent identities and the API call log
-            (auditlog.http.request from the bundled pan_mcp_auditlog).
+            Full administration of the MCP Pro app: read the audit log,
+            configure audit rules, and manage all users' API keys.
+            Implies Auditlog Manager from the bundled pan_mcp_auditlog.
         </field>
     </record>
 
-    <record id="group_mcp_governance_manager" model="res.groups">
-        <field name="name">Manager</field>
-        <field name="privilege_id" ref="res_groups_privilege_mcp_governance"/>
-        <field name="implied_ids" eval="[Command.link(ref('group_mcp_governance_user')), Command.link(ref('pan_mcp_auditlog.group_auditlog_manager'))]"/>
-        <field name="user_ids" eval="[Command.link(ref('base.user_admin'))]"/>
-        <field name="comment">
-            Governance administration: create / suspend / revoke agent
-            identities and configure audit rules.
-        </field>
-    </record>
+    <!--
+        Admin is added to the Administrator group from hooks.py
+        (post_init_hook on install, post-migration on upgrade). Doing this
+        from XML does not work: `user_ids` on res.groups silently fails to
+        propagate on some Odoo 19 setups, and the inverse — writing
+        group_ids on the base.user_admin record — is blocked because that
+        xmlid is marked noupdate.
+    -->
 
 </odoo>

@@ -54,8 +54,8 @@ class TestMenuContract(TransactionCase):
             "Configuration menu must be gated to the Manager group.",
         )
 
-    def test_root_menu_visible_to_user_group(self):
-        """The user group must be able to see the app at all."""
+    def test_root_menu_visible_to_internal_users(self):
+        """Any internal user can see the MCP Pro menu (they manage their own API keys)."""
         root = self._menu("menu_mcp_governance_root")
-        user_group = self.env.ref("pan_mcp_pro_governance.group_mcp_governance_user")
-        self.assertIn(user_group, root.group_ids)
+        internal_user_group = self.env.ref("base.group_user")
+        self.assertIn(internal_user_group, root.group_ids)

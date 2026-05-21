@@ -73,6 +73,16 @@ behind `base.group_no_one`):
 - [ ] Bump version in `__manifest__.py` (format: `19.0.X.Y.Z`) when DB schema changes
 - [ ] Custom fields use `x_` prefix (see Conventions)
 
+### Odoo major-upgrade checklist (verify when bumping Odoo version)
+
+- [ ] Field-widget `res_user_group_ids` still registered, and
+      `res.groups._get_view_group_hierarchy()` still returns the
+      `{categories, privileges, groups}` shape the widget expects.
+      We reuse it on the role form — see
+      [docs/dev/role-form-access-rights-widget.md](docs/dev/role-form-access-rights-widget.md).
+- [ ] `res.groups.privilege` model still present (Odoo 19 introduced it;
+      future versions may rework).
+
 ## Conventions
 
 ### `x_` prefix on custom fields (Odoo.sh requirement)

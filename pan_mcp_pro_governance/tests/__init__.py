@@ -6,5 +6,6 @@ from . import (
     test_hooks,
     test_lifecycle_tour,
     test_migrations,
+    test_role_manager_guard,
     test_ui_contract,
 )

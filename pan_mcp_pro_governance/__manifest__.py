@@ -1,22 +1,20 @@
 {
-    "name": "MCP Pro",
-    "summary": "Connect your Odoo with Claude, ChatGPT, Gemini and Copilot - with a full audit trail of every AI action.",
+    "name": "MCP Pro — Audit Log & Scoped API Keys for AI Agents (Claude, ChatGPT, Gemini)",
+    "summary": "Audit log and scoped API keys for AI agents in Odoo — Claude, ChatGPT, Gemini, Copilot. Free companion to MCP Pro server.",
     "description": """
-        MCP Pro - Connect your Odoo with Claude, ChatGPT, Gemini, Copilot
-        =================================================================
+        MCP Pro - Audit Log & Scoped API Keys for AI Agents in Odoo
+        ===========================================================
 
-        The MCP server that brings your favourite AI app inside your Odoo -
-        with a full audit trail of every action.
+        MCP Pro is a hosted MCP server (paid SaaS, EU-based) plus this
+        free companion addon. Start fast: connect Claude, ChatGPT, Gemini
+        or Microsoft Copilot to your Odoo in under a minute on the hosted
+        server — works on Odoo Online, Odoo.sh and on-premise. Install
+        this addon when you need governance: scoped API keys bound to
+        user roles, and an audit log of every inbound AI call.
 
         Pull open quotes, follow up with customers, create sales orders,
-        reconcile invoices - straight from chat in Claude, ChatGPT, Gemini
-        or Microsoft Copilot. Works on desktop and mobile. Works on Odoo
-        Online, Odoo.sh and on-premise.
-
-        The MCP Pro server runs outside Odoo (5-minute setup, EU-hosted).
-        This addon installs *inside* your Odoo and gives operators what
-        the server alone cannot: scoped API keys bound to OCA user roles,
-        and an audit trail of every inbound call, powered by OCA Audit Log.
+        reconcile invoices — straight from chat. Works on desktop and
+        mobile.
 
         Features
         --------
@@ -35,15 +33,9 @@
         - Last-used timestamp and call counter per key
 
         **Security groups:**
-        - MCP Pro User (read-only)
-        - MCP Pro Manager (administration)
-
-        Roadmap (broader AI governance)
-        -------------------------------
-        - First-class agent identity registry (provider, owner, lifecycle)
-        - Per-agent policies, quotas, risk classification
-        - Approval workflows for high-impact actions
-        - EU AI Act compliance reporting
+        - MCP Pro Administrator (read the audit log, configure rules,
+          manage all API keys). Any internal user can manage their own
+          API keys without this group.
 
         Data handling
         -------------
@@ -62,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.7.1",
     "license": "AGPL-3",
     "depends": [
         "base",
@@ -83,6 +75,7 @@
         "views/mcp_governance_apikeys_views.xml",
         "views/mcp_governance_auditlog_views.xml",
         "views/mcp_governance_onboarding_views.xml",
+        "views/mcp_governance_role_views.xml",
         "views/mcp_governance_menus.xml",
     ],
     "post_init_hook": "post_init_hook",

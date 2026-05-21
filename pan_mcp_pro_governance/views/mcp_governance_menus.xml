@@ -5,7 +5,7 @@
               name="MCP Pro"
               sequence="95"
               web_icon="pan_mcp_pro_governance,static/description/icon.png"
-              groups="group_mcp_governance_user"/>
+              groups="base.group_user"/>
 
     <menuitem id="menu_mcp_governance_get_started"
               name="Get Started"
@@ -17,7 +17,8 @@
               name="Audit Log"
               parent="menu_mcp_governance_root"
               action="action_mcp_governance_api_call_log"
-              sequence="10"/>
+              sequence="10"
+              groups="group_mcp_governance_manager"/>
 
     <menuitem id="menu_mcp_governance_apikeys"
               name="API Keys"
