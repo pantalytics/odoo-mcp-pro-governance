@@ -37,14 +37,19 @@ def _has_role_managers(env):
     )
 
 
+_LOCKOUT_MESSAGE = (
+    "This change would leave no user able to manage roles. "
+    "Grant another active user the 'Administration: Settings' "
+    "right (or include it in their role) before applying this change."
+)
+
+
 def _raise_lockout():
-    raise ValidationError(
-        _(
-            "This change would leave no user able to manage roles. "
-            "Grant another active user the 'Administration: Settings' "
-            "right (or include it in their role) before applying this change."
-        )
-    )
+    # Plain string, not `_(...)`: the translate alias crashes when raised
+    # outside a request context (e.g. set_groups_from_roles fired during
+    # role-line write in TransactionCase). The English message is the only
+    # one this module ships anyway.
+    raise ValidationError(_LOCKOUT_MESSAGE)
 
 
 class ResUsers(models.Model):

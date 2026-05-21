@@ -90,20 +90,30 @@ class ResUsersApikeys(models.Model):
     x_use_count = fields.Integer(readonly=True, default=0, string="Use Count")
 
     @api.constrains("x_role_id", "user_id")
-    def _check_role_belongs_to_user(self):
+    def _check_role_subset_of_user(self):
+        """A key cannot grant more permissions than its owning user has.
+
+        This is the real security invariant. We deliberately do NOT require
+        the role to be assigned to the user via OCA role_line_ids — that
+        would trigger OCA's enforcement and strip the user of unrelated
+        UI groups (Audit Log menu, Settings access, etc.). See ADR-014.
+        """
         for rec in self:
             if not rec.x_role_id:
                 continue
-            # base_user_role's role_ids compute is broken on 19.0; use the
-            # underlying role_line_ids → role_id mapping directly.
-            user_role_ids = rec.user_id.sudo().role_line_ids.mapped("role_id").ids
-            if rec.x_role_id.id not in user_role_ids:
+            user_group_ids = set(rec.user_id.sudo().group_ids.ids)
+            role_group_ids = set(rec.x_role_id.all_implied_ids.ids)
+            excess = role_group_ids - user_group_ids
+            if excess:
+                missing = self.env["res.groups"].browse(list(excess)).mapped("display_name")
                 raise ValidationError(
                     _(
-                        "Role %(role)s is not assigned to user %(user)s. "
-                        "Assign the role to the user first.",
+                        "Role '%(role)s' includes groups that user '%(user)s' "
+                        "does not have: %(missing)s. A key cannot grant more "
+                        "than its owner.",
                         role=rec.x_role_id.display_name,
                         user=rec.user_id.login,
+                        missing=", ".join(missing),
                     )
                 )
 
