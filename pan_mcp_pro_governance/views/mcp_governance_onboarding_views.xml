@@ -45,7 +45,8 @@
                             <a class="btn btn-link text-muted"
                                href="https://pantalytics.odoo.com/knowledge/article/82"
                                target="_blank"
-                               rel="noopener noreferrer">
+                               rel="noopener noreferrer"
+                               role="button">
                                 Already set up? Get started →
                             </a>
                         </div>
