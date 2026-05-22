@@ -11,24 +11,27 @@
         <field name="model">res.users.apikeys</field>
         <field name="arch" type="xml">
             <list create="false" edit="false">
-                <field name="user_id"/>
                 <field name="name" string="Name"/>
-                <field name="x_role_id"/>
-                <field name="x_state"/>
-                <field name="x_last_used"/>
-                <field name="x_use_count"/>
-                <field name="create_date"/>
+                <field name="x_role_id" string="Role"/>
+                <field name="user_id"/>
                 <button type="object" name="remove" title="Delete API key" icon="fa-trash"/>
             </list>
         </field>
     </record>
 
-    <!-- Top-level action shown in the MCP Pro menu. -->
+    <!-- Top-level action shown in the MCP Pro menu. The standard list
+         view is used so users keep select / actions / search exactly
+         like any other Odoo list. The `mcp_pro_apikeys_help` context
+         flag is read by static/src/js/apikeys_help_banner.js, which
+         injects a small "how to create a key" alert above the list
+         even when records exist (the action's `help` HTML below only
+         renders on the empty state). -->
     <record id="action_mcp_governance_apikeys" model="ir.actions.act_window">
         <field name="name">API Keys</field>
         <field name="res_model">res.users.apikeys</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_apikey_list_mcp_pro"/>
+        <field name="context">{"mcp_pro_apikeys_help": True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No API keys yet.
@@ -37,6 +40,10 @@
                 (top-right avatar → Preferences → Account Security → New API Key).
                 Pick a role to scope the key down — without a role, the key
                 inherits your full user permissions.
+            </p><p>
+                Create one key per use case (Claude, n8n, a cron script, …)
+                so each one is easy to identify in the audit log and can be
+                revoked on its own.
             </p>
         </field>
     </record>
@@ -49,6 +56,20 @@
         <field name="model">res.users.apikeys.description</field>
         <field name="inherit_id" ref="base.form_res_users_key_description"/>
         <field name="arch" type="xml">
+            <!-- Surface the "one key per use case" guideline at the very top
+                 of the wizard, before any field. This is the moment of
+                 creation, so it's where the naming advice belongs. -->
+            <xpath expr="//field[@name='name']" position="before">
+                <div class="alert alert-info" role="alert">
+                    <p class="mb-0">
+                        <strong>Tip:</strong> use one key per use case
+                        — for example <em>Claude</em>, <em>n8n</em>,
+                        <em>nightly-report-script</em>. Easier to trace
+                        in the audit log, and you can revoke one
+                        without breaking the others.
+                    </p>
+                </div>
+            </xpath>
             <!-- Insert before the parent's "Give a duration..." section so
                  the order is: Name → Role → Duration. -->
             <xpath expr="//h3[contains(., 'Give a duration')]" position="before">
@@ -63,6 +84,12 @@
                        options="{'no_create': True, 'no_open': True}"
                        domain="[('id', 'in', x_available_role_ids)]"
                        placeholder="Select a role…"/>
+                <p class="text-muted small mt-2">
+                    Only roles whose access groups fit within your own are
+                    listed — a key cannot grant more than its owner.
+                    <a href="https://pantalytics.odoo.com/knowledge/article/82"
+                       target="_blank" rel="noopener">Learn more</a>.
+                </p>
                 <p invisible="x_role_id" class="text-muted">
                     <em>No role: this key will have the same access as your
                     user account.</em>

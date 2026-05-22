@@ -20,6 +20,32 @@
                 <attribute name="widget">res_user_group_ids</attribute>
                 <attribute name="options" />
             </field>
+            <!--
+                Explainer above the Access Rights widget: answers the
+                "who will see this role in their API-key dropdown?" question
+                at the moment of decision (while ticking groups).
+            -->
+            <field name="implied_ids" position="before">
+                <p class="text-muted small mb-2">
+                    This role becomes selectable as an API-key scope for any
+                    user whose own access groups already include all the
+                    groups ticked below.
+                    <a href="https://pantalytics.odoo.com/knowledge/article/82"
+                       target="_blank" rel="noopener">Learn more</a>.
+                </p>
+            </field>
+            <!--
+                Progressive-disclosure helper: visible only while the role is
+                new (id is falsy). Picking a user pre-fills implied_ids via
+                onchange; after first save the field disappears, so existing
+                roles never carry this UI noise.
+            -->
+            <field name="name" position="after">
+                <field name="x_copy_from_user_id"
+                       invisible="id"
+                       options="{'no_create': True}"
+                       placeholder="Optional — start from an existing user"/>
+            </field>
         </field>
     </record>
 </odoo>

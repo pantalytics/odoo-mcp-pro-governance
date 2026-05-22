@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!--
+        Extend the stock list view template to render a "how to create an API
+        key" info banner above the table when the action's context carries the
+        `mcp_pro_apikeys_help` flag. The flag is set by the API Keys action in
+        views/mcp_governance_apikeys_views.xml so this banner is scoped to that
+        one page — every other list view in the system is untouched.
+
+        We keep the action's `help` HTML (nocontent smiley) for the empty
+        state; this banner covers the "I already have keys" case where the
+        nocontent help disappears.
+    -->
+    <t t-name="pan_mcp_pro_governance.ApiKeysHelpBanner"
+       t-inherit="web.ListView"
+       t-inherit-mode="extension">
+        <xpath expr="//t[@t-set-slot='control-panel-selection-actions']" position="after">
+            <div t-if="props.context and props.context.mcp_pro_apikeys_help"
+                 class="alert alert-info mb-2 mx-2 mt-2"
+                 role="alert">
+                <p class="mb-1">
+                    <strong>How to create an API key.</strong>
+                    Top-right avatar → Preferences → Account Security → New API Key.
+                </p>
+                <p class="mb-1 small">
+                    Pick a role on the wizard to scope the key down — without
+                    a role, the key inherits your full user permissions.
+                </p>
+                <p class="mb-0 small">
+                    Create one key per use case (Claude, n8n, a script, …)
+                    so each one is easy to identify in the audit log and
+                    can be revoked on its own.
+                </p>
+            </div>
+        </xpath>
+    </t>
+
+</templates>

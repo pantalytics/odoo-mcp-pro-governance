@@ -1,7 +1,8 @@
 from . import (
-    agent_identity,
     auditlog_http_request,
+    auditlog_http_session,
     auditlog_log,
+    auditlog_rule,
     get_started,
     ir_http,
     ir_model_access,

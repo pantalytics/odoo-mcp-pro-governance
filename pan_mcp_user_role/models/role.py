@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 class ResUsersRole(models.Model):
     _name = "res.users.role"
     _inherits = {"res.groups": "group_id"}
-    _description = "User Role"
+    _description = "Role"
 
     group_id = fields.Many2one(
         comodel_name="res.groups",

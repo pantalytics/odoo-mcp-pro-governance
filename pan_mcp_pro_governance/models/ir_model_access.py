@@ -75,8 +75,7 @@ class IrModelAccess(models.Model):
                 "The API key you are using is bound to the role '%(role)s', "
                 "which does not allow %(operation)s on model '%(model)s'.\n\n"
                 "To fix: either add the required groups to this role in "
-                "Settings → Users & Companies → User Roles, or use an API key "
-                "bound to a broader role.",
+                "MCP Pro → Roles, or use an API key bound to a broader role.",
                 role=role.display_name,
                 operation=op_label,
                 model=model,

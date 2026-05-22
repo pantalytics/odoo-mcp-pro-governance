@@ -14,7 +14,7 @@ For the full three-repo family map see [docs/research/07_related_repos.md](docs/
 
 - **UI design rules** for this module: [docs/dev/design.md](docs/dev/design.md). Bound to Pantalytics design philosophy at [brand.pantalytics.com/en/design-philosophy](https://brand.pantalytics.com/en/design-philosophy). Touching menus/views/forms? Read it first.
 - **Feedback loops** for "how do I know my change is good?": [docs/dev/FEEDBACK.md](docs/dev/FEEDBACK.md). Lists every loop from pre-commit (<2s) to CI (~6 min) and which to use when.
-- **Documentation workflow**: [docs/README.md](docs/README.md). `docs/user/` is the master for end-user help (one-way sync → Odoo Knowledge); `docs/dev/` stays GitHub-only. No docs on pantalytics.com.
+- **Documentation workflow**: [docs/README.md](docs/README.md). **Odoo Knowledge is the master for end-user help** (pantalytics.odoo.com → Help → MCP Pro Governance) — edit there, not in markdown. `docs/dev/`, `docs/adr/`, `docs/research/` stay GitHub-only. `docs/user/` is parking for un-migrated content only. No docs on pantalytics.com.
 
 ## What this module actually does
 
@@ -45,11 +45,11 @@ overrides on existing Odoo / OCA models, not new models.
   account.move, crm.lead, product.template, stock.picking — only for
   models whose owning module is installed.
 
-**Parked for a later release** (model stays in codebase, menu hidden
-behind `base.group_no_one`):
-- `mcp.governance.agent.identity` — first-class identity model with
-  provider, owner, lifecycle. Available in developer mode for early
-  adopters; not surfaced in the default UI.
+**Dropped in v1.10:** `mcp.governance.agent.identity` (was parked
+since v0.4). OCA `auditlog` already carries `user_id` per request,
+which is enough attribution for current scope. The migration in
+`migrations/19.0.1.10.0/pre-migration.py` drops the table. ADR-004
+is superseded.
 
 **Dropped in v0.2:** `mcp.governance.audit.log` and
 `mcp.governance.api.call.log` from v0.1. The migration in
@@ -113,21 +113,23 @@ When a field's semantic meaning is *new* to the domain (e.g. "the technical user
 
 | File | Purpose |
 |---|---|
-| `models/res_users.py` | `_get_group_ids` and `_compute_all_group_ids` overrides — the source of narrowing. Plus `_get_api_key_role()` helper that reads role-id from session + thread-local. |
-| `models/res_users_apikeys.py` | Adds `x_role_id`, `x_state`, `x_last_used`, `x_use_count` to the native API key model. Overrides `_check_credentials` to stash role-id on both session and thread-local. Manages a per-thread storage in `_mcp_thread_local`. |
+| `models/res_users.py` | `_get_group_ids` and `_compute_all_group_ids` overrides — the source of narrowing. Plus `_get_api_key_role()` helper that reads role-id from session + thread-local. Overrides `_check_uid_passwd` to re-apply the role thread-local and audit api-key id on every call: the parent is `ormcache('uid', 'passwd')`, so on cache hits the `_check_credentials` chain (where role + audit are normally wired) is skipped — without this the legacy `/jsonrpc` and `/xmlrpc` endpoints would silently lose narrowing after the first call. Uses an own `@ormcache('uid', 'passwd')`-keyed resolver so the lookup invalidates together with Odoo's password cache. |
+| `models/res_users_apikeys.py` | Adds `x_role_id`, `x_state`, `x_last_used`, `x_use_count` to the native API key model. Overrides `_check_credentials` to stash role-id on both session and thread-local (cache-miss path) and to push the api-key id into the audit-request snapshot. Manages a per-thread storage in `_mcp_thread_local`. |
 | `models/res_users_apikeys_description.py` | Wizard inherit: adds the optional Role dropdown filtered to the user's own roles. Carries the role over to the freshly-generated key in `make_key`. |
 | `models/ir_model_access.py` | Bypasses parent's ormcache(uid, mode) when an API-key role is active, then re-runs the same SQL with the narrowed group ids. Plus `_make_access_error` rewrite for clearer role-context messages. |
 | `models/ir_rule.py` | Adds `_mcp_api_key_role_id` to `_compute_domain_keys` so the rule-domain cache differentiates per role. Threads the role id through `env.context` during a narrowed call. |
-| `models/ir_http.py` | Resets the API-key role thread-local at the start of every request so a UI session that follows an API-key request on the same worker thread is not inadvertently narrowed. |
-| `models/agent_identity.py` | The parked first-class agent identity model. Menu hidden behind `base.group_no_one` in v0.4; lives on for future v0.5+ work. |
+| `models/ir_http.py` | Resets the API-key role thread-local at the start of every request so a UI session that follows an API-key request on the same worker thread is not inadvertently narrowed. Also snapshots werkzeug request context (path, url_root, session sid, uid) on a thread-local before `super()._dispatch`, so the audit-log capture can still see what was hit on legacy `/jsonrpc` and `/xmlrpc` — Odoo's `dispatch_rpc()` pops the request via `borrow_request()`, leaving `request` unbound during execute_kw. |
+| `models/auditlog_http_request.py` | `_inherit` on `auditlog.http.request`. Adds the `x_api_key_id` column and the regex that derives `x_model` / `x_method` from `/web/dataset/call_kw/...` and `/json/2/...` paths. Overrides `current_http_request()` with a snapshot fallback so legacy `/jsonrpc` and `/xmlrpc` calls (where werkzeug `request` is unbound) still produce a linked HTTP request row. |
+| `models/auditlog_http_session.py` | `_inherit` on `auditlog.http.session`. Mirrors the snapshot fallback in `current_http_session()` for legacy RPC paths. |
+| `models/auditlog_rule.py` | `_inherit` on `auditlog.rule`. Adds the `x_scope` selection (all / browser / api / users) plus the `x_user_ids` and `x_apikey_ids` targets. Overrides `create_logs` to gate on `_mcp_should_log_request(uid)`, so a rule can scope itself to UI-only or to specific API keys without disabling the upstream audit. |
 | `hooks.py` | `post_init_hook` seeds draft `auditlog.rule` rows for installed AI-target models. |
 | `migrations/19.0.0.2.0/pre-migration.py` | Drops the two v0.1 governance log tables on upgrade. |
+| `migrations/19.0.1.10.0/pre-migration.py` | Drops the `mcp_governance_agent_identity` table on upgrade. |
 | `views/mcp_governance_apikeys_views.xml` | The API key wizard inherits (Role dropdown), the kanban inherit (shows role + state + use count), the show-form inherit (rewrites the "full access" warning), and the top-level "API Keys" act_window for the MCP Pro menu. |
 | `views/mcp_governance_api_call_log_views.xml` | Window action over `auditlog.http.request` re-using OCA's views. |
-| `views/mcp_governance_agent_identity_views.xml` | Tree/form/search/action for the parked agent identity model. |
-| `views/mcp_governance_menus.xml` | Top-level "MCP Pro" + Audit Log + API Keys (+ hidden Agent Identities) + Configuration → Audit Rules. |
+| `views/mcp_governance_menus.xml` | Top-level "MCP Pro" + Audit Log + API Keys + Configuration → Audit Rules. |
 | `security/mcp_pro_governance_groups.xml` | User / Manager groups; imply `pan_mcp_auditlog.group_auditlog_*`. |
-| `security/ir.model.access.csv` | ACL rows for `mcp.governance.agent.identity` only. |
+| `security/ir.model.access.csv` | ACL row for the `mcp.governance.get_started` landing page model. |
 | `tests/test_*.py` | Unit tests (TransactionCase) + web tours. |
 | `static/description/index.html` | App Store listing HTML (no external links allowed). |
 | `static/src/js/tours/` | Web tours for HttpCase tests. |

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>MCP Pro architecture diagram</title>
+<style>
+  :root {
+    --pan-accent: #9b99ff;
+    --pan-accent-soft: #f0f0ff;
+    --pan-ink: #1f1f2e;
+    --pan-ink-soft: #6b6b80;
+    --pan-line: #d4d4dc;
+    --odoo: #714b67;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    color: var(--pan-ink);
+  }
+  .stage {
+    width: 1200px;
+    height: 420px;
+    box-sizing: border-box;
+    padding: 40px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  svg { display: block; }
+
+  /* shared text */
+  .label {
+    font-size: 22px;
+    font-weight: 600;
+    fill: var(--pan-ink);
+  }
+  .sublabel {
+    font-size: 14px;
+    fill: var(--pan-ink-soft);
+    font-weight: 400;
+  }
+  .annotation {
+    font-size: 18px;
+    fill: var(--pan-accent);
+    font-weight: 600;
+    font-style: italic;
+  }
+  .pill {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    fill: var(--pan-accent);
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg width="1136" height="340" viewBox="0 0 1136 340" xmlns="http://www.w3.org/2000/svg">
+    <!-- arrow marker -->
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#b8b8c4"/>
+      </marker>
+    </defs>
+
+    <!-- connectors (drawn first so boxes sit on top) -->
+    <line x1="232" y1="190" x2="324" y2="190" stroke="#b8b8c4" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="560" y1="190" x2="652" y2="190" stroke="#b8b8c4" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="888" y1="190" x2="980" y2="190" stroke="#b8b8c4" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- ============ BOX 1 — AI clients ============ -->
+    <g>
+      <rect x="16" y="110" width="216" height="160" rx="14" ry="14"
+            fill="#ffffff" stroke="#d4d4dc" stroke-width="1.5"/>
+      <text x="124" y="148" text-anchor="middle" class="pill">AI clients</text>
+
+      <!-- Claude wordmark-ish: orange dot + Claude -->
+      <g transform="translate(38, 168)">
+        <circle cx="10" cy="10" r="9" fill="#d97757"/>
+        <text x="28" y="15" font-size="16" font-weight="600" fill="#1f1f2e">Claude</text>
+      </g>
+      <!-- ChatGPT: green dot + ChatGPT -->
+      <g transform="translate(38, 198)">
+        <circle cx="10" cy="10" r="9" fill="#10a37f"/>
+        <text x="28" y="15" font-size="16" font-weight="600" fill="#1f1f2e">ChatGPT</text>
+      </g>
+      <!-- Cursor / Gemini / etc -->
+      <g transform="translate(38, 228)">
+        <circle cx="10" cy="10" r="9" fill="#1f1f2e"/>
+        <text x="28" y="15" font-size="16" font-weight="600" fill="#1f1f2e">Cursor, Gemini…</text>
+      </g>
+    </g>
+
+    <!-- ============ BOX 2 — MCP Pro ============ -->
+    <g>
+      <rect x="324" y="110" width="236" height="160" rx="14" ry="14"
+            fill="#ffffff" stroke="#d4d4dc" stroke-width="1.5"/>
+      <text x="442" y="148" text-anchor="middle" class="pill">Hosted service</text>
+      <text x="442" y="192" text-anchor="middle" class="label">MCP Pro</text>
+      <text x="442" y="218" text-anchor="middle" class="sublabel">The AI connector</text>
+      <text x="442" y="240" text-anchor="middle" class="sublabel">pantalytics.com</text>
+    </g>
+
+    <!-- ============ BOX 3 — Governance (you are here) ============ -->
+    <g>
+      <!-- soft purple fill so it reads as 'highlighted' -->
+      <rect x="652" y="110" width="236" height="160" rx="14" ry="14"
+            fill="#f0f0ff" stroke="#9b99ff" stroke-width="2"
+            stroke-dasharray="6 5"/>
+      <text x="770" y="148" text-anchor="middle" class="pill">Optional</text>
+      <text x="770" y="192" text-anchor="middle" class="label">MCP Pro Governance</text>
+      <text x="770" y="218" text-anchor="middle" class="sublabel">Control panel inside</text>
+      <text x="770" y="240" text-anchor="middle" class="sublabel">your Odoo (this app)</text>
+
+      <!-- You are here annotation -->
+      <text x="770" y="66" text-anchor="middle" class="annotation">You are here</text>
+      <!-- curved arrow from text down to box -->
+      <path d="M 770 78 C 770 88, 770 90, 770 102"
+            stroke="#9b99ff" stroke-width="2" fill="none"
+            marker-end="url(#arrow-purple)"/>
+      <defs>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5"
+                markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9b99ff"/>
+        </marker>
+      </defs>
+    </g>
+
+    <!-- ============ BOX 4 — Your Odoo ============ -->
+    <g>
+      <rect x="980" y="110" width="156" height="160" rx="14" ry="14"
+            fill="#ffffff" stroke="#d4d4dc" stroke-width="1.5"/>
+      <text x="1058" y="148" text-anchor="middle" class="pill">Your data</text>
+      <text x="1058" y="192" text-anchor="middle" class="label">Your Odoo</text>
+      <text x="1058" y="218" text-anchor="middle" class="sublabel">CRM, Sales,</text>
+      <text x="1058" y="240" text-anchor="middle" class="sublabel">Inventory…</text>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

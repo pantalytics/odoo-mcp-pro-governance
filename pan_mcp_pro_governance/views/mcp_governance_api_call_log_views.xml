@@ -15,10 +15,13 @@
             <p class="o_view_nocontent_smiling_face">
                 No calls logged yet.
             </p><p>
-                One row is created for every inbound HTTP request that touches an
-                audited model. Configure which models are audited under
-                <b>MCP Pro → Configuration → Audit Rules</b>. Filter by user to see
-                only the calls made by a specific AI agent.
+                One row is created for every inbound HTTP request that touches
+                an audited model. Configure which models are audited under
+                <b>MCP Pro → Audit Rules</b> (subscribe the rule to start
+                recording — draft rules log nothing).
+            </p><p>
+                Group by <b>API Key</b> to see what each agent (Claude, n8n, a
+                script) has been doing.
             </p>
         </field>
     </record>

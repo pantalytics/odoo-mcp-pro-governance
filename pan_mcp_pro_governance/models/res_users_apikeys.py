@@ -71,9 +71,9 @@ class ResUsersApikeys(models.Model):
         string="Role",
         ondelete="restrict",
         index=True,
-        help="The OCA user role this key represents. The key's effective "
-        "permissions during any request are exactly this role's groups — "
-        "never broader than the owning user, and never broader than this role.",
+        help="The role this key represents. The key's effective permissions "
+        "during any request are exactly this role's groups — never broader "
+        "than the owning user, and never broader than this role.",
     )
     x_state = fields.Selection(
         selection=[
@@ -175,6 +175,12 @@ class ResUsersApikeys(models.Model):
         # Always: thread-local. Survives borrow_request() in /jsonrpc.
         if role_id:
             set_thread_api_key_role_id(role_id)
+        # Audit-log snapshot: stash the resolved key id so the legacy
+        # /jsonrpc and /xmlrpc paths (where request is popped) still
+        # record `x_api_key_id` on the auditlog.http.request row.
+        from .ir_http import set_audit_api_key_id
+
+        set_audit_api_key_id(api_key_id)
 
         # Lightweight usage counter; one UPDATE per call. Tolerable for
         # the prototype — promote to a deferred / batched update if it

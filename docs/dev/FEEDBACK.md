@@ -44,7 +44,7 @@ Ruff doet formatting + lints. Mislukt iets: lees de regel, fix, en commit opnieu
 Test-tags volgen `:Klasse.methode`. Voorbeeld:
 
 ```bash
-make test-one TAG=:TestAgentIdentity.test_lifecycle_transitions
+make test-one TAG=:TestApiKeys.test_role_narrowing
 ```
 
 De test draait op een verse `test_one_<timestamp>` DB. De daadwerkelijke dev-DB blijft draaien voor browser-iteratie.
@@ -97,7 +97,7 @@ De `test` job in `.github/workflows/ci.yml` doet hetzelfde als loop 4 maar:
 - Tegen Postgres 16.
 - Zonder lokale filestore.
 - Met Odoo 19 Community (geen Enterprise — dus geen Enterprise-only paden testen!).
-- Chromium wordt apt-installed zodat HttpCase tours (smoke + lifecycle) niet stilletjes overgeslagen worden.
+- Chromium wordt apt-installed zodat HttpCase tours niet stilletjes overgeslagen worden.
 
 Daarnaast draaien er twee aparte gates:
 
@@ -124,7 +124,7 @@ Voor je een PR opent, draai in deze volgorde:
 
 ```bash
 make lint                                       # ~2s
-make test-one TAG=:TestAgentIdentity            # ~15s
+make test-one TAG=:TestApiKeys                  # ~15s
 make test                                       # ~90s — fresh DB install gate
 # UI-wijziging?
 /ui-feedback                                    # ~30s

@@ -1,5 +1,111 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <!-- auditlog.rule form: progressive-disclosure layout.
+         Replaces OCA's two-column General/Logging block with a flow:
+         (1) what to audit, (2) which operations, (3) who to audit;
+         everything else (log type, capture-on-delete, field-level and
+         legacy user excludes) moves to an Advanced tab. -->
+    <record id="view_auditlog_rule_form_scope" model="ir.ui.view">
+        <field name="name">auditlog.rule.form.scope</field>
+        <field name="model">auditlog.rule</field>
+        <field name="inherit_id" ref="pan_mcp_auditlog.view_auditlog_rule_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group" position="replace">
+                <group>
+                    <group string="What to audit">
+                        <field
+                            name="model_id"
+                            options="{'no_create': True}"
+                            readonly="state == 'confirmed'"
+                        />
+                    </group>
+                    <group string="Log which operations">
+                        <field name="log_create" readonly="state == 'confirmed'" />
+                        <field name="log_write" readonly="state == 'confirmed'" />
+                        <field name="log_unlink" readonly="state == 'confirmed'" />
+                        <field name="log_read" readonly="state == 'confirmed'" />
+                        <field
+                            name="log_export_data"
+                            readonly="state == 'confirmed'"
+                        />
+                    </group>
+                </group>
+                <group string="Who to audit">
+                    <field
+                        name="x_scope"
+                        widget="radio"
+                        readonly="state == 'confirmed'"
+                    />
+                    <field
+                        name="x_apikey_ids"
+                        widget="many2many_tags"
+                        options="{'no_create': True}"
+                        readonly="state == 'confirmed'"
+                        invisible="x_scope != 'api'"
+                        placeholder="Leave empty to log all API keys"
+                    />
+                    <field
+                        name="x_user_ids"
+                        widget="many2many_tags"
+                        options="{'no_create': True}"
+                        readonly="state == 'confirmed'"
+                        required="x_scope == 'users'"
+                        invisible="x_scope != 'users'"
+                        placeholder="Pick one or more users…"
+                    />
+                </group>
+                <div class="text-muted small mb-3" invisible="x_scope != 'users'">
+                    Logs every request from these users — both their browser
+                    sessions and their API key calls.
+                </div>
+                <notebook>
+                    <page string="Advanced" name="advanced">
+                        <group>
+                            <group string="Storage">
+                                <field
+                                    name="log_type"
+                                    widget="radio"
+                                    readonly="state == 'confirmed'"
+                                />
+                                <field
+                                    name="capture_record"
+                                    readonly="state == 'confirmed'"
+                                    invisible="log_type != 'full' or log_unlink != True"
+                                />
+                            </group>
+                            <group string="Exclusions">
+                                <field
+                                    name="fields_to_exclude_ids"
+                                    widget="many2many_tags"
+                                    options="{'no_create': True}"
+                                    readonly="state == 'confirmed'"
+                                />
+                                <field
+                                    name="users_to_exclude_ids"
+                                    widget="many2many_tags"
+                                    options="{'no_create': True}"
+                                    readonly="state == 'confirmed'"
+                                />
+                            </group>
+                        </group>
+                        <div class="text-muted small">
+                            <strong>Users to exclude</strong> is the OCA legacy
+                            filter. Prefer the <em>Who to audit</em> lists
+                            above; this field stays available for back-compat
+                            scenarios where you want full-source logging
+                            minus a few specific users.
+                        </div>
+                        <field
+                            name="action_id"
+                            readonly="True"
+                            groups="base.group_no_one"
+                        />
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
     <!-- auditlog.log list: surface the originating API key -->
     <record id="view_auditlog_log_tree_api_key" model="ir.ui.view">
         <field name="name">auditlog.log.list.api_key</field>
@@ -44,9 +150,10 @@
         </field>
     </record>
 
-    <!-- auditlog.http.request list: surface the API key.
-         Parent tree only carries name / create_date / http_session_id
-         (no user_id), so anchor at the end. -->
+    <!-- auditlog.http.request list: time-first layout. Reading order
+         left-to-right answers "when, what model, what method, who".
+         Path stays available as an optional column for debugging
+         non-RPC routes where x_model/x_method can't be parsed. -->
     <record id="view_auditlog_http_request_tree_api_key" model="ir.ui.view">
         <field name="name">auditlog.http.request.list.api_key</field>
         <field name="model">auditlog.http.request</field>
@@ -55,9 +162,56 @@
             ref="pan_mcp_auditlog.view_auditlog_http_request_tree"
         />
         <field name="arch" type="xml">
-            <field name="http_session_id" position="after">
-                <field name="x_api_key_id" optional="show" />
+            <xpath expr="//list" position="replace">
+                <list>
+                    <field name="create_date" string="Time" />
+                    <field name="x_model" />
+                    <field name="x_method" />
+                    <field name="user_id" />
+                    <field name="x_api_key_id" />
+                    <field name="name" string="Path" optional="hide" />
+                    <field name="http_session_id" optional="hide" />
+                </list>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- auditlog.http.request search: scope-by-channel filters + API
+         key search + group-by. Default view stays unfiltered so the
+         compliance-officer view (story 3) keeps working; story 1/6
+         users hit "API only" once and the filter sticks per session. -->
+    <record id="view_auditlog_http_request_search_api_key" model="ir.ui.view">
+        <field name="name">auditlog.http.request.search.api_key</field>
+        <field name="model">auditlog.http.request</field>
+        <field
+            name="inherit_id"
+            ref="pan_mcp_auditlog.view_auditlog_http_request_search"
+        />
+        <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="x_api_key_id" />
             </field>
+            <field name="name" position="before">
+                <filter
+                    name="api_only"
+                    string="API only"
+                    domain="[('x_api_key_id', '!=', False)]"
+                />
+                <filter
+                    name="browser_only"
+                    string="Browser only"
+                    domain="[('x_api_key_id', '=', False)]"
+                />
+                <separator />
+            </field>
+            <filter name="group_by_user_id" position="after">
+                <filter
+                    name="group_by_api_key"
+                    string="API Key"
+                    domain="[]"
+                    context="{'group_by':'x_api_key_id'}"
+                />
+            </filter>
         </field>
     </record>
 

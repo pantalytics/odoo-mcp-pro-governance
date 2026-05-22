@@ -13,10 +13,10 @@
               action="action_mcp_governance_get_started"
               sequence="5"/>
 
-    <menuitem id="menu_mcp_governance_audit_log"
-              name="Audit Log"
+    <menuitem id="menu_mcp_governance_user_roles"
+              name="Roles"
               parent="menu_mcp_governance_root"
-              action="action_mcp_governance_api_call_log"
+              action="pan_mcp_user_role.action_res_users_role_tree"
               sequence="10"
               groups="group_mcp_governance_manager"/>
 
@@ -24,31 +24,20 @@
               name="API Keys"
               parent="menu_mcp_governance_root"
               action="action_mcp_governance_apikeys"
-              sequence="20"/>
-
-    <!--
-        Agent Identities is staged for a future release. The model, views and
-        tests stay in the codebase, but the menu is hidden from end-users so
-        the app surface is just Audit Log + API Keys until that feature lands.
-        Visible in developer mode via `base.group_no_one`.
-    -->
-    <menuitem id="menu_mcp_governance_identities"
-              name="Agent Identities"
-              parent="menu_mcp_governance_root"
-              action="action_mcp_governance_agent_identity"
-              sequence="80"
-              groups="base.group_no_one"/>
-
-    <menuitem id="menu_mcp_governance_config"
-              name="Configuration"
-              parent="menu_mcp_governance_root"
-              sequence="90"
-              groups="group_mcp_governance_manager"/>
+              sequence="15"/>
 
     <menuitem id="menu_mcp_governance_audit_rules"
               name="Audit Rules"
-              parent="menu_mcp_governance_config"
+              parent="menu_mcp_governance_root"
               action="pan_mcp_auditlog.action_auditlog_rule_tree"
-              sequence="10"/>
+              sequence="20"
+              groups="group_mcp_governance_manager"/>
+
+    <menuitem id="menu_mcp_governance_audit_log"
+              name="Audit Log"
+              parent="menu_mcp_governance_root"
+              action="action_mcp_governance_api_call_log"
+              sequence="25"
+              groups="group_mcp_governance_manager"/>
 
 </odoo>

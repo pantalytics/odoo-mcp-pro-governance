@@ -1,11 +1,9 @@
 from . import (
-    test_agent_identity,
     test_apikeys,
     test_apikeys_wizard,
+    test_auditlog_rule_scope,
     test_governance_tour,
     test_hooks,
-    test_lifecycle_tour,
     test_migrations,
-    test_role_manager_guard,
     test_ui_contract,
 )

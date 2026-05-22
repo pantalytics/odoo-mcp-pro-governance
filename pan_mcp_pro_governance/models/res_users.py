@@ -26,12 +26,66 @@ request is popped during dispatch). UI sessions are unaffected because
 ``_get_api_key_role`` returns False when no API-key context is active.
 """
 
-from odoo import api, models
+from odoo import api, models, tools
 from odoo.http import request
+
+from .ir_http import set_audit_api_key_id
 
 
 class ResUsers(models.Model):
     _inherit = "res.users"
+
+    @api.model
+    @tools.ormcache("uid", "passwd")
+    def _mcp_resolve_api_key(self, uid, passwd):
+        """Return ``(api_key_id, role_id)`` for an active key matching
+        ``(uid, passwd)``, or ``(False, False)``.
+
+        Cached on the same key as Odoo's own ``_check_uid_passwd``
+        ormcache so it invalidates together with password/key changes.
+        We need our own lookup because the parent cache hides the
+        ``_check_credentials`` chain on cache hits — which would
+        otherwise be the only place we learn the API key id and role.
+        """
+        if not passwd or not uid:
+            return (False, False)
+        from odoo.addons.base.models.res_users import (
+            INDEX_SIZE,
+            KEY_CRYPT_CONTEXT,
+        )
+
+        index = passwd[:INDEX_SIZE]
+        self.env.cr.execute(
+            "SELECT id, key, x_role_id, x_state "
+            "FROM res_users_apikeys "
+            "WHERE user_id = %s AND index = %s",
+            (uid, index),
+        )
+        for kid, hashed, role_id, state in self.env.cr.fetchall():
+            if KEY_CRYPT_CONTEXT.verify(passwd, hashed):
+                if state != "active":
+                    return (False, False)
+                return (kid, role_id or False)
+        return (False, False)
+
+    @api.model
+    def _check_uid_passwd(self, uid, passwd):
+        """Override: always seed the audit snapshot AND the role
+        thread-local for the resolved API key. Parent is
+        ``ormcache('uid', 'passwd')`` so on cache hits the
+        ``_check_credentials`` chain — the only place narrowing is
+        normally wired up — is skipped. Without this override a
+        role-bound key only narrows on its first call per worker.
+        """
+        result = super()._check_uid_passwd(uid, passwd)
+        api_key_id, role_id = self.sudo()._mcp_resolve_api_key(uid, passwd)
+        if api_key_id:
+            set_audit_api_key_id(api_key_id)
+        if role_id:
+            from .res_users_apikeys import set_thread_api_key_role_id
+
+            set_thread_api_key_role_id(role_id)
+        return result
 
     @api.model
     def _get_api_key_role(self):
