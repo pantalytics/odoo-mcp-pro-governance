@@ -14,17 +14,24 @@ The fix lives in ``pan_mcp_auditlog`` — ``_register_hook`` now scrubs
 markers without a matching confirmed rule on every registry build.
 """
 
+from unittest.mock import patch
+
 from odoo.tests.common import TransactionCase
 
 
 class TestAuditlogOrphanPatches(TransactionCase):
     def test_register_hook_reverts_orphan_patches(self):
-        """Reproduces the production incident: a rule that was confirmed
-        and then flipped to draft via a side channel (here: direct SQL,
-        in production: a worker that missed the registry_invalidated
-        signal) leaves its patches on the model class. The next
-        ``_register_hook`` pass — run on every registry build — must
-        strip them.
+        """Reproduces the production incident: a rule transitions to
+        draft, but the worker carrying the registry patches misses the
+        ``registry_invalidated`` signal so the patches survive on the
+        model class. The next ``_register_hook`` pass — run on every
+        registry build — must strip them.
+
+        We simulate the missed revert by patching ``_revert_methods``
+        to a no-op for the duration of ``set_to_draft``. The ORM write
+        still flushes ``state='draft'`` to the DB exactly like the
+        real worker would have observed; only the class-level patch
+        revert is skipped, leaving the orphan marker in place.
         """
         rule = self.env["auditlog.rule"].create(
             {
@@ -42,14 +49,8 @@ class TestAuditlogOrphanPatches(TransactionCase):
         self.assertIn("auditlog_ruled_write", groups_cls.__dict__)
         self.assertTrue(hasattr(groups_cls.write, "origin"))
 
-        # Bypass write() (which would call _revert_methods) to mimic the
-        # cross-worker broken state: DB says draft, but the registry on
-        # this worker still carries the patched method.
-        self.env.cr.execute(
-            "UPDATE auditlog_rule SET state = 'draft' WHERE id = %s",
-            (rule.id,),
-        )
-        self.env.invalidate_all()
+        with patch.object(type(rule), "_revert_methods", lambda self: None):
+            rule.set_to_draft()
         self.assertEqual(rule.state, "draft")
         self.assertIn("auditlog_ruled_write", groups_cls.__dict__)
 
