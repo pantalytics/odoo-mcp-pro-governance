@@ -44,15 +44,27 @@ class TestMenuContract(TransactionCase):
         """The App Store listing name is 'MCP Pro' — the menu must match."""
         self.assertEqual(self._menu("menu_mcp_governance_root").name, "MCP Pro")
 
-    def test_configuration_is_manager_only(self):
-        """docs/dev/design.md: Configuration is for managers, not users."""
-        config = self._menu("menu_mcp_governance_config")
+    def test_manager_only_menus_are_gated(self):
+        """docs/dev/design.md: governance configuration is for managers, not users.
+
+        v1.18.0 flattened the menu tree — there is no separate
+        ``Configuration`` submenu anymore. The same contract now applies
+        per item: every menu surfacing audit/role/governance config must
+        carry the Manager group.
+        """
         manager_group = self.env.ref("pan_mcp_pro_governance.group_mcp_governance_manager")
-        self.assertIn(
-            manager_group,
-            config.group_ids,
-            "Configuration menu must be gated to the Manager group.",
+        manager_only_xmlids = (
+            "menu_mcp_governance_user_roles",
+            "menu_mcp_governance_audit_rules",
+            "menu_mcp_governance_audit_log",
         )
+        for xmlid in manager_only_xmlids:
+            menu = self._menu(xmlid)
+            self.assertIn(
+                manager_group,
+                menu.group_ids,
+                f"{xmlid} must be gated to the Manager group.",
+            )
 
     def test_root_menu_visible_to_internal_users(self):
         """Any internal user can see the MCP Pro menu (they manage their own API keys)."""

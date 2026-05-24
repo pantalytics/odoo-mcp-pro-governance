@@ -43,12 +43,13 @@ class TestAuditlogOrphanPatches(TransactionCase):
         self.assertTrue(hasattr(groups_cls.write, "origin"))
 
         # Bypass write() (which would call _revert_methods) to mimic the
-        # cross-worker broken state.
+        # cross-worker broken state: DB says draft, but the registry on
+        # this worker still carries the patched method.
         self.env.cr.execute(
             "UPDATE auditlog_rule SET state = 'draft' WHERE id = %s",
             (rule.id,),
         )
-        rule.invalidate_recordset(["state"])
+        self.env.invalidate_all()
         self.assertEqual(rule.state, "draft")
         self.assertIn("auditlog_ruled_write", groups_cls.__dict__)
 
