@@ -41,8 +41,7 @@ def ensure_admin_in_manager_group(env):
     )
     if not admin or not manager_group:
         _logger.warning(
-            "MCP Pro: could not add admin to Manager group "
-            "(admin=%s, group=%s).",
+            "MCP Pro: could not add admin to Manager group (admin=%s, group=%s).",
             admin,
             manager_group,
         )
@@ -50,8 +49,7 @@ def ensure_admin_in_manager_group(env):
     if manager_group in admin.group_ids:
         return
     env.cr.execute(
-        "INSERT INTO res_groups_users_rel (gid, uid) VALUES (%s, %s) "
-        "ON CONFLICT DO NOTHING",
+        "INSERT INTO res_groups_users_rel (gid, uid) VALUES (%s, %s) ON CONFLICT DO NOTHING",
         (manager_group.id, admin.id),
     )
     env.invalidate_all()

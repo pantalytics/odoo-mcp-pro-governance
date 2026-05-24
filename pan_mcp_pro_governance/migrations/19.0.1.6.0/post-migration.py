@@ -5,9 +5,8 @@ from an earlier version run this migration instead. Idempotent: a role
 is only created when zero roles exist in the database.
 """
 
-from odoo.api import Environment, SUPERUSER_ID
-
 from odoo.addons.pan_mcp_pro_governance.hooks import ensure_default_admin_role
+from odoo.api import SUPERUSER_ID, Environment
 
 
 def migrate(cr, version):

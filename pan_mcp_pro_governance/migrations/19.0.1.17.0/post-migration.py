@@ -30,9 +30,7 @@ def migrate(cr, version):
 
     # Default everything to 'all' first (handles freshly added column +
     # any rule that has neither list filled).
-    cr.execute(
-        "UPDATE auditlog_rule SET x_scope = 'all' WHERE x_scope IS NULL"
-    )
+    cr.execute("UPDATE auditlog_rule SET x_scope = 'all' WHERE x_scope IS NULL")
 
     # 'api' scope: only the apikey list was filled.
     cr.execute(

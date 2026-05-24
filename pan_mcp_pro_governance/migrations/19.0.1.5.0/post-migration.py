@@ -23,7 +23,7 @@ fails with ``ForeignKeyViolation``. Same risk for ``ir.rule`` group
 links via ``rule_group_rel``. Clean both before unlinking.
 """
 
-from odoo.api import Environment, SUPERUSER_ID
+from odoo.api import SUPERUSER_ID, Environment
 
 
 def migrate(cr, version):

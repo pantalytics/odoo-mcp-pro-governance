@@ -5,7 +5,6 @@ We only test the validation paths our override adds — the part that runs
 the `_auto = False` apikeys table, neither friendly to TransactionCase.
 """
 
-from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
 
 

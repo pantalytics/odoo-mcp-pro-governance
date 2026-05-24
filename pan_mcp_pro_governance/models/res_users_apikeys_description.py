@@ -42,9 +42,7 @@ class ResUsersApikeysDescription(models.TransientModel):
     def _compute_available_role_ids(self):
         user_group_ids = set(self.env.user.sudo().group_ids.ids)
         all_roles = self.env["res.users.role"].sudo().search([])
-        eligible = all_roles.filtered(
-            lambda r: set(r.all_implied_ids.ids).issubset(user_group_ids)
-        )
+        eligible = all_roles.filtered(lambda r: set(r.all_implied_ids.ids).issubset(user_group_ids))
         for rec in self:
             rec.x_available_role_ids = eligible
 

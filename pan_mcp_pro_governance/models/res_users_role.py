@@ -48,6 +48,4 @@ class ResUsersRole(models.Model):
     def _onchange_x_copy_from_user_id(self):
         for role in self:
             if role.x_copy_from_user_id:
-                role.implied_ids = [
-                    fields.Command.set(role.x_copy_from_user_id.group_ids.ids)
-                ]
+                role.implied_ids = [fields.Command.set(role.x_copy_from_user_id.group_ids.ids)]

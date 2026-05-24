@@ -6,9 +6,8 @@ left admin without the group (and thus without the menu) on existing
 databases. Fix it once on upgrade.
 """
 
-from odoo.api import Environment, SUPERUSER_ID
-
 from odoo.addons.pan_mcp_pro_governance.hooks import ensure_admin_in_manager_group
+from odoo.api import SUPERUSER_ID, Environment
 
 
 def migrate(cr, version):

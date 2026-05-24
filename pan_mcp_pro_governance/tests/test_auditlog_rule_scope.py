@@ -19,12 +19,8 @@ class TestAuditlogRuleScope(TransactionCase):
         cls.ApiKey = cls.env["res.users.apikeys"].sudo()
         cls.partner_model = cls.env.ref("base.model_res_partner")
 
-        cls.user_anna = cls.env["res.users"].create(
-            {"name": "Anna", "login": "anna_scope_test"}
-        )
-        cls.user_bob = cls.env["res.users"].create(
-            {"name": "Bob", "login": "bob_scope_test"}
-        )
+        cls.user_anna = cls.env["res.users"].create({"name": "Anna", "login": "anna_scope_test"})
+        cls.user_bob = cls.env["res.users"].create({"name": "Bob", "login": "bob_scope_test"})
 
         # `res.users.apikeys` is `_auto = False` — use the canonical entry.
         future = datetime.datetime.now() + datetime.timedelta(days=1)
@@ -41,13 +37,9 @@ class TestAuditlogRuleScope(TransactionCase):
 
         # post_init_hook seeds a rule on res.partner. The unique constraint on
         # model_id means we cannot create another — reuse the seeded one.
-        cls.rule = cls.Rule.search(
-            [("model_id", "=", cls.partner_model.id)], limit=1
-        )
+        cls.rule = cls.Rule.search([("model_id", "=", cls.partner_model.id)], limit=1)
         if not cls.rule:
-            cls.rule = cls.Rule.create(
-                {"name": "test scope", "model_id": cls.partner_model.id}
-            )
+            cls.rule = cls.Rule.create({"name": "test scope", "model_id": cls.partner_model.id})
 
     def _mock_request(self, api_key_id=None):
         """Return a context manager that patches odoo.http.request."""

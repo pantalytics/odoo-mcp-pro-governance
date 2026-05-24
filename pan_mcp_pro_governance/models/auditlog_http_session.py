@@ -37,9 +37,7 @@ class AuditlogHTTPSession(models.Model):
             if self.env.cr.fetchone():
                 return cached
 
-        existing = self.search(
-            [("name", "=", sid), ("user_id", "=", uid)], limit=1
-        )
+        existing = self.search([("name", "=", sid), ("user_id", "=", uid)], limit=1)
         if existing:
             set_audit_cached_session_id(existing.id)
             return existing.id
