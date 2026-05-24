@@ -239,6 +239,14 @@ class AuditlogRule(models.Model):
             self.pool._auditlog_model_cache = {}
         if not self:
             self = self.search([("state", "=", "confirmed")])
+            # Worker-boot path: scrub patches left over from a previous
+            # confirmed rule that is now gone or back to draft. Without
+            # this, long-running workers (Odoo SaaS cron) keep writing
+            # audit log rows for a model that no longer has any rule,
+            # because OCA only reverts on explicit set_to_draft/unlink
+            # and the registry_invalidated signal does not propagate to
+            # every worker process.
+            self._revert_orphan_patches()
         return self._patch_methods()
 
     def _patch_method(self, model, method_name, check_attr):
@@ -308,10 +316,49 @@ class AuditlogRule(models.Model):
                     setattr(
                         type(model_model), method, getattr(model_model, method).origin
                     )
-                    delattr(type(model_model), f"auditlog_ruled_{method}")
+                    # Guard: marker may be absent if the dynamic model class was
+                    # rebuilt (registry reload) after patching, while the patched
+                    # method survived on the type. Only delete what's actually there.
+                    check_attr = f"auditlog_ruled_{method}"
+                    if check_attr in type(model_model).__dict__:
+                        delattr(type(model_model), check_attr)
                     updated = True
         if updated:
             self._update_registry()
+
+    def _revert_orphan_patches(self):
+        """Strip patches from model classes that no longer match a rule.
+
+        ``self`` is the set of currently-confirmed rules. Any model in
+        the registry carrying an ``auditlog_ruled_<method>`` marker
+        without a matching confirmed rule (with ``log_<method>=True``)
+        is treated as a leaked patch from a previous registry
+        generation and reset to its original method.
+        """
+        log_methods = ("create", "read", "write", "unlink", "export_data")
+        active = {}
+        for rule in self:
+            model_name = rule.model_id.model or rule.model_model
+            if not model_name:
+                continue
+            methods = active.setdefault(model_name, set())
+            for method in log_methods:
+                if getattr(rule, f"log_{method}"):
+                    methods.add(method)
+        for model_name in list(self.env.registry):
+            model_cls = self.env.registry[model_name]
+            wanted = active.get(model_name, ())
+            for method in log_methods:
+                marker = f"auditlog_ruled_{method}"
+                if marker not in model_cls.__dict__:
+                    continue
+                if method in wanted:
+                    continue
+                patched = model_cls.__dict__.get(method)
+                origin = getattr(patched, "origin", None) if patched else None
+                if origin is not None:
+                    setattr(model_cls, method, origin)
+                delattr(model_cls, marker)
 
     @api.model_create_multi
     def create(self, vals_list):

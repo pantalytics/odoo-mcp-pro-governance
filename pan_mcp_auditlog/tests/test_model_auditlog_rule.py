@@ -34,3 +34,23 @@ class TestModelAuditlogRule(BaseCommon):
         ):
             with self.env.cr.savepoint():
                 rule.model_id = False
+
+    def test_revert_methods_marker_missing(self):
+        """Reverting a confirmed rule must not crash if the marker attribute
+        was dropped from the dynamic model class (e.g. after a registry rebuild)
+        while the patched method itself still carries its ``.origin``.
+        Regression: AttributeError on delattr in _revert_methods.
+        """
+        model_id = self.env.ref("base.model_res_groups").id
+        rule = self.env["auditlog.rule"].create(
+            {"name": "Marker drop", "model_id": model_id, "log_write": True}
+        )
+        rule.set_to_confirmed()
+        groups_cls = type(self.env["res.groups"])
+        self.assertTrue(hasattr(groups_cls.write, "origin"))
+        self.assertIn("auditlog_ruled_write", groups_cls.__dict__)
+        # Simulate the out-of-sync state: marker gone, patched method stays.
+        delattr(groups_cls, "auditlog_ruled_write")
+        # Without the guard this raises AttributeError.
+        rule.set_to_draft()
+        self.assertFalse(hasattr(groups_cls.write, "origin"))
