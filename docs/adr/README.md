@@ -26,7 +26,9 @@ Format follows [Michael Nygard's ADR template](https://cognitect.com/blog/2011/1
 | [009](009-scoped-api-keys.md) | Scoped API keys (Airtable-PAT-inspired): parallel scope system on `res.users.apikeys` | Superseded by 010 |
 | [010](010-api-key-bound-to-role.md) | API key bound to a single OCA `base_user_role` — narrow effective groups per request | Accepted |
 | [011](011-one-role-per-api-key.md) | One role per API key (Many2one), not many — least-privilege over OCA-style stacking | Accepted |
-| [012](012-vendor-oca-dependencies.md) | Vendor OCA `auditlog` + `base_user_role` into this repo as bundled sibling addons — apps.odoo.com refuses listings whose `depends` includes modules not in its own index | Accepted |
+| [012](012-vendor-oca-dependencies.md) | Vendor OCA `auditlog` + `base_user_role` into this repo as bundled sibling addons — apps.odoo.com refuses listings whose `depends` includes modules not in its own index | Superseded by 013 |
+| [013](013-rename-vendored-modules.md) | Rename bundled OCA modules under a Pantalytics prefix (`pan_mcp_auditlog`, `pan_mcp_user_role`) — apps.odoo.com enforces global module-name uniqueness | Accepted |
+| [014](014-no-live-chat-on-get-started.md) | No live-chat widget on the in-app Get Started page — the addon stays call-home-free; the SaaS keeps its chat | Accepted |
 
 ## How to add a new ADR
 
