@@ -1,5 +1,7 @@
 from odoo import fields, models
 
+from .. import compat
+
 
 class WizardCreateRoleFromUser(models.TransientModel):
     _name = "wizard.create.role.from.user"
@@ -28,7 +30,7 @@ class WizardCreateRoleFromUser(models.TransientModel):
             }
         )
 
-        role.implied_ids = [fields.Command.set(user.group_ids.ids)]
+        role.implied_ids = [fields.Command.set(compat.user_groups(user).ids)]
 
         if self.assign_to_user:
             role_line_obj.create(

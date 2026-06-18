@@ -6,7 +6,14 @@ import copy
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Command
-from odoo.orm.identifiers import NewId
+
+from .. import compat
+
+try:
+    # Odoo >= 19: identifiers moved into the odoo.orm package.
+    from odoo.orm.identifiers import NewId
+except ImportError:  # Odoo <= 18
+    from odoo.models import NewId
 
 FIELDS_BLACKLIST = [
     "id",
@@ -224,11 +231,23 @@ class AuditlogRule(models.Model):
         string="Fields to Exclude",
     )
 
-    _model_uniq = models.Constraint(
-        "unique(model_id)",
-        "There is already a rule defined on this model.\n"
-        "You cannot define another: please edit the existing one.",
-    )
+    # models.Constraint is the Odoo 19 declarative form; <= 18 uses the
+    # _sql_constraints tuple list.
+    if compat.ODOO_VERSION >= 19:
+        _model_uniq = models.Constraint(
+            "unique(model_id)",
+            "There is already a rule defined on this model.\n"
+            "You cannot define another: please edit the existing one.",
+        )
+    else:
+        _sql_constraints = [
+            (
+                "model_uniq",
+                "unique(model_id)",
+                "There is already a rule defined on this model.\n"
+                "You cannot define another: please edit the existing one.",
+            )
+        ]
 
     def _register_hook(self):
         """Get all rules and apply them to log method calls."""

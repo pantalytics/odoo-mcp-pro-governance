@@ -29,6 +29,7 @@ request is popped during dispatch). UI sessions are unaffected because
 from odoo import api, models, tools
 from odoo.http import request
 
+from .. import compat
 from .ir_http import set_audit_api_key_id
 
 
@@ -107,10 +108,7 @@ class ResUsers(models.Model):
     def _mcp_role_group_ids(self, role):
         """Transitive closure of res.groups for a role."""
         groups = role.group_id | role.implied_ids
-        if "all_implied_ids" in groups._fields:
-            groups |= groups.mapped("all_implied_ids")
-        else:
-            groups |= groups.mapped("implied_ids")
+        groups |= groups.mapped(compat.IMPLIED_FIELD)
         return groups
 
     def _get_group_ids(self):
@@ -128,20 +126,26 @@ class ResUsers(models.Model):
                 return tuple(self._mcp_role_group_ids(role).ids)
         return super()._get_group_ids()
 
-    @api.depends("group_ids.all_implied_ids")
-    def _compute_all_group_ids(self):
-        """Override: narrow ``all_group_ids`` to the role's groups for
-        the current env user when an API-key role is set. This is what
-        ``ir.rule._compute_domain`` reads when filtering rules by group
-        intersection.
+    # ``all_group_ids`` and its compute are new in Odoo 19. On 18 the field
+    # does not exist, so this override is omitted there — narrowing on 18
+    # rides entirely on ``_get_group_ids`` plus the ir.model.access /
+    # ir.rule overrides, which both read it. See compat.py.
+    if compat.ODOO_VERSION >= 19:
 
-        For other users in the recordset (e.g. admin inspecting another
-        user) the parent computation applies.
-        """
-        active_role = self._get_api_key_role()
-        env_user = self.env.user
-        for user in self:
-            if active_role and user == env_user:
-                user.all_group_ids = self._mcp_role_group_ids(active_role)
-            else:
-                user.all_group_ids = user.group_ids.all_implied_ids
+        @api.depends("group_ids.all_implied_ids")
+        def _compute_all_group_ids(self):
+            """Override: narrow ``all_group_ids`` to the role's groups for
+            the current env user when an API-key role is set. This is what
+            ``ir.rule._compute_domain`` reads when filtering rules by group
+            intersection.
+
+            For other users in the recordset (e.g. admin inspecting another
+            user) the parent computation applies.
+            """
+            active_role = self._get_api_key_role()
+            env_user = self.env.user
+            for user in self:
+                if active_role and user == env_user:
+                    user.all_group_ids = self._mcp_role_group_ids(active_role)
+                else:
+                    user.all_group_ids = user.group_ids.all_implied_ids

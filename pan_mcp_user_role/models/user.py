@@ -2,6 +2,8 @@
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 from odoo import api, fields, models
 
+from .. import compat
+
 
 class ResUsers(models.Model):
     _inherit = "res.users"
@@ -69,11 +71,13 @@ class ResUsers(models.Model):
         # We obtain all the groups associated to each role first, so that
         # it is faster to compare later with each user's groups.
         for role in self.mapped("role_line_ids.role_id"):
-            # v19: use transitive implied groups provided by ORM
-            role_groups[role] = list(set(role.all_implied_ids.ids))
+            # Transitive implied groups provided by the ORM
+            # (all_implied_ids on 19, trans_implied_ids on <= 18).
+            role_groups[role] = list(set(compat.implied_groups(role).ids))
         for user in self:
             if not user.role_line_ids and not force:
                 continue
+            user_group_ids = compat.user_groups(user).ids
             group_ids = []
             for role_line in user._get_enabled_roles():
                 role = role_line.role_id
@@ -83,20 +87,20 @@ class ResUsers(models.Model):
             admin_group = self.env.ref("base.group_system", raise_if_not_found=False)
             if (
                 admin_group
-                and admin_group.id in user.group_ids.ids
+                and admin_group.id in user_group_ids
                 and admin_group.id not in group_ids
             ):
                 other_admins = self.sudo().search_count(
-                    [("id", "!=", user.id), ("group_ids", "in", admin_group.id)]
+                    [("id", "!=", user.id), (compat.USER_GROUPS_FIELD, "in", admin_group.id)]
                 )
                 if other_admins == 0:
                     group_ids.append(admin_group.id)
-            groups_to_add = list(set(group_ids) - set(user.group_ids.ids))
-            groups_to_remove = list(set(user.group_ids.ids) - set(group_ids))
+            groups_to_add = list(set(group_ids) - set(user_group_ids))
+            groups_to_remove = list(set(user_group_ids) - set(group_ids))
             to_add = [fields.Command.link(gr) for gr in groups_to_add]
             to_remove = [fields.Command.unlink(gr) for gr in groups_to_remove]
             groups = to_remove + to_add
             if groups:
-                vals = {"group_ids": groups}
+                vals = {compat.USER_GROUPS_FIELD: groups}
                 super(ResUsers, user).write(vals)
         return True
