@@ -2,10 +2,12 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import copy
+from collections import defaultdict
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Command
+from odoo.tools import OrderedSet
 
 from .. import compat
 
@@ -66,64 +68,97 @@ class ThrowAwayCache:
     out unsaved values from the current user's cache during a write.
     """
 
-    # List of attributes of the transaction object that need to be set aside for
-    # a (temporary) clean slate.
-    transaction_attributes = [
-        "field_data",
-        "field_data_patches",
-        "field_dirty",
-        "protected",
-        "tocompute",
-    ]
-
     def __init__(self, env):
         self._transaction = env.transaction
 
-    def __enter__(self):
-        """Replace the cache data storage of the transaction.
+    # The cache architecture changed in Odoo 19: the per-field storage moved
+    # onto the transaction (field_data &c.) and env.cache became derived. On
+    # <= 18 env.cache is a writable Cache object shared via the transaction.
+    # Each branch swaps the disposable cache the way its version expects.
+    if compat.ODOO_VERSION >= 19:
+        # List of attributes of the transaction object that need to be set
+        # aside for a (temporary) clean slate.
+        transaction_attributes = [
+            "field_data",
+            "field_data_patches",
+            "field_dirty",
+            "protected",
+            "tocompute",
+        ]
 
-        Environments share a common cache that is stored in various properties
-        of the shared transaction. The transaction object itself is also linked
-        to the cursor, so if we want to keep using the same cursor, we need to
-        patch out these properties.
-        """
-        for attribute in self.transaction_attributes:
-            instance = getattr(self._transaction, attribute)
-            setattr(
-                self,
-                f"_original_{attribute}",
-                instance,
-            )
-            # Create an empty copy of the container instance
-            replacement = copy.copy(instance)
-            replacement.clear()
-            setattr(
-                self._transaction,
-                attribute,
-                replacement,
-            )
+        def __enter__(self):
+            """Replace the cache data storage of the transaction.
 
-        # Store a copy of the field cache memo of each env. This is slightly more
-        # elaborate because its value is different for each env.
-        self._original_field_cache_memos = {}
-        for env in self._transaction.envs:
-            self._original_field_cache_memos[env] = dict(env._field_cache_memo)
-            env._field_cache_memo.clear()
-        return self
+            Environments share a common cache that is stored in various
+            properties of the shared transaction. The transaction object itself
+            is also linked to the cursor, so if we want to keep using the same
+            cursor, we need to patch out these properties.
+            """
+            for attribute in self.transaction_attributes:
+                instance = getattr(self._transaction, attribute)
+                setattr(
+                    self,
+                    f"_original_{attribute}",
+                    instance,
+                )
+                # Create an empty copy of the container instance
+                replacement = copy.copy(instance)
+                replacement.clear()
+                setattr(
+                    self._transaction,
+                    attribute,
+                    replacement,
+                )
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Restore the original cache data storage of the transaction."""
-        for attribute in self.transaction_attributes:
-            attr = getattr(self, f"_original_{attribute}")
-            setattr(self._transaction, attribute, attr)
+            # Store a copy of the field cache memo of each env. This is slightly
+            # more elaborate because its value is different for each env.
+            self._original_field_cache_memos = {}
+            for env in self._transaction.envs:
+                self._original_field_cache_memos[env] = dict(env._field_cache_memo)
+                env._field_cache_memo.clear()
+            return self
 
-        # Restore the contents of the field_cache_memo of each env. Environments
-        # are read-only objects, so we cannot patch back the actual stashed copies.
-        for env in self._transaction.envs:
-            env._field_cache_memo.clear()
-            if cache_memo := self._original_field_cache_memos.get(env):
-                for key, value in cache_memo.items():
-                    env._field_cache_memo[key] = value
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            """Restore the original cache data storage of the transaction."""
+            for attribute in self.transaction_attributes:
+                attr = getattr(self, f"_original_{attribute}")
+                setattr(self._transaction, attribute, attr)
+
+            # Restore the contents of the field_cache_memo of each env.
+            # Environments are read-only objects, so we cannot patch back the
+            # actual stashed copies.
+            for env in self._transaction.envs:
+                env._field_cache_memo.clear()
+                if cache_memo := self._original_field_cache_memos.get(env):
+                    for key, value in cache_memo.items():
+                        env._field_cache_memo[key] = value
+
+    else:  # Odoo <= 18 — vetted OCA 18.0 implementation.
+
+        def __enter__(self):
+            """Swap env.cache (writable on <= 18) on every env + transaction.
+
+            It is not enough to replace the cache on the current env: once a
+            sudo runs under this context manager, another env is fetched which
+            would still hold the original cache, so swap them all.
+            """
+            self._original_cache = self._transaction.cache
+            # Also swap out the list of fields to recompute; their compute
+            # methods may depend on not-yet-flushed cache values.
+            self._original_tocompute = self._transaction.tocompute
+            self._transaction.tocompute = defaultdict(OrderedSet)
+            temporary_cache = api.Cache()
+            for env in self._transaction.envs:
+                env.cache = temporary_cache
+            self._transaction.cache = temporary_cache
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            """Restore the original cache wherever it was replaced."""
+            for env in self._transaction.envs:
+                env.cache = self._original_cache
+            self._transaction.cache = self._original_cache
+            self._transaction.tocompute = self._original_tocompute
 
 
 class AuditlogRule(models.Model):
