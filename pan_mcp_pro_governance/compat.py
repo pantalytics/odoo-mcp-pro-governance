@@ -38,9 +38,19 @@ def user_groups(user):
 
 
 def implied_groups(groups):
-    """Return the transitive closure of implied groups for ``groups``.
+    """Return the transitive closure of implied groups for ``groups``,
+    *including the group(s) themselves* — matching Odoo 19's
+    ``all_implied_ids`` semantics on every version.
 
     ``groups`` may be a ``res.groups`` recordset or a ``res.users.role``
     (which exposes the field via ``_inherits``).
+
+    Note the version difference this normalises: 19's ``all_implied_ids``
+    includes the group itself, but 18's ``trans_implied_ids`` does NOT, so on
+    <= 18 we add it back. Used by the API-key subset checks and the role->group
+    sync, which both rely on the v19 self-inclusive set.
     """
-    return groups[IMPLIED_FIELD]
+    if ODOO_VERSION >= 19:
+        return groups[IMPLIED_FIELD]
+    base = groups.group_id if groups._name == "res.users.role" else groups
+    return base | base.mapped(IMPLIED_FIELD)
