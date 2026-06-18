@@ -4,31 +4,27 @@
 > Odoo 18 (en optioneel 17) naast de huidige 19, met één gedeelde
 > codebase. Aanleiding: een prospect draait Odoo 18 en vraagt de app.
 >
-> **Voortgang (branch `feat/v18-compat`):**
-> - ✅ Fase 0 — werkbranch aangemaakt.
-> - ✅ Fase 1 — `pan_mcp_pro_governance` versie-tolerant: `compat.py`,
->   model-edits, gesplitste security-XML (`groups_privilege_v19.xml` /
->   `groups_legacy.xml`), v19-gated rolform-veld/-view.
-> - ✅ Fase 2 — OCA-forks: `pan_mcp_user_role/compat.py` + edits;
->   `pan_mcp_auditlog` bleek qua groepen al versie-schoon.
-> - ✅ Fresh-DB install + volledige testsuite groen op **v19**
->   (`0 failed, 0 error(s) of 21 tests`). Statische v18-simulatie van de
->   compat/gating bevestigd.
-> - 🟡 Fase 3 — runtime-verificatie op **Odoo 18 gestart** (wegwerp
->   `odoo:18`-container tegen de bestaande Postgres, addons gemount):
->   - ✅ `pan_mcp_pro_governance` + `pan_mcp_user_role` laden/installeren op 18.
->   - ✅ Bevestigd: Odoo 18 **weigert** een manifest met `19.0`-prefix te
->     laden → release-branches móeten de versie pinnen (niet alleen App Store).
->   - ✅ v18-breuken gevonden + gefixt: `odoo.orm.identifiers.NewId`
->     (defensieve import → `odoo.models.NewId` op 18) en `models.Constraint`
->     ×2 (version-gated `_sql_constraints` op 18).
->   - 🔴 **Blokker:** `pan_mcp_auditlog`'s capture-engine (`_CleanCacheContext`)
->     gebruikt v19 Transaction-internals (`field_data`, `field_data_patches`).
->     In v18 heten die anders. Dit is geen triviale compat-wrap; vereist
->     OCA's 18.0-capture-code voor het v18-pad. Aparte, grotere klus.
->   - 🟡 auditlog-**tests** refereren v19-fixtures (`res.groups.privilege`,
->     `group_ids`) — version-guarden (test-only, blokkeert install niet).
-> - ⏳ Fase 4/5 — merge naar trunk + release-branches: pas na go.
+> **Voortgang (trunk `19.0` + release-branch `18.0`):**
+> - ✅ Fase 0–2 — `compat.py` in alle drie de addons; governance + beide
+>   OCA-forks versie-tolerant. Gesplitste security-XML; v19-gated rolform.
+> - ✅ Fase 3 — **draait op echte Odoo 18** (wegwerp `odoo:18`-container):
+>   **fresh-DB install van de hele stack slaagt** ("Registry loaded",
+>   post_init_hook draait). Gefixte v18-breuken: `NewId`-import,
+>   `models.Constraint` ×2, `group_privilege_id`, de auditlog-capture-engine
+>   (`ThrowAwayCache`, vetted OCA-18.0-implementatie), het user-list view-anker,
+>   en self-inclusive `implied_groups`.
+> - ✅ **v19 blijft 100% groen** door alles heen (`0 failed of 21 tests`).
+> - ✅ Fase 4 — `feat/v18-compat` gemerged in `19.0`.
+> - ✅ Fase 5 — `18.0`-release-branch aangemaakt (delta = 3 manifest-versies
+>   + governance data-lijst + het user-list anker).
+> - 🟡 **Restwerk v18-tests** (install werkt; dit is QA-polish):
+>   - auditlog OCA-tests (31 fail / 8 err van 45): refereren v19-fixtures
+>     (`res.groups.privilege`, `group_ids`) → version-guarden. Test-only.
+>   - governance: 2× `menu.group_ids` in **testcode** (v19-isme → guarden);
+>     `available_roles` + 2× orphan-patch: vergen interactieve v18-debugging
+>     van role-creatie/patch-semantiek. user_role: groen.
+> - ⏳ Scope 17: nog niet meegenomen (compat dekt `< 19` al; alleen een
+>   17.0-release-branch + smoke-test resteert).
 
 ## Fase 3 — bevindingen op echte Odoo 18 (2026-06-18)
 
@@ -52,9 +48,10 @@ volstaat — geen enterprise-image nodig. Bij het draaien moeten de drie
 manifest-versies tijdelijk op `18.0`-prefix (anders weigert Odoo te laden);
 op de echte 18.0-branch is dat permanent.
 
-**Restwerk voor een groene v18:** de auditlog capture-engine porten tegen
-OCA 18.0 (de `field_data`/cache-context), en de auditlog-tests version-guarden.
-Het governance-addon en user_role zijn op v18 inhoudelijk rond.
+**Status:** opgelost via **optie A** (zie hieronder) — bleek compacter dan
+gevreesd: de v19-afhankelijkheid zat volledig in één klasse (`ThrowAwayCache`),
+niet de hele engine. Restwerk voor een *groene testsuite* is nu alleen nog het
+version-guarden van v19-fixtures in testcode.
 
 ### Bewijs: auditlog's capture-context is puur v19
 
@@ -70,14 +67,15 @@ Het is dus geen veldnaam-rename maar een andere cache-architectuur. Conclusie:
 **niet met de hand namaken** (giswerk op een audit-feature) — OCA's 18.0-auditlog
 heeft hier z'n eigen implementatie.
 
-### Beslispunt auditlog (open)
+### Beslispunt auditlog → gekozen: A
 
-- **A.** Beide capture-paden (v18 + v19) version-gated in één bestand. Werkt,
-  maar sleept een groot stuk OCA-code dubbel mee; rommelig.
-- **B. (aanbevolen)** Auditlog als per-versie gevendorde module: op de
-  18.0-branch OCA's 18.0-auditlog (+ onze rename + orphan-patch-fix). Geen
-  compat-gymnastiek voor third-party code. Ons addon + user_role blijven
-  wél één codebase. → Hybride.
+- **A. (gekozen)** Alleen de ene v19-specifieke klasse (`ThrowAwayCache`)
+  version-gaten: v19-pad behouden, OCA's vetted 18.0-implementatie ernaast
+  (`env.cache` swap). ~40 regels, geen dubbele engine. Auditlog blijft één
+  codebase. Bleek de juiste keuze toen het divergente oppervlak één klasse
+  bleek, niet de hele engine.
+- **B. (verworpen)** Auditlog per-versie vendoren. Onnodig zwaar gegeven dat
+  A zo klein uitviel.
 
 ## 1. Beslissing in één alinea
 
