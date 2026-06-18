@@ -18,8 +18,6 @@ create extra internal users (per ADR-005 / Odoo billing constraints).
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .. import compat
-
 
 class ResUsersApikeysDescription(models.TransientModel):
     _inherit = "res.users.apikeys.description"
@@ -42,11 +40,9 @@ class ResUsersApikeysDescription(models.TransientModel):
 
     @api.depends_context("uid")
     def _compute_available_role_ids(self):
-        user_group_ids = set(compat.user_groups(self.env.user.sudo()).ids)
+        user = self.env.user
         all_roles = self.env["res.users.role"].sudo().search([])
-        eligible = all_roles.filtered(
-            lambda r: set(compat.implied_groups(r).ids).issubset(user_group_ids)
-        )
+        eligible = all_roles.filtered(lambda r: not r._mcp_excess_group_ids(user))
         for rec in self:
             rec.x_available_role_ids = eligible
 
@@ -54,9 +50,7 @@ class ResUsersApikeysDescription(models.TransientModel):
         # If a role is chosen, validate its groups are a subset of the user's.
         role_id = False
         if self.x_role_id:
-            user_group_ids = set(compat.user_groups(self.env.user.sudo()).ids)
-            role_group_ids = set(compat.implied_groups(self.x_role_id).ids)
-            excess = role_group_ids - user_group_ids
+            excess = self.x_role_id._mcp_excess_group_ids(self.env.user)
             if excess:
                 missing = self.env["res.groups"].browse(list(excess)).mapped("display_name")
                 raise UserError(

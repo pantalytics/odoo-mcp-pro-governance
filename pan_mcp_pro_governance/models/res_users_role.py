@@ -58,3 +58,16 @@ class ResUsersRole(models.Model):
             if role.x_copy_from_user_id:
                 source_groups = compat.user_groups(role.x_copy_from_user_id)
                 role.implied_ids = [fields.Command.set(source_groups.ids)]
+
+    def _mcp_excess_group_ids(self, user):
+        """Return the group ids this role implies that ``user`` does not have.
+
+        The core API-key security invariant: a key can never grant more than
+        its owner. An empty result means the role is a subset of the user's
+        groups (eligible to bind a key). Single source of truth for the
+        wizard's role filter, the key constraint, and ``make_key``.
+        """
+        self.ensure_one()
+        role_group_ids = set(compat.implied_groups(self).ids)
+        user_group_ids = set(compat.user_groups(user.sudo()).ids)
+        return role_group_ids - user_group_ids

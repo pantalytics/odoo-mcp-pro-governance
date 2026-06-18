@@ -21,8 +21,6 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
-from .. import compat
-
 _logger = logging.getLogger(__name__)
 
 # Per-thread storage for the API-key role attribution. Cleared at the
@@ -103,9 +101,7 @@ class ResUsersApikeys(models.Model):
         for rec in self:
             if not rec.x_role_id:
                 continue
-            user_group_ids = set(compat.user_groups(rec.user_id.sudo()).ids)
-            role_group_ids = set(compat.implied_groups(rec.x_role_id).ids)
-            excess = role_group_ids - user_group_ids
+            excess = rec.x_role_id._mcp_excess_group_ids(rec.user_id)
             if excess:
                 missing = self.env["res.groups"].browse(list(excess)).mapped("display_name")
                 raise ValidationError(
