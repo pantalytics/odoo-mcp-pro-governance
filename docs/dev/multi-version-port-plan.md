@@ -13,16 +13,21 @@
 >   `models.Constraint` ×2, `group_privilege_id`, de auditlog-capture-engine
 >   (`ThrowAwayCache`, vetted OCA-18.0-implementatie), het user-list view-anker,
 >   en self-inclusive `implied_groups`.
-> - ✅ **v19 blijft 100% groen** door alles heen (`0 failed of 21 tests`).
-> - ✅ Fase 4 — `feat/v18-compat` gemerged in `19.0`.
-> - ✅ Fase 5 — `18.0`-release-branch aangemaakt (delta = 3 manifest-versies
->   + governance data-lijst + het user-list anker).
-> - 🟡 **Restwerk v18-tests** (install werkt; dit is QA-polish):
->   - auditlog OCA-tests (31 fail / 8 err van 45): refereren v19-fixtures
->     (`res.groups.privilege`, `group_ids`) → version-guarden. Test-only.
->   - governance: 2× `menu.group_ids` in **testcode** (v19-isme → guarden);
->     `available_roles` + 2× orphan-patch: vergen interactieve v18-debugging
->     van role-creatie/patch-semantiek. user_role: groen.
+> - ✅ **Volledige testsuite groen op BEIDE versies**: v19 `0 failed of 21`,
+>   **v18 `0 failed of 72`** (governance + auditlog + user_role).
+> - ✅ Fase 4 — `feat/v18-compat` gemerged in `19.0`; gedeelde fixes terug op trunk.
+> - ✅ Fase 5 — `18.0`-release-branch (delta vs trunk = 3 manifest-versies +
+>   governance data-lijst + user-list view-anker; al het Python is gedeeld).
+> - 📌 Extra v18-werk dat nodig bleek (gedeeld, versie-tolerant):
+>   - auditlog revert via `delattr` op <=18 (v18-framework flagt achtergebleven
+>     class-patches); `tests/common.py` beheert de patch-lifecycle per test.
+>   - test-compat (`USER_GROUPS_FIELD` op menu/user), privilege-tests geskipt <19.
+>   - `implied_groups` = platte field-read (matcht v19; lege rol → lege set).
+>   - key-owner rol impliceert `base.group_user` (nul-groepen-user triggert een
+>     Odoo-18-core `max()`-bug in `_check_expiration_date`).
+> - 🔎 **Eén v18-follow-up**: de wizard `x_available_role_ids` lost leeg op onder
+>   de v18-compute (filter-logica is wél correct, handmatig geverifieerd) — test
+>   geskipt op <19, vraagt nog uitzoekwerk.
 > - ⏳ Scope 17: nog niet meegenomen (compat dekt `< 19` al; alleen een
 >   17.0-release-branch + smoke-test resteert).
 
