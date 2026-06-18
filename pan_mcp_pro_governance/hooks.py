@@ -12,6 +12,8 @@ depend on `sale`, `crm`, `account`, etc.
 
 import logging
 
+from . import compat
+
 _logger = logging.getLogger(__name__)
 
 
@@ -46,7 +48,7 @@ def ensure_admin_in_manager_group(env):
             manager_group,
         )
         return
-    if manager_group in admin.group_ids:
+    if manager_group in compat.user_groups(admin):
         return
     env.cr.execute(
         "INSERT INTO res_groups_users_rel (gid, uid) VALUES (%s, %s) ON CONFLICT DO NOTHING",

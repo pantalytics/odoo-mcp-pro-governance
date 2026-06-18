@@ -12,22 +12,35 @@ assignment, and the guard searched ``group_ids`` instead of
 
 from odoo import api, fields, models
 
+from .. import compat
+
 
 class ResUsersRole(models.Model):
     _inherit = "res.users.role"
 
-    # On a *new* role record the inherited `view_group_hierarchy`
-    # compute on res.groups does not run (no associated group_id
-    # exists until save). The standard `res_user_group_ids` widget
-    # then crashes on `Object.values(undefined)`. Redeclare the field
-    # locally with a compute that always returns the global hierarchy,
-    # which is correct for both new and existing roles since the
-    # hierarchy is identical for every record.
-    view_group_hierarchy = fields.Json(
-        compute="_compute_view_group_hierarchy",
-        store=False,
-        copy=False,
-    )
+    # The ``res_user_group_ids`` access-rights widget and
+    # ``_get_view_group_hierarchy`` are new in Odoo 19. On 18 the role form
+    # falls back to the OCA default (flat many2many_tags), so this field and
+    # its compute are only declared on >= 19. See compat.py and the
+    # version-gated role view.
+    if compat.ODOO_VERSION >= 19:
+        # On a *new* role record the inherited `view_group_hierarchy`
+        # compute on res.groups does not run (no associated group_id
+        # exists until save). The standard `res_user_group_ids` widget
+        # then crashes on `Object.values(undefined)`. Redeclare the field
+        # locally with a compute that always returns the global hierarchy,
+        # which is correct for both new and existing roles since the
+        # hierarchy is identical for every record.
+        view_group_hierarchy = fields.Json(
+            compute="_compute_view_group_hierarchy",
+            store=False,
+            copy=False,
+        )
+
+        def _compute_view_group_hierarchy(self):
+            hierarchy = self.env["res.groups"]._get_view_group_hierarchy()
+            for record in self:
+                record.view_group_hierarchy = hierarchy
 
     # Progressive-disclosure helper on the new-role form: pick a user
     # and the role's implied groups are seeded from theirs. Non-stored,
@@ -39,13 +52,9 @@ class ResUsersRole(models.Model):
         store=False,
     )
 
-    def _compute_view_group_hierarchy(self):
-        hierarchy = self.env["res.groups"]._get_view_group_hierarchy()
-        for record in self:
-            record.view_group_hierarchy = hierarchy
-
     @api.onchange("x_copy_from_user_id")
     def _onchange_x_copy_from_user_id(self):
         for role in self:
             if role.x_copy_from_user_id:
-                role.implied_ids = [fields.Command.set(role.x_copy_from_user_id.group_ids.ids)]
+                source_groups = compat.user_groups(role.x_copy_from_user_id)
+                role.implied_ids = [fields.Command.set(source_groups.ids)]

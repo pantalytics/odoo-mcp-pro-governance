@@ -6,6 +6,8 @@ import logging
 from odoo import api, fields, models
 from odoo.api import SUPERUSER_ID
 
+from .. import compat
+
 _logger = logging.getLogger(__name__)
 
 
@@ -41,12 +43,15 @@ class ResUsersRole(models.Model):
         required=False,
     )
     model_access_count = fields.Integer(compute="_compute_model_access_ids")
-    group_privilege_id = fields.Many2one(
-        related="group_id.privilege_id",
-        string="Associated privilege",
-        help="Privilege assigned to the associated group.",
-        readonly=False,
-    )
+    # res.groups.privilege_id is new in Odoo 19; on <= 18 groups carry
+    # category_id directly and this related field has nothing to point at.
+    if compat.ODOO_VERSION >= 19:
+        group_privilege_id = fields.Many2one(
+            related="group_id.privilege_id",
+            string="Associated privilege",
+            help="Privilege assigned to the associated group.",
+            readonly=False,
+        )
     is_default = fields.Boolean(
         string="Default on new users",
         help=("When enabled, this role is assigned to newly created users by default."),
@@ -159,10 +164,21 @@ class ResUsersRoleLine(models.Model):
     date_from = fields.Date("From")
     date_to = fields.Date("To")
     is_enabled = fields.Boolean("Enabled", compute="_compute_is_enabled")
-    _user_role_uniq = models.Constraint(
-        "UNIQUE (user_id, role_id)",
-        "User roles can be assigned to a user only once at a time",
-    )
+    # models.Constraint is the Odoo 19 declarative form; <= 18 uses the
+    # _sql_constraints tuple list.
+    if compat.ODOO_VERSION >= 19:
+        _user_role_uniq = models.Constraint(
+            "UNIQUE (user_id, role_id)",
+            "User roles can be assigned to a user only once at a time",
+        )
+    else:
+        _sql_constraints = [
+            (
+                "user_role_uniq",
+                "UNIQUE (user_id, role_id)",
+                "User roles can be assigned to a user only once at a time",
+            )
+        ]
 
     @api.depends("date_from", "date_to")
     def _compute_is_enabled(self):
