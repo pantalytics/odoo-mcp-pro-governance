@@ -3,10 +3,13 @@
 # © 2021 Stefan Rijnhart <stefan@opener.amsterdam>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import unittest
+
 from odoo.fields import Command
 
 from odoo.addons.base.models.ir_model import MODULE_UNINSTALL_FLAG
 
+from .. import compat
 from .common import AuditLogRuleCommon
 
 
@@ -187,6 +190,9 @@ class AuditlogCommon:
         if self.groups_rule.capture_record:
             self.assertTrue(len(log_record.line_ids) > 0)
 
+    @unittest.skipUnless(
+        compat.ODOO_VERSION >= 19, "res.groups.privilege exists only on Odoo 19+"
+    )
     def test_LogCreation7(self):
         """Seventh test: multi-create with different M2O values.
 
@@ -221,6 +227,9 @@ class AuditlogCommon:
         )
         self.assertEqual(len(logs), len(groups))
 
+    @unittest.skipUnless(
+        compat.ODOO_VERSION >= 19, "res.groups.privilege exists only on Odoo 19+"
+    )
     def test_LogUpdate(self):
         """Tests write results with different M2O values."""
         self.groups_rule.set_to_confirmed()
@@ -489,10 +498,12 @@ class AuditLogRuleTestForUserFields(AuditLogRuleCommon):
                 {
                     "name": "Test User",
                     "login": "testuser",
-                    "group_ids": [
-                        Command.link(cls.env.ref("base.group_user").id),
-                        Command.link(cls.env.ref("base.group_partner_manager").id),
-                    ],
+                    **{
+                        compat.USER_GROUPS_FIELD: [
+                            Command.link(cls.env.ref("base.group_user").id),
+                            Command.link(cls.env.ref("base.group_partner_manager").id),
+                        ]
+                    },
                 }
             )
         )
@@ -503,10 +514,12 @@ class AuditLogRuleTestForUserFields(AuditLogRuleCommon):
                 {
                     "name": "Test User2",
                     "login": "testuser2",
-                    "group_ids": [
-                        Command.link(cls.env.ref("base.group_user").id),
-                        Command.link(cls.env.ref("base.group_partner_manager").id),
-                    ],
+                    **{
+                        compat.USER_GROUPS_FIELD: [
+                            Command.link(cls.env.ref("base.group_user").id),
+                            Command.link(cls.env.ref("base.group_partner_manager").id),
+                        ]
+                    },
                 }
             )
         )
@@ -696,7 +709,7 @@ class AuditLogRuleTestForUserModel(AuditLogRuleCommon):
     def test_01_AuditlogFull_field_group_write_log(self):
         """Change group and check successfully created log"""
         self.user.with_context(tracking_disable=True).write(
-            {"group_ids": [Command.link(self.group.id)]}
+            {compat.USER_GROUPS_FIELD: [Command.link(self.group.id)]}
         )
         # Checking log is created for testpartner1
         write_log_record = self.auditlog_log.search(

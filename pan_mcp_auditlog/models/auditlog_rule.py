@@ -367,15 +367,21 @@ class AuditlogRule(models.Model):
                 if getattr(rule, f"log_{method}") and hasattr(
                     getattr(model_model, method), "origin"
                 ):
-                    setattr(
-                        type(model_model), method, getattr(model_model, method).origin
-                    )
+                    model_class = type(model_model)
+                    if compat.ODOO_VERSION >= 19:
+                        setattr(model_class, method, getattr(model_model, method).origin)
+                    elif method in model_class.__dict__:
+                        # Odoo <= 18: delete to restore the inherited method
+                        # (matches OCA 18.0). setattr would leave it as a direct
+                        # class attribute, which v18's test framework flags as a
+                        # leaked patch.
+                        delattr(model_class, method)
                     # Guard: marker may be absent if the dynamic model class was
                     # rebuilt (registry reload) after patching, while the patched
                     # method survived on the type. Only delete what's actually there.
                     check_attr = f"auditlog_ruled_{method}"
-                    if check_attr in type(model_model).__dict__:
-                        delattr(type(model_model), check_attr)
+                    if check_attr in model_class.__dict__:
+                        delattr(model_class, check_attr)
                     updated = True
         if updated:
             self._update_registry()
@@ -410,8 +416,12 @@ class AuditlogRule(models.Model):
                     continue
                 patched = model_cls.__dict__.get(method)
                 origin = getattr(patched, "origin", None) if patched else None
-                if origin is not None:
-                    setattr(model_cls, method, origin)
+                if compat.ODOO_VERSION >= 19:
+                    if origin is not None:
+                        setattr(model_cls, method, origin)
+                elif method in model_cls.__dict__:
+                    # Odoo <= 18: restore by deleting (see _revert_methods).
+                    delattr(model_cls, method)
                 delattr(model_cls, marker)
 
     @api.model_create_multi
