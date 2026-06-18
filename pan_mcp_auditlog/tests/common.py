@@ -16,6 +16,27 @@ class AuditLogRuleCommon(TransactionCase):
         cls.models |= set(rule.model_id.mapped("model"))
         return rule
 
+    # Odoo 18's test framework asserts, after every test, that no extra
+    # attributes were left on any model class (v19 has no such check). OCA
+    # auditlog patches the model class (class-level, NOT transactional) when a
+    # rule is confirmed; under TransactionCase the DB rule.state is restored by
+    # the per-test savepoint rollback but the Python patches are not. So we
+    # manage the patches by hand around each test: re-apply on setUp (for rules
+    # the DB still reports confirmed, e.g. from setUpClass) and strip on
+    # tearDown (before the framework check). Both are no-ops on 19, where the
+    # check does not exist and rules are reverted only at tearDownClass.
+    def setUp(self):
+        super().setUp()
+        self.env["auditlog.rule"].search([("state", "=", "confirmed")])._register_hook()
+
+    def tearDown(self):
+        for rule in self.env["auditlog.rule"].search([("state", "=", "confirmed")]):
+            try:
+                rule._revert_methods()
+            except KeyError:  # pragma: no cover
+                continue  # Model not loaded yet
+        super().tearDown()
+
     @classmethod
     def tearDownClass(cls):
         for rule in cls.env["auditlog.rule"].search([]):

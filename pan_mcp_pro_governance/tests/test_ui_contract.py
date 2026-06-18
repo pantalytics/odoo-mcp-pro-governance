@@ -8,6 +8,8 @@ the test exists because the design says so.
 
 from odoo.tests.common import TransactionCase
 
+from .. import compat
+
 
 class TestMenuContract(TransactionCase):
     """Progressive disclosure: one app, manager-only Configuration."""
@@ -62,7 +64,7 @@ class TestMenuContract(TransactionCase):
             menu = self._menu(xmlid)
             self.assertIn(
                 manager_group,
-                menu.group_ids,
+                menu[compat.USER_GROUPS_FIELD],
                 f"{xmlid} must be gated to the Manager group.",
             )
 
@@ -70,4 +72,4 @@ class TestMenuContract(TransactionCase):
         """Any internal user can see the MCP Pro menu (they manage their own API keys)."""
         root = self._menu("menu_mcp_governance_root")
         internal_user_group = self.env.ref("base.group_user")
-        self.assertIn(internal_user_group, root.group_ids)
+        self.assertIn(internal_user_group, root[compat.USER_GROUPS_FIELD])

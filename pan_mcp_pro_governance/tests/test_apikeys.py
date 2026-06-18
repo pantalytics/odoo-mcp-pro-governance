@@ -22,7 +22,16 @@ class TestApiKeyRoleBinding(TransactionCase):
         super().setUpClass()
         cls.ApiKey = cls.env["res.users.apikeys"].sudo()
         cls.Role = cls.env["res.users.role"]
-        cls.role = cls.Role.create({"name": "MCP Test Role"})
+        # Imply base.group_user so the key owner is a realistic internal user.
+        # A user with zero groups trips a latent Odoo 18 core bug in
+        # res.users._check_expiration_date (max() over an empty groups set)
+        # during API-key generation; every real internal user has group_user.
+        cls.role = cls.Role.create(
+            {
+                "name": "MCP Test Role",
+                "implied_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
+            }
+        )
         cls.user = cls.env["res.users"].create(
             {
                 "name": "MCP Key Owner",
