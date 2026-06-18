@@ -3,7 +3,7 @@
 
 {
     "name": "Audit Log (Pantalytics bundle)",
-    "version": "19.0.1.0.3",
+    "version": "18.0.1.0.3",
     "author": "ABF OSIELL, Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "website": "https://github.com/OCA/server-tools",

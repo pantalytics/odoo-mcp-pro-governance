@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.20.0",
+    "version": "18.0.1.20.0",
     "license": "AGPL-3",
     "depends": [
         "base",
@@ -70,21 +70,21 @@
     # NOTE — multi-version (see docs/dev/multi-version-port-plan.md):
     # Odoo parses __manifest__.py with ast.literal_eval, so this list cannot
     # branch on the running version. The few version-specific data files are
-    # therefore the ONE legitimate per-release-branch difference. This (19.0)
-    # branch loads the 19+ variants; the 18.0 release branch swaps:
-    #   - security/groups_privilege_v19.xml  ->  security/groups_legacy.xml
-    #   - drops views/mcp_governance_role_views.xml  (res_user_group_ids widget
-    #     is 19-only; 18 uses the OCA default flat tags)
+    # therefore the ONE legitimate per-release-branch difference. This is the
+    # **18.0** release branch: it loads the legacy (<= 18) variants —
+    #   - security/groups_legacy.xml          (category_id, no res.groups.privilege)
+    #   - no views/mcp_governance_role_views.xml  (res_user_group_ids widget is
+    #     19-only; 18 uses the OCA default flat tags)
+    # The 19.0 trunk loads groups_privilege_v19.xml + the role view instead.
     # All Python stays identical across branches via compat.py.
     "data": [
         "security/mcp_pro_governance_groups.xml",
-        "security/groups_privilege_v19.xml",
+        "security/groups_legacy.xml",
         "security/ir.model.access.csv",
         "views/mcp_governance_api_call_log_views.xml",
         "views/mcp_governance_apikeys_views.xml",
         "views/mcp_governance_auditlog_views.xml",
         "views/mcp_governance_onboarding_views.xml",
-        "views/mcp_governance_role_views.xml",
         "views/mcp_governance_menus.xml",
     ],
     "post_init_hook": "post_init_hook",
