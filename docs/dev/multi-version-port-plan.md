@@ -28,8 +28,13 @@
 > - 🔎 **Eén v18-follow-up**: de wizard `x_available_role_ids` lost leeg op onder
 >   de v18-compute (filter-logica is wél correct, handmatig geverifieerd) — test
 >   geskipt op <19, vraagt nog uitzoekwerk.
-> - ⏳ Scope 17: nog niet meegenomen (compat dekt `< 19` al; alleen een
->   17.0-release-branch + smoke-test resteert).
+> - ⏳ Scope 17: **groter dan 18** — smoke-install op `odoo:17` faalt op
+>   `Wrong value for ir.ui.view.type: 'list'`. Odoo 18 hernoemde de view-tag
+>   `<tree>` → `<list>`; 17 gebruikt nog `<tree>`. De Python-compat dekt 17 al
+>   (alle gates zijn `>= 19`, dus 17 volgt het legacy-pad), maar 17 vergt
+>   extra **declaratief** werk: per-versie view-files of een tag-transform voor
+>   élke list/tree-view (OCA + onze eigen). Bewust uitgesteld — de prospect is
+>   v18; 17 is een aparte klus.
 
 ## Fase 3 — bevindingen op echte Odoo 18 (2026-06-18)
 
