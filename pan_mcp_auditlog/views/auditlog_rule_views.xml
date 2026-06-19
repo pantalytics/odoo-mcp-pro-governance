@@ -85,7 +85,7 @@
         <field name="name">auditlog.rule.list</field>
         <field name="model">auditlog.rule</field>
         <field name="arch" type="xml">
-            <list
+            <tree
                 decoration-info="state == 'draft'"
                 decoration-bf="state == 'confirmed'"
             >
@@ -98,7 +98,7 @@
                 <field name="log_create" />
                 <field name="log_export_data" />
                 <field name="state" />
-            </list>
+            </tree>
         </field>
     </record>
     <record id="view_auditlog_rule_search" model="ir.ui.view">
@@ -133,7 +133,7 @@
         <field name="name">Rules</field>
         <field name="res_model">auditlog.rule</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
         <field name="context">{}</field>
         <field name="search_view_id" ref="view_auditlog_rule_search" />
     </record>

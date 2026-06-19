@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "18.0.1.20.0",
+    "version": "17.0.1.20.0",
     "license": "AGPL-3",
     "depends": [
         "base",

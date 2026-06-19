@@ -22,11 +22,11 @@
         <field name="name">auditlog.http.session.list</field>
         <field name="model">auditlog.http.session</field>
         <field name="arch" type="xml">
-            <list>
+            <tree>
                 <field name="user_id" />
                 <field name="create_date" />
                 <field name="name" />
-            </list>
+            </tree>
         </field>
     </record>
     <record id="view_auditlog_http_session_search" model="ir.ui.view">

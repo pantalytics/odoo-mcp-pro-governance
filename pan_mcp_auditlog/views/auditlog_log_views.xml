@@ -66,14 +66,14 @@
                                     <field name="new_value_text" readonly="1" />
                                 </group>
                             </form>
-                            <list>
+                            <tree>
                                 <field name="field_description" />
                                 <field name="field_name" />
                                 <!--<field name="old_value"/>-->
                                 <field name="old_value_text" />
                                 <!--<field name="new_value"/>-->
                                 <field name="new_value_text" />
-                            </list>
+                            </tree>
                         </field>
                     </group>
                 </sheet>
@@ -84,14 +84,14 @@
         <field name="name">auditlog.log.list</field>
         <field name="model">auditlog.log</field>
         <field name="arch" type="xml">
-            <list create="false">
+            <tree create="false">
                 <field name="create_date" />
                 <field name="name" />
                 <field name="model_id" />
                 <field name="res_id" />
                 <field name="method" />
                 <field name="user_id" />
-            </list>
+            </tree>
         </field>
     </record>
     <record id="view_auditlog_log_search" model="ir.ui.view">

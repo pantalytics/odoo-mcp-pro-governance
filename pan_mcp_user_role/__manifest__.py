@@ -4,7 +4,7 @@
 
 {
     "name": "User Roles (Pantalytics bundle)",
-    "version": "18.0.1.0.4",
+    "version": "17.0.1.0.4",
     "category": "Tools",
     "author": "ABF OSIELL, Odoo Community Association (OCA)",
     "license": "LGPL-3",

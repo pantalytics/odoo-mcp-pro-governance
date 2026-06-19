@@ -168,8 +168,8 @@
              permitted to use position="replace" over the OCA layout. -->
         <field name="priority">99</field>
         <field name="arch" type="xml">
-            <xpath expr="//list" position="replace">
-                <list>
+            <xpath expr="//tree" position="replace">
+                <tree>
                     <field name="create_date" string="Time" />
                     <field name="x_model" />
                     <field name="x_method" />
@@ -177,7 +177,7 @@
                     <field name="x_api_key_id" />
                     <field name="name" string="Path" optional="hide" />
                     <field name="http_session_id" optional="hide" />
-                </list>
+                </tree>
             </xpath>
         </field>
     </record>
