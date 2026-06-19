@@ -15,6 +15,8 @@ import datetime
 
 from odoo.tests.common import TransactionCase
 
+from .. import compat
+
 
 class TestApiKeyRoleBinding(TransactionCase):
     @classmethod
@@ -46,8 +48,13 @@ class TestApiKeyRoleBinding(TransactionCase):
         `_generate` always uses `self.env.user`. We override `env.user`
         for the call so the key belongs to our test user.
         """
-        future = datetime.datetime.now() + datetime.timedelta(days=1)
-        self.ApiKey.with_user(self.user)._generate("rpc", "test key", future)
+        api = self.ApiKey.with_user(self.user)
+        if compat.ODOO_VERSION >= 18:
+            # Odoo 18 added the expiration_date argument to _generate.
+            future = datetime.datetime.now() + datetime.timedelta(days=1)
+            api._generate("rpc", "test key", future)
+        else:
+            api._generate("rpc", "test key")
         # _generate returns the raw key string, not the record. Fetch by
         # user+name (the test fixture creates exactly one).
         return self.ApiKey.search(

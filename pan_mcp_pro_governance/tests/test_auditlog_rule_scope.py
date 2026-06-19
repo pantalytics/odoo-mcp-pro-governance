@@ -10,6 +10,8 @@ from unittest import mock
 
 from odoo.tests.common import TransactionCase
 
+from .. import compat
+
 
 class TestAuditlogRuleScope(TransactionCase):
     @classmethod
@@ -23,9 +25,14 @@ class TestAuditlogRuleScope(TransactionCase):
         cls.user_bob = cls.env["res.users"].create({"name": "Bob", "login": "bob_scope_test"})
 
         # `res.users.apikeys` is `_auto = False` — use the canonical entry.
-        future = datetime.datetime.now() + datetime.timedelta(days=1)
-        cls.ApiKey.with_user(cls.user_anna)._generate("rpc", "Anna's Claude", future)
-        cls.ApiKey.with_user(cls.user_bob)._generate("rpc", "Bob's n8n", future)
+        # Odoo 18 added the expiration_date arg to _generate; 17 has no expiry.
+        expiry = (
+            (datetime.datetime.now() + datetime.timedelta(days=1),)
+            if compat.ODOO_VERSION >= 18
+            else ()
+        )
+        cls.ApiKey.with_user(cls.user_anna)._generate("rpc", "Anna's Claude", *expiry)
+        cls.ApiKey.with_user(cls.user_bob)._generate("rpc", "Bob's n8n", *expiry)
         cls.anna_key = cls.ApiKey.search(
             [("user_id", "=", cls.user_anna.id), ("name", "=", "Anna's Claude")],
             limit=1,

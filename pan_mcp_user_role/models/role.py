@@ -3,7 +3,7 @@
 import datetime
 import logging
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.api import SUPERUSER_ID
 
 from .. import compat
@@ -114,7 +114,7 @@ class ResUsersRole(models.Model):
 
     def copy(self, default=None):
         self.ensure_one()
-        default = dict(default or {}, name=self.env._("%s (copy)", self.name))
+        default = dict(default or {}, name=_("%s (copy)", self.name))
         return super().copy(default)
 
     def update_users(self):

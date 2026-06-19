@@ -24,11 +24,15 @@ class TestApiKeyWizardValidation(TransactionCase):
         )
 
     def _wizard(self, **overrides):
-        values = {"name": "wizard test key", "duration": "30"}
+        Desc = self.env["res.users.apikeys.description"]
+        values = {"name": "wizard test key"}
+        # duration/expiration arrived in Odoo 18; the 17 wizard has no such field.
+        if "duration" in Desc._fields:
+            values["duration"] = "30"
         values.update(overrides)
         # sudo to bypass the wizard's own ACL; with_user to make
         # env.user.role_ids the test user's roles (what the compute reads).
-        return self.env["res.users.apikeys.description"].with_user(self.user).sudo().create(values)
+        return Desc.with_user(self.user).sudo().create(values)
 
     def test_available_roles_include_subset_roles(self):
         # The wizard filters roles to those whose implied groups are a
