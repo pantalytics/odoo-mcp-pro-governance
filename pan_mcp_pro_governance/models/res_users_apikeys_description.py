@@ -38,6 +38,11 @@ class ResUsersApikeysDescription(models.TransientModel):
         "choices, since a key cannot grant more than its owner.",
     )
 
+    # `name` is a real, always-set field on the wizard; depending on it forces
+    # the compute to actually run on Odoo 18. With only @api.depends_context
+    # and no field dependency, Odoo 18 never schedules the compute, so the
+    # field stays at its empty default (Odoo 19 computes it lazily on read).
+    @api.depends("name")
     @api.depends_context("uid")
     def _compute_available_role_ids(self):
         user = self.env.user
