@@ -4,7 +4,7 @@
 import copy
 from collections import defaultdict
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tools import OrderedSet
@@ -429,7 +429,7 @@ class AuditlogRule(models.Model):
         """Update the registry when a new rule is created."""
         for vals in vals_list:
             if "model_id" not in vals or not vals["model_id"]:
-                raise UserError(self.env._("No model defined to create line."))
+                raise UserError(_("No model defined to create line."))
             model = self.env["ir.model"].sudo().browse(vals["model_id"])
             vals.update({"model_name": model.name, "model_model": model.model})
         new_records = super().create(vals_list)
@@ -442,7 +442,7 @@ class AuditlogRule(models.Model):
         """Update the registry when existing rules are updated."""
         if "model_id" in vals:
             if not vals["model_id"]:
-                raise UserError(self.env._("Field 'model_id' cannot be empty."))
+                raise UserError(_("Field 'model_id' cannot be empty."))
             model = self.env["ir.model"].sudo().browse(vals["model_id"])
             vals.update({"model_name": model.name, "model_model": model.model})
         res = super().write(vals)
@@ -957,7 +957,7 @@ class AuditlogRule(models.Model):
                 f"[('model_id', '=', {rule.model_id.id}), ('res_id', '=', active_id)]"
             )
             vals = {
-                "name": self.env._("View logs"),
+                "name": _("View logs"),
                 "res_model": "auditlog.log",
                 "binding_model_id": rule.model_id.id,
                 "domain": domain,
