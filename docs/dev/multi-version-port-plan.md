@@ -25,9 +25,11 @@
 >   - `implied_groups` = platte field-read (matcht v19; lege rol → lege set).
 >   - key-owner rol impliceert `base.group_user` (nul-groepen-user triggert een
 >     Odoo-18-core `max()`-bug in `_check_expiration_date`).
-> - 🔎 **Eén v18-follow-up**: de wizard `x_available_role_ids` lost leeg op onder
->   de v18-compute (filter-logica is wél correct, handmatig geverifieerd) — test
->   geskipt op <19, vraagt nog uitzoekwerk.
+> - ✅ **Wizard rol-dropdown op v18 gefixt**: `x_available_role_ids` had
+>   `@api.depends_context('uid')` zónder field-dependency; Odoo 18 plant zo'n
+>   compute nooit in, dus het veld bleef op z'n lege default (19 compute't lazy
+>   bij read, wat de gap verborg). Nu `@api.depends("name")` → compute draait op
+>   beide versies; de test draait weer mee (geen skip).
 > - ⏳ Scope 17: **groter dan 18** — smoke-install op `odoo:17` faalt op
 >   `Wrong value for ir.ui.view.type: 'list'`. Odoo 18 hernoemde de view-tag
 >   `<tree>` → `<list>`; 17 gebruikt nog `<tree>`. De Python-compat dekt 17 al
