@@ -30,13 +30,17 @@
 >   compute nooit in, dus het veld bleef op z'n lege default (19 compute't lazy
 >   bij read, wat de gap verborg). Nu `@api.depends("name")` → compute draait op
 >   beide versies; de test draait weer mee (geen skip).
-> - ⏳ Scope 17: **groter dan 18** — smoke-install op `odoo:17` faalt op
->   `Wrong value for ir.ui.view.type: 'list'`. Odoo 18 hernoemde de view-tag
->   `<tree>` → `<list>`; 17 gebruikt nog `<tree>`. De Python-compat dekt 17 al
->   (alle gates zijn `>= 19`, dus 17 volgt het legacy-pad), maar 17 vergt
->   extra **declaratief** werk: per-versie view-files of een tag-transform voor
->   élke list/tree-view (OCA + onze eigen). Bewust uitgesteld — de prospect is
->   v18; 17 is een aparte klus.
+> - ✅ **Odoo 17 toegevoegd** — `17.0`-release-branch, volledige suite groen
+>   (`0 failed of 72`). 17 vergde meer dan 18; vier extra 17-breuken:
+>   - **view-tag** `<list>` → `<tree>` (Odoo 18 hernoemde 'm) — per-branch in álle
+>     view-files; daarom is de 17.0-delta groter dan de 18.0-delta.
+>   - **`path`-veld** op `ir.actions.act_window` (nieuw in 18) — weggehaald op 17.
+>   - **API-key wizard**: 17's core-wizard heeft geen duration/expiratie (kwam in
+>     18). Role-blok ankert op `//footer` i.p.v. de duration-h3; `_generate()`
+>     heeft op 17 geen expiratie-arg; wizard-`duration`-veld bestaat niet → tests
+>     versie-tolerant gemaakt.
+>   - **`env._()`** translation-shortcut is Odoo 18+ → vervangen door de globale
+>     `_()` (werkt op alle versies; gedeelde wijziging).
 
 ## Fase 3 — bevindingen op echte Odoo 18 (2026-06-18)
 
