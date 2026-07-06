@@ -41,6 +41,30 @@ class TestApiKeyWizardValidation(TransactionCase):
         wiz = self._wizard()
         self.assertIn(self.role, wiz.x_available_role_ids)
 
+    def test_wizard_view_combines_under_translation(self):
+        # Regression: our inherit anchored on translated h3 text
+        # (`//h3[contains(., 'Give a duration')]`), so combining the wizard
+        # view raised "Element not found" on any non-English instance —
+        # view inheritance runs against the *translated* arch. Reproduce by
+        # translating the base heading and requesting the view in that lang.
+        Desc = self.env["res.users.apikeys.description"]
+        if "duration" not in Desc._fields:
+            self.skipTest("no duration section before Odoo 18")
+        self.env["res.lang"]._activate_lang("nl_NL")
+        self.env.ref("base.form_res_users_key_description").update_field_translations(
+            "arch_db",
+            {
+                "nl_NL": {
+                    "Give a duration for the key's validity": (
+                        "Geef een geldigheidsduur op voor de sleutel"
+                    )
+                }
+            },
+        )
+        # Before the fix this raises ValueError during apply_inheritance_specs.
+        view = Desc.with_context(lang="nl_NL").get_view()
+        self.assertIn("x_role_id", view["arch"])
+
     # NOTE: a "role with extra groups is excluded" test would create a
     # role with role.implied_ids = [admin_only_group] and assert it is
     # absent from x_available_role_ids. That write currently trips the

@@ -3,6 +3,23 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.20.1] - 2026-07-06
+
+### Fixed
+- **API-key wizard crashed on non-English instances.** The Role dropdown
+  inherit anchored on the parent heading's *text*
+  (`//h3[contains(., 'Give a duration')]`). Odoo applies view inheritance
+  against the translated arch, so on a Dutch (or any non-English) instance
+  the literal English text was absent and combining the
+  `res.users.apikeys.description` view raised
+  `Element '<xpath .../>' cannot be found in the parent view` — the
+  "New API Key" wizard would not open at all. The xpath now anchors
+  structurally on the heading preceding the `duration` field
+  (`//field[@name='duration']/preceding-sibling::h3[1]`), which is
+  language-independent and robust to other modules adding headings.
+  Added a regression test that combines the wizard view under a translated
+  `nl_NL` heading.
+
 ## [19.0.1.3.0] - 2026-05-20
 
 ### Added
