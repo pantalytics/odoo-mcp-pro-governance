@@ -3,6 +3,26 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.20.2] - 2026-07-06
+
+### Fixed
+- **Audit-rule scope misfired for API keys on legacy RPC.** The scope
+  filter (`auditlog.rule._mcp_should_log_request`) read the authenticating
+  API-key id only from `request.session`. On the legacy `/jsonrpc` and
+  `/xmlrpc` paths `borrow_request()` pops the werkzeug request, so that
+  read returned nothing and the call was misclassified as a browser
+  session — a `Only API key calls` rule silently dropped those writes and
+  a `Only browser sessions` rule logged them by mistake. It now falls back
+  to the `ir.http._dispatch` snapshot, the same fallback every other audit
+  path already uses. Added regression tests for the legacy path.
+
+### Changed
+- **Internal:** the shared "request session, else `_dispatch` snapshot"
+  lookup for the authenticating API-key id is now a single helper,
+  `ir_http.current_request_api_key_id()`, used by both
+  `auditlog.http.request.create` and the audit-rule scope filter. No
+  behaviour change; removes the duplication that let the bug above slip in.
+
 ## [19.0.1.20.1] - 2026-07-06
 
 ### Fixed
