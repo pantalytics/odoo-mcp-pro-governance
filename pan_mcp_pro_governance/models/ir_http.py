@@ -48,6 +48,22 @@ def get_audit_request_snapshot():
     return getattr(_audit_local, "snapshot", None)
 
 
+def current_request_api_key_id():
+    """Api-key id authenticating the in-flight request, or ``None``.
+
+    Reads ``request.session`` on the modern ``/json/2`` and browser paths,
+    and falls back to the ``_dispatch`` snapshot on the legacy ``/jsonrpc``
+    and ``/xmlrpc`` paths where ``borrow_request()`` has popped the werkzeug
+    request. Centralising the fallback keeps every audit consumer
+    consistent — forgetting it here is exactly what made role-scoped audit
+    rules misfire on legacy RPC.
+    """
+    if http_request:
+        return http_request.session.get("x_mcp_api_key_id")
+    snapshot = get_audit_request_snapshot()
+    return snapshot.get("api_key_id") if snapshot else None
+
+
 def set_audit_api_key_id(value):
     """Stash the authenticated API key id on the thread-local snapshot.
 

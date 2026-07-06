@@ -7,6 +7,7 @@ from odoo import api, fields, models
 from odoo.http import request
 
 from .ir_http import (
+    current_request_api_key_id,
     get_audit_cached_request_id,
     get_audit_request_snapshot,
     set_audit_cached_request_id,
@@ -50,16 +51,10 @@ class AuditlogHTTPRequest(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Read api_key_id from the live request when available, otherwise
-        # fall back to the snapshot captured in ir.http._dispatch (legacy
-        # /jsonrpc and /xmlrpc lose the request inside dispatch_rpc).
-        api_key_id = None
-        if request:
-            api_key_id = request.session.get("x_mcp_api_key_id")
-        else:
-            snapshot = get_audit_request_snapshot()
-            if snapshot:
-                api_key_id = snapshot.get("api_key_id")
+        # Reads the live request when available, else the ir.http._dispatch
+        # snapshot (legacy /jsonrpc and /xmlrpc lose the request inside
+        # dispatch_rpc). Shared with the audit-rule scope filter.
+        api_key_id = current_request_api_key_id()
         if api_key_id:
             for vals in vals_list:
                 vals.setdefault("x_api_key_id", api_key_id)

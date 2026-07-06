@@ -1,8 +1,10 @@
 """Tests for the audit rule scope filter (x_scope + x_user_ids / x_apikey_ids).
 
-The decision lives in `_mcp_should_log_request`, which reads the current
-`odoo.http.request`. TransactionCase has no request, so we patch it
-directly with `unittest.mock` to simulate API-key vs browser channels.
+The decision lives in `_mcp_should_log_request`, which resolves the
+api-key id through `ir_http.current_request_api_key_id`. TransactionCase
+has no HTTP request, so we patch that module's `http_request` (and its
+snapshot fallback) with `unittest.mock` to simulate API-key vs browser
+channels across both the modern and legacy RPC paths.
 """
 
 import datetime
@@ -48,26 +50,25 @@ class TestAuditlogRuleScope(TransactionCase):
         if not cls.rule:
             cls.rule = cls.Rule.create({"name": "test scope", "model_id": cls.partner_model.id})
 
+    _IR_HTTP = "odoo.addons.pan_mcp_pro_governance.models.ir_http"
+
     def _mock_request(self, api_key_id=None):
-        """Return a context manager that patches odoo.http.request."""
+        """Simulate the modern /json/2 + browser path: request on the stack."""
         req = mock.MagicMock()
         req.session.get.return_value = api_key_id
-        return mock.patch(
-            "odoo.addons.pan_mcp_pro_governance.models.auditlog_rule.request",
-            req,
-        )
+        return mock.patch(f"{self._IR_HTTP}.http_request", req)
 
     def _mock_legacy_request(self, api_key_id=None):
         """Simulate the legacy /jsonrpc + /xmlrpc path.
 
         There the werkzeug request is popped by borrow_request(), so
-        ``request`` is falsy and the api-key id is only reachable via the
-        snapshot captured in ir.http._dispatch. Patches both.
+        ``http_request`` is falsy and the api-key id is only reachable via
+        the snapshot captured in ir.http._dispatch. Patches both.
         """
         snapshot = {"api_key_id": api_key_id} if api_key_id else None
         return mock.patch.multiple(
-            "odoo.addons.pan_mcp_pro_governance.models.auditlog_rule",
-            request=None,
+            self._IR_HTTP,
+            http_request=None,
             get_audit_request_snapshot=mock.Mock(return_value=snapshot),
         )
 

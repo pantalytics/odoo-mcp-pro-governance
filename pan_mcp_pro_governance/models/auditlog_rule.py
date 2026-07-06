@@ -2,9 +2,8 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from odoo import fields, models
-from odoo.http import request
 
-from .ir_http import get_audit_request_snapshot
+from .ir_http import current_request_api_key_id
 
 
 class AuditlogRule(models.Model):
@@ -63,17 +62,11 @@ class AuditlogRule(models.Model):
         superuser instead of the originator.
         """
         self.ensure_one()
-        # Modern /json/2 + browser: the werkzeug request is on the stack.
-        # Legacy /jsonrpc and /xmlrpc dispatch through borrow_request(),
-        # which unsets it — fall back to the snapshot captured in
-        # ir.http._dispatch, exactly as the auditlog HTTP request/session
-        # capture does. Without this, legacy API-key calls are misread as
-        # browser sessions and scope filtering silently misfires.
-        if request:
-            api_key_id = request.session.get("x_mcp_api_key_id")
-        else:
-            snapshot = get_audit_request_snapshot()
-            api_key_id = snapshot.get("api_key_id") if snapshot else None
+        # Resolves the api-key id across modern and legacy RPC paths
+        # (see current_request_api_key_id). Reading only request.session
+        # here would misclassify legacy /jsonrpc + /xmlrpc API-key calls
+        # as browser sessions.
+        api_key_id = current_request_api_key_id()
         is_api = bool(api_key_id)
         scope = self.x_scope or "all"
         if scope == "all":
