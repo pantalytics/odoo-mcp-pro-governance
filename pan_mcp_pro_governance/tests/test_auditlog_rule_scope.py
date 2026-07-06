@@ -57,6 +57,20 @@ class TestAuditlogRuleScope(TransactionCase):
             req,
         )
 
+    def _mock_legacy_request(self, api_key_id=None):
+        """Simulate the legacy /jsonrpc + /xmlrpc path.
+
+        There the werkzeug request is popped by borrow_request(), so
+        ``request`` is falsy and the api-key id is only reachable via the
+        snapshot captured in ir.http._dispatch. Patches both.
+        """
+        snapshot = {"api_key_id": api_key_id} if api_key_id else None
+        return mock.patch.multiple(
+            "odoo.addons.pan_mcp_pro_governance.models.auditlog_rule",
+            request=None,
+            get_audit_request_snapshot=mock.Mock(return_value=snapshot),
+        )
+
     def test_scope_all_logs_everything(self):
         self.rule.x_scope = "all"
         with self._mock_request():
@@ -115,4 +129,32 @@ class TestAuditlogRuleScope(TransactionCase):
         """A freshly seeded rule has x_scope='all' and logs everything."""
         self.assertEqual(self.rule.x_scope, "all")
         with self._mock_request():
+            self.assertTrue(self.rule._mcp_should_log_request(self.user_anna.id))
+
+    # --- Legacy /jsonrpc + /xmlrpc: request is popped, api-key id lives on
+    # the snapshot. Scope filtering must read it there or it misfires. ---
+
+    def test_scope_api_matches_legacy_snapshot(self):
+        """scope=api logs a legacy API-key call detected via the snapshot."""
+        self.rule.x_scope = "api"
+        self.rule.x_apikey_ids = [(5, 0, 0)]
+        with self._mock_legacy_request(api_key_id=self.anna_key.id):
+            self.assertTrue(self.rule._mcp_should_log_request(self.user_anna.id))
+
+    def test_scope_api_specific_keys_legacy_snapshot(self):
+        """scope=api with a key filter honours the snapshot's api-key id."""
+        self.rule.x_scope = "api"
+        self.rule.x_apikey_ids = [(6, 0, [self.anna_key.id])]
+        with self._mock_legacy_request(api_key_id=self.anna_key.id):
+            self.assertTrue(self.rule._mcp_should_log_request(self.user_anna.id))
+        with self._mock_legacy_request(api_key_id=self.bob_key.id):
+            self.assertFalse(self.rule._mcp_should_log_request(self.user_bob.id))
+
+    def test_scope_browser_excludes_legacy_api_call(self):
+        """A legacy API-key call must NOT be counted as a browser session."""
+        self.rule.x_scope = "browser"
+        with self._mock_legacy_request(api_key_id=self.anna_key.id):
+            self.assertFalse(self.rule._mcp_should_log_request(self.user_anna.id))
+        # No snapshot at all (e.g. a true legacy browser call) → browser.
+        with self._mock_legacy_request():
             self.assertTrue(self.rule._mcp_should_log_request(self.user_anna.id))

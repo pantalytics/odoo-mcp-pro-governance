@@ -4,6 +4,8 @@
 from odoo import fields, models
 from odoo.http import request
 
+from .ir_http import get_audit_request_snapshot
+
 
 class AuditlogRule(models.Model):
     _inherit = "auditlog.rule"
@@ -61,7 +63,17 @@ class AuditlogRule(models.Model):
         superuser instead of the originator.
         """
         self.ensure_one()
-        api_key_id = request.session.get("x_mcp_api_key_id") if request else None
+        # Modern /json/2 + browser: the werkzeug request is on the stack.
+        # Legacy /jsonrpc and /xmlrpc dispatch through borrow_request(),
+        # which unsets it — fall back to the snapshot captured in
+        # ir.http._dispatch, exactly as the auditlog HTTP request/session
+        # capture does. Without this, legacy API-key calls are misread as
+        # browser sessions and scope filtering silently misfires.
+        if request:
+            api_key_id = request.session.get("x_mcp_api_key_id")
+        else:
+            snapshot = get_audit_request_snapshot()
+            api_key_id = snapshot.get("api_key_id") if snapshot else None
         is_api = bool(api_key_id)
         scope = self.x_scope or "all"
         if scope == "all":
