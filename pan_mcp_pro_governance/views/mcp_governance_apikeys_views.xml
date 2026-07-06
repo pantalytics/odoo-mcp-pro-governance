@@ -70,9 +70,16 @@
                     </p>
                 </div>
             </xpath>
-            <!-- Insert before the parent's "Give a duration..." section so
-                 the order is: Name → Role → Duration. -->
-            <xpath expr="//h3[contains(., 'Give a duration')]" position="before">
+            <!-- Insert before the parent's duration section so the order is:
+                 Name → Role → Duration. Anchor structurally on the heading
+                 that precedes the `duration` field — NOT on its text.
+                 View inheritance runs against the *translated* arch, so an
+                 xpath like `//h3[contains(., 'Give a duration')]` matches only
+                 when the UI language is English and raises "Element not found"
+                 on any translated instance (e.g. nl_NL). Matching by the
+                 `duration` field name is language-independent and also robust
+                 to other modules inserting extra h3 headings. -->
+            <xpath expr="//field[@name='duration']/preceding-sibling::h3[1]" position="before">
                 <h3 class="fw-bold">Role <span class="text-muted fw-normal">(optional)</span></h3>
                 <p>
                     Pick a role to scope this key down to a narrower set of
