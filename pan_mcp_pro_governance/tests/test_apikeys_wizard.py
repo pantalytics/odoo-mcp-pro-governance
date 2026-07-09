@@ -50,9 +50,7 @@ class TestApiKeyWizardValidation(TransactionCase):
         # here `sudo()` the wizard, which masked this; this one runs in the
         # real (non-admin) user context. Fixed by granting base.group_user
         # read on res.users.role (security/ir.model.access.csv).
-        plain = self.env["res.users"].create(
-            {"name": "Plain Member", "login": "plain_member"}
-        )
+        plain = self.env["res.users"].create({"name": "Plain Member", "login": "plain_member"})
         self.assertFalse(plain.has_group("base.group_erp_manager"))
         Desc = self.env["res.users.apikeys.description"]
         values = {"name": "member key"}
