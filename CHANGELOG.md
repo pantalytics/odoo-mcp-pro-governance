@@ -3,6 +3,22 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.20.5] - 2026-09-08
+
+### Fixed
+- **User form crashed (`UndefinedColumn: auth_totp_device.x_role_id`)
+  when 2FA is in use.** `auth_totp.device` inherits `res.users.apikeys`
+  by prototype inheritance, so Odoo copies this module's `x_role_id`,
+  `x_state`, `x_last_used` and `x_use_count` fields onto its own
+  `auth_totp_device` table. Our `init()` hard-coded `res_users_apikeys`
+  as the target table, so those columns were never created on
+  `auth_totp_device`; reading a user's trusted TOTP devices (e.g. while
+  granting another user MCP Pro admin rights) then raised
+  `psycopg2.errors.UndefinedColumn`. `init()` now keys every DDL
+  statement on `self._table`, so the columns are provisioned on both
+  tables. Existing databases are healed on upgrade — no manual migration
+  needed. Reported by Mil Cuyvers (DCBO Open Solutions).
+
 ## [19.0.1.20.3] - 2026-08-14
 
 ### Fixed
