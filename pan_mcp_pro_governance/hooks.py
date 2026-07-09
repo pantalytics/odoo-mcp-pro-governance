@@ -103,7 +103,13 @@ def post_init_hook(env):
                 model_name,
             )
             continue
-        if AuditlogRule.search_count([("model_id", "=", model.id), ("name", "=", rule_name)]):
+        # auditlog.rule enforces unique(model_id): at most one rule per
+        # model. Skip if ANY rule already exists for this model, not just
+        # one matching our name — otherwise, on a database that already has
+        # an audit rule on this model (e.g. migrated from a pre-existing OCA
+        # `auditlog` install), create() would violate the constraint and
+        # abort the whole install. Leave the operator's existing rule alone.
+        if AuditlogRule.search_count([("model_id", "=", model.id)]):
             continue
         AuditlogRule.create(
             {

@@ -18,6 +18,15 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   statement on `self._table`, so the columns are provisioned on both
   tables. Existing databases are healed on upgrade — no manual migration
   needed. Reported by Mil Cuyvers (DCBO Open Solutions).
+- **Install aborted on databases with a pre-existing `auditlog` rule.**
+  `post_init_hook` seeds a draft `auditlog.rule` per AI-target model, but
+  `auditlog.rule` enforces `unique(model_id)` (one rule per model). The
+  hook only skipped a model when a rule with *our* exact name already
+  existed, so a database that already had an audit rule on that model
+  under a different name (e.g. migrated from a pre-existing OCA
+  `auditlog` install) hit the constraint and the whole install failed.
+  The hook now skips a model when *any* rule already exists for it,
+  leaving the operator's rule untouched. Also reported by Mil Cuyvers.
 
 ## [19.0.1.20.3] - 2026-08-14
 
