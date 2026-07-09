@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mcp_governance_get_started_user,mcp.governance.get_started user,model_mcp_governance_get_started,base.group_user,1,1,1,1
+access_res_users_role_read_member,res.users.role read for own-key wizard,pan_mcp_user_role.model_res_users_role,base.group_user,1,0,0,0
