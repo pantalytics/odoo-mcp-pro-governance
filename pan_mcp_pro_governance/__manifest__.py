@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.20.1",
+    "version": "19.0.1.21.0",
     "license": "AGPL-3",
     "depends": [
         "base",
@@ -80,6 +80,7 @@
         "security/mcp_pro_governance_groups.xml",
         "security/groups_privilege_v19.xml",
         "security/ir.model.access.csv",
+        "security/mcp_scoped_model_list.xml",
         "views/mcp_governance_api_call_log_views.xml",
         "views/mcp_governance_apikeys_views.xml",
         "views/mcp_governance_auditlog_views.xml",

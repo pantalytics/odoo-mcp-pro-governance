@@ -6,5 +6,6 @@ from . import (
     test_governance_tour,
     test_hooks,
     test_migrations,
+    test_scoped_model_list,
     test_ui_contract,
 )

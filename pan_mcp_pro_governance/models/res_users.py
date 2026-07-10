@@ -111,6 +111,31 @@ class ResUsers(models.Model):
         groups |= groups.mapped(compat.IMPLIED_FIELD)
         return groups
 
+    def _mcp_ir_model_domain(self):
+        """Record-rule domain scoping ``ir.model`` rows for the active key.
+
+        Referenced from the global rule in
+        ``security/mcp_scoped_model_list.xml``. For a role-bound API request
+        it limits ``ir.model`` to the models the role may read, so the MCP
+        ``list_models`` tool mirrors the role instead of leaking the whole
+        catalogue (or, without the ACL grant in ``ir_model_access.py``,
+        returning nothing). For every other request -- UI sessions, unscoped
+        keys, sudo -- it returns an always-true domain, so ``ir.model`` stays
+        fully visible and nothing else changes.
+
+        The introspection models themselves (see ``MCP_INTROSPECTION_MODELS``)
+        are excluded from the visible rows: they are granted for the ACL check
+        only, and would just be noise in ``list_models``.
+        """
+        from .ir_model_access import MCP_INTROSPECTION_MODELS
+
+        role = self._get_api_key_role()
+        if not role:
+            return [(1, "=", 1)]
+        allowed = self.env["ir.model.access"]._get_allowed_models("read")
+        allowed = allowed - frozenset(MCP_INTROSPECTION_MODELS)
+        return [("model", "in", sorted(allowed))]
+
     def _get_group_ids(self):
         """Override: return role's groups (bypassing parent's ormcache)
         when this user is the active env user and an API-key role is set.

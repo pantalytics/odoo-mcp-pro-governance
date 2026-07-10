@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Scope the model catalogue (ir.model) to the API-key role.
+
+        The MCP Pro server's `list_models` tool enumerates models by reading
+        ir.model. A scoped read-only role has no access to technical models, so
+        without help it either sees the whole database catalogue (misleading:
+        it can read almost none of them) or nothing at all. This global rule,
+        together with the ir.model read grant in ir_model_access.py, limits the
+        visible rows to exactly the models the active role may read.
+
+        It is a global rule (no groups) so it is evaluated for every ir.model
+        read, but the domain resolves to an always-true clause for any request
+        that is not bound to an API-key role (UI users, unscoped keys). See
+        res.users._mcp_ir_model_domain.
+    -->
+    <record id="ir_rule_mcp_scoped_model_list" model="ir.rule">
+        <field name="name">MCP Pro: scope ir.model to the API-key role</field>
+        <field name="model_id" ref="base.model_ir_model"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">user._mcp_ir_model_domain()</field>
+    </record>
+</odoo>
