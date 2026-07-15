@@ -17,11 +17,22 @@ for the role id regardless of which auth path was taken.
 import logging
 import threading
 
+import psycopg2
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
+
+# Postgres raises one of these when two requests touch the same row
+# concurrently. Expected under load on a shared API key, not a fault.
+# Mirrors odoo.service.model.PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, spelled
+# out here rather than imported so a model doesn't reach into a service.
+CONCURRENT_UPDATE_ERRORS = (
+    psycopg2.errors.SerializationFailure,
+    psycopg2.errors.DeadlockDetected,
+    psycopg2.errors.LockNotAvailable,
+)
 
 # Per-thread storage for the API-key role attribution. Cleared at the
 # start of every _check_credentials call so a stale value from a prior
@@ -180,14 +191,36 @@ class ResUsersApikeys(models.Model):
 
         set_audit_api_key_id(api_key_id)
 
-        # Lightweight usage counter; one UPDATE per call. Tolerable for
-        # the prototype — promote to a deferred / batched update if it
-        # becomes a hot path.
-        self.env.cr.execute(
-            "UPDATE res_users_apikeys "
-            "SET x_last_used = now() at time zone 'utc', "
-            "    x_use_count = x_use_count + 1 "
-            "WHERE id = %s",
-            (api_key_id,),
-        )
+        # Lightweight usage counter; one UPDATE per call. Promote to a
+        # deferred / batched update if it becomes a hot path.
+        #
+        # Best-effort by design: it runs on the auth path, so it must never
+        # deny a valid key. Concurrent calls on one key update this row at
+        # once and the loser gets a SerializationFailure, which retrying()
+        # would retry but never sees — _authenticate_explicit() wraps auth in
+        # `except Exception: raise AccessDenied()`, making it a 403 first. The
+        # savepoint stops that from poisoning the request transaction. A lost
+        # increment costs nothing: both columns are readonly display fields.
+        try:
+            with self.env.cr.savepoint(flush=False):
+                self.env.cr.execute(
+                    "UPDATE res_users_apikeys "
+                    "SET x_last_used = now() at time zone 'utc', "
+                    "    x_use_count = x_use_count + 1 "
+                    "WHERE id = %s",
+                    (api_key_id,),
+                )
+        except CONCURRENT_UPDATE_ERRORS:
+            _logger.debug(
+                "MCP Pro Governance: usage counter for API key id=%s skipped, "
+                "concurrent update on the same key. Authentication unaffected.",
+                api_key_id,
+            )
+        except psycopg2.Error:
+            _logger.warning(
+                "MCP Pro Governance: usage counter for API key id=%s failed. "
+                "Authentication unaffected.",
+                api_key_id,
+                exc_info=True,
+            )
         return user_id
