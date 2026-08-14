@@ -58,18 +58,25 @@ class TestAuditlogBinaryFields(TransactionCase):
         """End-to-end: a confirmed full-log rule must log the create of a
         record carrying an image, and the log must not contain the image
         fields."""
-        rule = self.Rule.create(
-            {
-                "name": "Binary field test",
-                "model_id": self.partner_model.id,
-                "log_type": "full",
-                "log_create": True,
-                "log_write": False,
-                "log_unlink": False,
-                "log_read": False,
-                "log_export_data": False,
-            }
-        )
+        # `auditlog.rule` carries a unique constraint on `model_id`, and
+        # `post_init_hook` already seeds a draft rule for `res.partner`.
+        # Reuse it when present instead of creating a second one; the
+        # TransactionCase rollback restores its original values.
+        vals = {
+            "log_type": "full",
+            "log_create": True,
+            "log_write": False,
+            "log_unlink": False,
+            "log_read": False,
+            "log_export_data": False,
+        }
+        rule = self.Rule.search([("model_id", "=", self.partner_model.id)], limit=1)
+        if rule:
+            rule.write(vals)
+        else:
+            rule = self.Rule.create(
+                dict(vals, name="Binary field test", model_id=self.partner_model.id)
+            )
         rule.set_to_confirmed()
         self.addCleanup(rule.set_to_draft)
 
