@@ -110,8 +110,7 @@ class TestApiKeyFieldsOnTotpDevice(TransactionCase):
 
     def _columns(self, table):
         self.env.cr.execute(
-            "SELECT column_name FROM information_schema.columns "
-            "WHERE table_name = %s",
+            "SELECT column_name FROM information_schema.columns " "WHERE table_name = %s",
             (table,),
         )
         return {row[0] for row in self.env.cr.fetchall()}
@@ -132,6 +131,4 @@ class TestApiKeyFieldsOnTotpDevice(TransactionCase):
             self.skipTest("auth_totp not installed in this database")
         # A bare search_read of the leaked field is enough to hit the SQL
         # column that used to be absent; it must not raise.
-        self.env["auth_totp.device"].sudo().search_read(
-            [], ["x_role_id", "x_state"], limit=1
-        )
+        self.env["auth_totp.device"].sudo().search_read([], ["x_role_id", "x_state"], limit=1)

@@ -74,26 +74,32 @@ class ResUsersApikeys(models.Model):
         # with `UndefinedColumn: auth_totp_device.x_role_id` as soon as it
         # snapshotted the user's trusted TOTP devices.
         table = SQL.identifier(self._table)
-        self.env.cr.execute(SQL(
-            """
+        self.env.cr.execute(
+            SQL(
+                """
             ALTER TABLE %s
             ADD COLUMN IF NOT EXISTS x_role_id integer,
             ADD COLUMN IF NOT EXISTS x_state varchar DEFAULT 'active',
             ADD COLUMN IF NOT EXISTS x_last_used timestamp without time zone,
             ADD COLUMN IF NOT EXISTS x_use_count integer DEFAULT 0
             """,
-            table,
-        ))
-        self.env.cr.execute(SQL(
-            "CREATE INDEX IF NOT EXISTS %s ON %s (x_role_id)",
-            SQL.identifier(f"{self._table}_x_role_id_idx"),
-            table,
-        ))
-        self.env.cr.execute(SQL(
-            "CREATE INDEX IF NOT EXISTS %s ON %s (x_state)",
-            SQL.identifier(f"{self._table}_x_state_idx"),
-            table,
-        ))
+                table,
+            )
+        )
+        self.env.cr.execute(
+            SQL(
+                "CREATE INDEX IF NOT EXISTS %s ON %s (x_role_id)",
+                SQL.identifier(f"{self._table}_x_role_id_idx"),
+                table,
+            )
+        )
+        self.env.cr.execute(
+            SQL(
+                "CREATE INDEX IF NOT EXISTS %s ON %s (x_state)",
+                SQL.identifier(f"{self._table}_x_state_idx"),
+                table,
+            )
+        )
 
     x_role_id = fields.Many2one(
         comodel_name="res.users.role",
