@@ -82,6 +82,12 @@ is superseded.
       [docs/dev/role-form-access-rights-widget.md](docs/dev/role-form-access-rights-widget.md).
 - [ ] `res.groups.privilege` model still present (Odoo 19 introduced it;
       future versions may rework).
+- [ ] The group-resolution seams per version still hold — see the table in
+      [docs/dev/odoo-17-narrowing.md](docs/dev/odoo-17-narrowing.md). In
+      particular `_mcp_compute_domain_narrowed` in `models/ir_rule.py`
+      mirrors core's `_compute_domain` body for 17/18; if a version below
+      19 changes how record rules intersect with groups, that copy goes
+      stale silently.
 
 ## Conventions
 

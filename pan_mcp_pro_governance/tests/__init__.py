@@ -8,6 +8,7 @@ from . import (
     test_hooks,
     test_migrations,
     test_request_api_key_id,
+    test_role_narrowing,
     test_scoped_model_list,
     test_ui_contract,
 )
