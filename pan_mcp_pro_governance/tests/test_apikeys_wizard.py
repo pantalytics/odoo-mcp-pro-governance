@@ -41,6 +41,50 @@ class TestApiKeyWizardValidation(TransactionCase):
         wiz = self._wizard()
         self.assertIn(self.role, wiz.x_available_role_ids)
 
+    def test_non_admin_member_can_read_available_roles(self):
+        # Regression: opening the New API Key wizard as a non-admin internal
+        # user raised AccessError, because the `x_available_role_ids` compute
+        # exposes `res.users.role` records and OCA base_user_role restricts
+        # that model to Access Rights managers. Every internal user manages
+        # their own keys, so the wizard must work for them. The other tests
+        # here `sudo()` the wizard, which masked this; this one runs in the
+        # real (non-admin) user context. Fixed by granting base.group_user
+        # read on res.users.role (security/ir.model.access.csv).
+        plain = self.env["res.users"].create({"name": "Plain Member", "login": "plain_member"})
+        self.assertFalse(plain.has_group("base.group_erp_manager"))
+        Desc = self.env["res.users.apikeys.description"]
+        values = {"name": "member key"}
+        if "duration" in Desc._fields:
+            values["duration"] = "30"
+        wiz = Desc.with_user(plain).create(values)
+        # Reading the roles the wizard offers must not raise
+        # "not allowed to access 'Role' records" for a non-admin.
+        self.assertIsNotNone(wiz.x_available_role_ids.mapped("display_name"))
+
+    def test_wizard_view_combines_under_translation(self):
+        # Regression: our inherit anchored on translated h3 text
+        # (`//h3[contains(., 'Give a duration')]`), so combining the wizard
+        # view raised "Element not found" on any non-English instance —
+        # view inheritance runs against the *translated* arch. Reproduce by
+        # translating the base heading and requesting the view in that lang.
+        Desc = self.env["res.users.apikeys.description"]
+        if "duration" not in Desc._fields:
+            self.skipTest("no duration section before Odoo 18")
+        self.env["res.lang"]._activate_lang("nl_NL")
+        self.env.ref("base.form_res_users_key_description").update_field_translations(
+            "arch_db",
+            {
+                "nl_NL": {
+                    "Give a duration for the key's validity": (
+                        "Geef een geldigheidsduur op voor de sleutel"
+                    )
+                }
+            },
+        )
+        # Before the fix this raises ValueError during apply_inheritance_specs.
+        view = Desc.with_context(lang="nl_NL").get_view()
+        self.assertIn("x_role_id", view["arch"])
+
     # NOTE: a "role with extra groups is excluded" test would create a
     # role with role.implied_ids = [admin_only_group] and assert it is
     # absent from x_available_role_ids. That write currently trips the

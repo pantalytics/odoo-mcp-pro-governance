@@ -3,6 +3,127 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [17.0.1.21.0] - 2026-09-15
+
+### Fixed
+- **Scoped API keys did nothing on Odoo 17.** A key bound to a role was
+  authenticated and then kept its owner's full rights, so an
+  administrator's key could still read and write everything. From Odoo 18
+  on, every permission path resolves groups through
+  `res.users._get_group_ids()`, and overriding that one method narrows a
+  whole request. Odoo 17 has no such method: `ir.model.access
+  ._get_allowed_models`, `ir.rule._get_rules` and `res.users._has_group`
+  each run their own SQL against `res_groups_users_rel`. All three are now
+  overridden below 18. Reported by Boris van der Hoeven (Pressure Control
+  Solutions).
+- **`AttributeError: 'Environment' object has no attribute
+  'execute_query'` on scoped requests.** `env.execute_query` arrived in
+  Odoo 18; the ACL override now uses `cr.execute`, which works on every
+  supported version.
+- **Role context was lost after the first call per worker on `/jsonrpc`
+  and `/xmlrpc`.** Odoo 17 authenticates RPC through the classmethod
+  `res.users.check(db, uid, passwd)`, which is `ormcache('uid', 'passwd')`;
+  on a cache hit the `_check_credentials` chain that sets the role is
+  skipped. 17 now gets the same re-application override that 18/19 get via
+  `_check_uid_passwd`. This is what made the failure intermittent.
+- **Record rules were intersected with the user's own groups, not the
+  role's, on Odoo 17 *and* 18.** Core reads `self.env.user.groups_id` in
+  `ir.rule._compute_domain` below 19 (19 reads `all_group_ids`, which we
+  narrow). Rules bound to the user's non-role groups were dropped from the
+  domain, so a narrowed key saw more rows than its role allowed.
+
+### Added
+- `tests/test_role_narrowing.py` — narrowing tests that ask Odoo the
+  questions Odoo asks itself during a real RPC call (allowed models, group
+  membership, record-rule filtering), instead of calling our own methods
+  and asserting on their return values. The old suite was green on 17
+  precisely because nothing tested the wiring to core.
+- [docs/dev/odoo-17-narrowing.md](docs/dev/odoo-17-narrowing.md) — the
+  per-version seam table and what to re-check on a major upgrade.
+
+### Changed
+- CI now runs on the `17.0` and `18.0` branches, not only `main` and
+  `19.0`. The workflow derives the Odoo series from the manifest version
+  instead of hard-coding `19.0`, so one file works on every release
+  branch and stays correct when synced between them. The trunk job keeps
+  the name "Odoo 19 module tests", so existing branch protection still
+  matches.
+
+### Backported from trunk
+- The five fixes released on 19.0 between 19.0.1.20.1 and 19.0.1.20.5:
+  TOTP column leak, auditlog rule collision on install, API-key usage
+  counter denying authentication, full-log audit rules reading
+  attachment-backed binary fields, non-admin access to the New API Key
+  wizard, and the structural anchor for the wizard Role field.
+
+## [19.0.1.20.5] - 2026-09-08
+
+### Fixed
+- **User form crashed (`UndefinedColumn: auth_totp_device.x_role_id`)
+  when 2FA is in use.** `auth_totp.device` inherits `res.users.apikeys`
+  by prototype inheritance, so Odoo copies this module's `x_role_id`,
+  `x_state`, `x_last_used` and `x_use_count` fields onto its own
+  `auth_totp_device` table. Our `init()` hard-coded `res_users_apikeys`
+  as the target table, so those columns were never created on
+  `auth_totp_device`; reading a user's trusted TOTP devices (e.g. while
+  granting another user MCP Pro admin rights) then raised
+  `psycopg2.errors.UndefinedColumn`. `init()` now keys every DDL
+  statement on `self._table`, so the columns are provisioned on both
+  tables. Existing databases are healed on upgrade — no manual migration
+  needed. Reported by Mil Cuyvers (DCBO Open Solutions).
+- **Install aborted on databases with a pre-existing `auditlog` rule.**
+  `post_init_hook` seeds a draft `auditlog.rule` per AI-target model, but
+  `auditlog.rule` enforces `unique(model_id)` (one rule per model). The
+  hook only skipped a model when a rule with *our* exact name already
+  existed, so a database that already had an audit rule on that model
+  under a different name (e.g. migrated from a pre-existing OCA
+  `auditlog` install) hit the constraint and the whole install failed.
+  The hook now skips a model when *any* rule already exists for it,
+  leaving the operator's rule untouched. Also reported by Mil Cuyvers.
+
+## [19.0.1.20.3] - 2026-08-14
+
+### Fixed
+- **Full-log audit rules could roll back a whole transaction.**
+  Confirming a sales order that creates a project (with a document
+  folder) and a delivery in one transaction failed with
+  `AssertionError: Could not find all values of ir.attachment(N,) to
+  flush them`. A `log_type = full` rule snapshots every audited field
+  of the new record; that set included `stock.picking.signature`, a
+  `fields.Image` and therefore attachment-backed. Reading it is not a
+  column read — `Binary.read` resolves the value through
+  `ir.attachment.search_fetch`, and a search flushes the model it
+  searches. With a deferred `ir.attachment.res_id` write still open
+  from `documents_project`, that flush could not find the pending
+  value in the cache and the transaction rolled back.
+  `auditlog.rule.get_auditlog_fields` now drops binary fields, so the
+  audit path never touches `ir.attachment`. One override covers
+  `create_full`, `write_full` and `unlink_full`, which share that
+  method. As a side effect file contents no longer land in
+  `auditlog_log_line`.
+  The rule's `fields_to_exclude_ids` does not help here — it is applied
+  in `create_logs`, after the values have already been read.
+  Reported by Daniël Roos (Roos AI) against Odoo 19 / odoo.sh.
+  Upstream OCA `auditlog` has no equivalent filter yet; this override
+  can be dropped once it does.
+
+## [19.0.1.20.1] - 2026-07-06
+
+### Fixed
+- **API-key wizard crashed on non-English instances.** The Role dropdown
+  inherit anchored on the parent heading's *text*
+  (`//h3[contains(., 'Give a duration')]`). Odoo applies view inheritance
+  against the translated arch, so on a Dutch (or any non-English) instance
+  the literal English text was absent and combining the
+  `res.users.apikeys.description` view raised
+  `Element '<xpath .../>' cannot be found in the parent view` — the
+  "New API Key" wizard would not open at all. The xpath now anchors
+  structurally on the heading preceding the `duration` field
+  (`//field[@name='duration']/preceding-sibling::h3[1]`), which is
+  language-independent and robust to other modules adding headings.
+  Added a regression test that combines the wizard view under a translated
+  `nl_NL` heading.
+
 ## [19.0.1.3.0] - 2026-05-20
 
 ### Added
