@@ -66,8 +66,23 @@ class ResUsersRole(models.Model):
         its owner. An empty result means the role is a subset of the user's
         groups (eligible to bind a key). Single source of truth for the
         wizard's role filter, the key constraint, and ``make_key``.
+
+        Both sides are compared as *effective* group sets. The role side is
+        already a transitive closure; the user side has to be closed too,
+        or the comparison is not like for like. A user with only
+        ``base.group_user`` ticked on their form holds everything that
+        group implies, but ``group_ids`` lists just the one row -- so a
+        role implying ``base.group_user`` reported that group's own
+        implications (``Technical Features`` and the role's backing group)
+        as excess and refused a role the owner plainly covers.
+
+        This normally stayed hidden because ``base_user_role`` syncs a
+        role's whole group set onto the user, making the raw lists match by
+        accident. It surfaced when the vendored auditlog tests ran first and
+        that sync did not hold.
         """
         self.ensure_one()
         role_group_ids = set(compat.implied_groups(self).ids)
-        user_group_ids = set(compat.user_groups(user.sudo()).ids)
+        user_groups = compat.user_groups(user.sudo())
+        user_group_ids = set(user_groups.ids) | set(compat.implied_groups(user_groups).ids)
         return role_group_ids - user_group_ids

@@ -23,6 +23,16 @@ We no longer override ``check()`` itself: parent's ``check`` reads from
 from odoo import _, models
 from odoo.exceptions import AccessError
 
+# Models the MCP introspection tools (notably the server's ``list_models``
+# tool, which does a ``search_read`` on ``ir.model``) must be able to read to
+# enumerate the catalogue -- even for a scoped read-only role that holds none
+# of the technical-model groups. We add these to the role's read set below so
+# the ACL check passes; the *rows* of ``ir.model`` are then scoped back to the
+# role's own models by the global rule in
+# ``security/mcp_scoped_model_list.xml`` (see ``res.users._mcp_ir_model_domain``),
+# so this never widens what a key can actually read.
+MCP_INTROSPECTION_MODELS = ("ir.model",)
+
 
 class IrModelAccess(models.Model):
     _inherit = "ir.model.access"
@@ -58,7 +68,13 @@ class IrModelAccess(models.Model):
             """,
             (tuple(group_ids) or (None,),),
         )
-        return frozenset(v[0] for v in self.env.cr.fetchall())
+        allowed = frozenset(v[0] for v in self.env.cr.fetchall())
+        # Let a scoped key read the model catalogue itself so the MCP
+        # ``list_models`` tool returns the role's models instead of an empty
+        # list. Read-only: never inject for write/create/unlink.
+        if mode == "read":
+            allowed |= frozenset(MCP_INTROSPECTION_MODELS)
+        return allowed
 
     def _make_access_error(self, model: str, mode: str):
         role = None
