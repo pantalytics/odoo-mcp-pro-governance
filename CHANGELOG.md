@@ -3,6 +3,118 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.23.0] - 2026-09-15
+
+### Fixed
+- **Record rules were intersected with the user's own groups, not the
+  role's, on Odoo 18.** `ir.rule._compute_domain` reads
+  `self.env.user.groups_id` below Odoo 19 (19 reads `all_group_ids`, which
+  this module narrows). Rules bound to the user's non-role groups were
+  dropped from the domain, so a narrowed key saw *more* rows than its role
+  allowed. `_mcp_compute_domain_narrowed` closes it for < 19. Found while
+  fixing the same layer on Odoo 17 (17.0.1.21.0).
+- **`_get_allowed_models` used `env.execute_query`**, which only exists
+  from Odoo 18. Now `cr.execute`, which works on every supported version.
+  No behaviour change on 19.
+- **The API-key role subset check compared a closure against a raw
+  assignment list.** `_mcp_excess_group_ids` closed the role's groups
+  transitively but read only the groups explicitly ticked on the owner's
+  form. A user holding `base.group_user` implicitly holds everything it
+  implies, so a role implying that group was reported as granting more
+  than its owner ("Technical Features") and refused. Both sides are now
+  compared as effective group sets.
+
+### Added
+- Odoo 17 support in the shared source: `_get_group_ids` fallback,
+  `_has_group`, `ir.rule._get_rules` and the `res.users.check` classmethod
+  are overridden below Odoo 18, where core has no group-resolution seam.
+  Inert on 18 and 19.
+- `tests/test_role_narrowing.py` — narrowing tests that ask Odoo the
+  questions Odoo asks itself during a real RPC call (allowed models, group
+  membership, which rows come back), instead of calling this module's own
+  methods and asserting on their return values.
+- [docs/dev/odoo-17-narrowing.md](docs/dev/odoo-17-narrowing.md) — the
+  per-version seam table and what to re-check on a major upgrade.
+
+### Changed
+- CI runs on the `17.0` and `18.0` branches as well, derives the Odoo
+  series from the manifest version instead of hard-coding `19.0`, and
+  invokes `odoo-bin` rather than `python -m odoo` (which put the CWD first
+  on `sys.path`, where a directory named `odoo/` shadowed the package).
+  The trunk job still renders as "Odoo 19 module tests", so existing
+  branch protection keeps matching.
+
+## [19.0.1.20.5] - 2026-09-08
+
+### Fixed
+- **User form crashed (`UndefinedColumn: auth_totp_device.x_role_id`)
+  when 2FA is in use.** `auth_totp.device` inherits `res.users.apikeys`
+  by prototype inheritance, so Odoo copies this module's `x_role_id`,
+  `x_state`, `x_last_used` and `x_use_count` fields onto its own
+  `auth_totp_device` table. Our `init()` hard-coded `res_users_apikeys`
+  as the target table, so those columns were never created on
+  `auth_totp_device`; reading a user's trusted TOTP devices (e.g. while
+  granting another user MCP Pro admin rights) then raised
+  `psycopg2.errors.UndefinedColumn`. `init()` now keys every DDL
+  statement on `self._table`, so the columns are provisioned on both
+  tables. Existing databases are healed on upgrade — no manual migration
+  needed. Reported by Mil Cuyvers (DCBO Open Solutions).
+- **Install aborted on databases with a pre-existing `auditlog` rule.**
+  `post_init_hook` seeds a draft `auditlog.rule` per AI-target model, but
+  `auditlog.rule` enforces `unique(model_id)` (one rule per model). The
+  hook only skipped a model when a rule with *our* exact name already
+  existed, so a database that already had an audit rule on that model
+  under a different name (e.g. migrated from a pre-existing OCA
+  `auditlog` install) hit the constraint and the whole install failed.
+  The hook now skips a model when *any* rule already exists for it,
+  leaving the operator's rule untouched. Also reported by Mil Cuyvers.
+
+## [19.0.1.20.3] - 2026-08-14
+
+### Fixed
+- **Full-log audit rules could roll back a whole transaction.**
+  Confirming a sales order that creates a project (with a document
+  folder) and a delivery in one transaction failed with
+  `AssertionError: Could not find all values of ir.attachment(N,) to
+  flush them`. A `log_type = full` rule snapshots every audited field
+  of the new record; that set included `stock.picking.signature`, a
+  `fields.Image` and therefore attachment-backed. Reading it is not a
+  column read — `Binary.read` resolves the value through
+  `ir.attachment.search_fetch`, and a search flushes the model it
+  searches. With a deferred `ir.attachment.res_id` write still open
+  from `documents_project`, that flush could not find the pending
+  value in the cache and the transaction rolled back.
+  `auditlog.rule.get_auditlog_fields` now drops binary fields, so the
+  audit path never touches `ir.attachment`. One override covers
+  `create_full`, `write_full` and `unlink_full`, which share that
+  method. As a side effect file contents no longer land in
+  `auditlog_log_line`.
+  The rule's `fields_to_exclude_ids` does not help here — it is applied
+  in `create_logs`, after the values have already been read.
+  Reported by Daniël Roos (Roos AI) against Odoo 19 / odoo.sh.
+  Upstream OCA `auditlog` has no equivalent filter yet; this override
+  can be dropped once it does.
+## [19.0.1.20.2] - 2026-07-06
+
+### Fixed
+- **Audit-rule scope misfired for API keys on legacy RPC.** The scope
+  filter (`auditlog.rule._mcp_should_log_request`) read the authenticating
+  API-key id only from `request.session`. On the legacy `/jsonrpc` and
+  `/xmlrpc` paths `borrow_request()` pops the werkzeug request, so that
+  read returned nothing and the call was misclassified as a browser
+  session — a `Only API key calls` rule silently dropped those writes and
+  a `Only browser sessions` rule logged them by mistake. It now falls back
+  to the `ir.http._dispatch` snapshot, the same fallback every other audit
+  path already uses. Added regression tests for the legacy path.
+
+### Changed
+- **Internal:** the shared "request session, else `_dispatch` snapshot"
+  lookup for the authenticating API-key id is now a single helper,
+  `ir_http.current_request_api_key_id()`, used by both
+  `auditlog.http.request.create` and the audit-rule scope filter. No
+  behaviour change; removes the duplication that let the bug above slip in.
+
+## [19.0.1.20.1] - 2026-07-06
 ## [18.0.1.20.1] - 2026-07-06
 
 ### Fixed
@@ -18,6 +130,7 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   (`//field[@name='duration']/preceding-sibling::h3[1]`), which is
   language-independent and robust to other modules adding headings.
   Added a regression test that combines the wizard view under a translated
+  `nl_NL` heading.
   `nl_NL` heading. (Ported from the 19.0 fix; 17.0 is unaffected — its
   wizard anchors on `//footer`, not translated text.)
 

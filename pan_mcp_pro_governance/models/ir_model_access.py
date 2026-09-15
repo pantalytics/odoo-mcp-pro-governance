@@ -11,7 +11,10 @@ Two pieces:
 
 2. ``_make_access_error`` — Odoo's default message says "you need
    group X" which is misleading when the real fix is at the role
-   layer. Override to surface the role-specific context.
+   layer. Override to surface the role-specific context. Odoo 17 has
+   no such seam (it builds the message inline in ``check()``), so on
+   17 the operator sees core's wording. Cosmetic only — the access
+   decision itself is narrowed on every supported version.
 
 We no longer override ``check()`` itself: parent's ``check`` reads from
 ``_get_allowed_models``, which we now narrow at the source.
@@ -19,7 +22,16 @@ We no longer override ``check()`` itself: parent's ``check`` reads from
 
 from odoo import _, models
 from odoo.exceptions import AccessError
-from odoo.tools import SQL
+
+# Models the MCP introspection tools (notably the server's ``list_models``
+# tool, which does a ``search_read`` on ``ir.model``) must be able to read to
+# enumerate the catalogue -- even for a scoped read-only role that holds none
+# of the technical-model groups. We add these to the role's read set below so
+# the ACL check passes; the *rows* of ``ir.model`` are then scoped back to the
+# role's own models by the global rule in
+# ``security/mcp_scoped_model_list.xml`` (see ``res.users._mcp_ir_model_domain``),
+# so this never widens what a key can actually read.
+MCP_INTROSPECTION_MODELS = ("ir.model",)
 
 
 class IrModelAccess(models.Model):
@@ -37,24 +49,32 @@ class IrModelAccess(models.Model):
         # Live compute, bypassing the parent's ormcache (which is keyed
         # on uid only and would poison across role contexts). _get_group_ids
         # is itself role-narrowed via res_users.py.
+        # `mode` is whitelisted right here, so interpolating it into the
+        # statement is safe — core does the same. Plain `cr.execute` rather
+        # than `env.execute_query`: the latter only exists from Odoo 18, and
+        # calling it on 17 raised `AttributeError: 'Environment' object has
+        # no attribute 'execute_query'` on every scoped request.
         assert mode in ("read", "write", "create", "unlink"), f"Invalid mode {mode!r}"
         group_ids = self.env.user._get_group_ids()
         self.flush_model()
-        rows = self.env.execute_query(
-            SQL(
-                """
-                SELECT m.model
-                  FROM ir_model_access a
-                  JOIN ir_model m ON (m.id = a.model_id)
-                 WHERE a.perm_%s AND a.active
-                   AND (a.group_id IS NULL OR a.group_id IN %s)
-                GROUP BY m.model
-                """,
-                SQL(mode),
-                tuple(group_ids) or (None,),
-            )
+        self.env.cr.execute(
+            f"""
+            SELECT m.model
+              FROM ir_model_access a
+              JOIN ir_model m ON (m.id = a.model_id)
+             WHERE a.perm_{mode} AND a.active
+               AND (a.group_id IS NULL OR a.group_id IN %s)
+            GROUP BY m.model
+            """,
+            (tuple(group_ids) or (None,),),
         )
-        return frozenset(v[0] for v in rows)
+        allowed = frozenset(v[0] for v in self.env.cr.fetchall())
+        # Let a scoped key read the model catalogue itself so the MCP
+        # ``list_models`` tool returns the role's models instead of an empty
+        # list. Read-only: never inject for write/create/unlink.
+        if mode == "read":
+            allowed |= frozenset(MCP_INTROSPECTION_MODELS)
+        return allowed
 
     def _make_access_error(self, model: str, mode: str):
         role = None

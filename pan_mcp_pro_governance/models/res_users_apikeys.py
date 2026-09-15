@@ -17,11 +17,23 @@ for the role id regardless of which auth path was taken.
 import logging
 import threading
 
+import psycopg2
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.http import request
+from odoo.tools import SQL
 
 _logger = logging.getLogger(__name__)
+
+# Postgres raises one of these when two requests touch the same row
+# concurrently. Expected under load on a shared API key, not a fault.
+# Mirrors odoo.service.model.PG_CONCURRENCY_EXCEPTIONS_TO_RETRY, spelled
+# out here rather than imported so a model doesn't reach into a service.
+CONCURRENT_UPDATE_ERRORS = (
+    psycopg2.errors.SerializationFailure,
+    psycopg2.errors.DeadlockDetected,
+    psycopg2.errors.LockNotAvailable,
+)
 
 # Per-thread storage for the API-key role attribution. Cleared at the
 # start of every _check_credentials call so a stale value from a prior
@@ -50,21 +62,44 @@ class ResUsersApikeys(models.Model):
         super().init()
         # The parent has _auto = False and manages its own schema. Add our
         # columns explicitly so they exist before any migration runs.
-        self.env.cr.execute("""
-            ALTER TABLE res_users_apikeys
+        #
+        # `auth_totp.device` inherits this model by prototype (`_inherit`
+        # with a distinct `_name`, also `_auto = False`), so Odoo copies our
+        # x_* fields onto its own `auth_totp_device` table too. That model
+        # defines no init() of its own, so THIS override runs for it as well.
+        # Key every statement on `self._table` so the columns land on
+        # whichever table is being initialised (res_users_apikeys OR
+        # auth_totp_device). Hard-coding "res_users_apikeys" left
+        # auth_totp_device without the columns, which crashed the user form
+        # with `UndefinedColumn: auth_totp_device.x_role_id` as soon as it
+        # snapshotted the user's trusted TOTP devices.
+        table = SQL.identifier(self._table)
+        self.env.cr.execute(
+            SQL(
+                """
+            ALTER TABLE %s
             ADD COLUMN IF NOT EXISTS x_role_id integer,
             ADD COLUMN IF NOT EXISTS x_state varchar DEFAULT 'active',
             ADD COLUMN IF NOT EXISTS x_last_used timestamp without time zone,
             ADD COLUMN IF NOT EXISTS x_use_count integer DEFAULT 0
-        """)
-        self.env.cr.execute("""
-            CREATE INDEX IF NOT EXISTS res_users_apikeys_x_role_id_idx
-            ON res_users_apikeys (x_role_id)
-        """)
-        self.env.cr.execute("""
-            CREATE INDEX IF NOT EXISTS res_users_apikeys_x_state_idx
-            ON res_users_apikeys (x_state)
-        """)
+            """,
+                table,
+            )
+        )
+        self.env.cr.execute(
+            SQL(
+                "CREATE INDEX IF NOT EXISTS %s ON %s (x_role_id)",
+                SQL.identifier(f"{self._table}_x_role_id_idx"),
+                table,
+            )
+        )
+        self.env.cr.execute(
+            SQL(
+                "CREATE INDEX IF NOT EXISTS %s ON %s (x_state)",
+                SQL.identifier(f"{self._table}_x_state_idx"),
+                table,
+            )
+        )
 
     x_role_id = fields.Many2one(
         comodel_name="res.users.role",
@@ -180,14 +215,36 @@ class ResUsersApikeys(models.Model):
 
         set_audit_api_key_id(api_key_id)
 
-        # Lightweight usage counter; one UPDATE per call. Tolerable for
-        # the prototype — promote to a deferred / batched update if it
-        # becomes a hot path.
-        self.env.cr.execute(
-            "UPDATE res_users_apikeys "
-            "SET x_last_used = now() at time zone 'utc', "
-            "    x_use_count = x_use_count + 1 "
-            "WHERE id = %s",
-            (api_key_id,),
-        )
+        # Lightweight usage counter; one UPDATE per call. Promote to a
+        # deferred / batched update if it becomes a hot path.
+        #
+        # Best-effort by design: it runs on the auth path, so it must never
+        # deny a valid key. Concurrent calls on one key update this row at
+        # once and the loser gets a SerializationFailure, which retrying()
+        # would retry but never sees — _authenticate_explicit() wraps auth in
+        # `except Exception: raise AccessDenied()`, making it a 403 first. The
+        # savepoint stops that from poisoning the request transaction. A lost
+        # increment costs nothing: both columns are readonly display fields.
+        try:
+            with self.env.cr.savepoint(flush=False):
+                self.env.cr.execute(
+                    "UPDATE res_users_apikeys "
+                    "SET x_last_used = now() at time zone 'utc', "
+                    "    x_use_count = x_use_count + 1 "
+                    "WHERE id = %s",
+                    (api_key_id,),
+                )
+        except CONCURRENT_UPDATE_ERRORS:
+            _logger.debug(
+                "MCP Pro Governance: usage counter for API key id=%s skipped, "
+                "concurrent update on the same key. Authentication unaffected.",
+                api_key_id,
+            )
+        except psycopg2.Error:
+            _logger.warning(
+                "MCP Pro Governance: usage counter for API key id=%s failed. "
+                "Authentication unaffected.",
+                api_key_id,
+                exc_info=True,
+            )
         return user_id

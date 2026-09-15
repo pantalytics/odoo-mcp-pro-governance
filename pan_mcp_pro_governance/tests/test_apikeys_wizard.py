@@ -7,6 +7,8 @@ the `_auto = False` apikeys table, neither friendly to TransactionCase.
 
 from odoo.tests.common import TransactionCase
 
+from .. import compat
+
 
 class TestApiKeyWizardValidation(TransactionCase):
     @classmethod
@@ -21,6 +23,15 @@ class TestApiKeyWizardValidation(TransactionCase):
                 "login": "wizard_user",
                 "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
             }
+        )
+        # base_user_role normally syncs a role's groups onto the user that
+        # holds it, which is what makes the role a subset of the owner. Do it
+        # explicitly here so the fixture does not depend on that side effect
+        # having fired: another addon's class patches on res.users can
+        # suppress it, and then these tests fail for a reason that has
+        # nothing to do with what they assert. See #14.
+        cls.user.sudo().write(
+            {compat.USER_GROUPS_FIELD: [(4, gid) for gid in compat.implied_groups(cls.role).ids]}
         )
 
     def _wizard(self, **overrides):
@@ -40,6 +51,26 @@ class TestApiKeyWizardValidation(TransactionCase):
         # groups (empty set), trivially a subset → present.
         wiz = self._wizard()
         self.assertIn(self.role, wiz.x_available_role_ids)
+
+    def test_non_admin_member_can_read_available_roles(self):
+        # Regression: opening the New API Key wizard as a non-admin internal
+        # user raised AccessError, because the `x_available_role_ids` compute
+        # exposes `res.users.role` records and OCA base_user_role restricts
+        # that model to Access Rights managers. Every internal user manages
+        # their own keys, so the wizard must work for them. The other tests
+        # here `sudo()` the wizard, which masked this; this one runs in the
+        # real (non-admin) user context. Fixed by granting base.group_user
+        # read on res.users.role (security/ir.model.access.csv).
+        plain = self.env["res.users"].create({"name": "Plain Member", "login": "plain_member"})
+        self.assertFalse(plain.has_group("base.group_erp_manager"))
+        Desc = self.env["res.users.apikeys.description"]
+        values = {"name": "member key"}
+        if "duration" in Desc._fields:
+            values["duration"] = "30"
+        wiz = Desc.with_user(plain).create(values)
+        # Reading the roles the wizard offers must not raise
+        # "not allowed to access 'Role' records" for a non-admin.
+        self.assertIsNotNone(wiz.x_available_role_ids.mapped("display_name"))
 
     def test_wizard_view_combines_under_translation(self):
         # Regression: our inherit anchored on translated h3 text
