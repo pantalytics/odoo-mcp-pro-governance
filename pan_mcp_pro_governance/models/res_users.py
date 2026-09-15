@@ -26,11 +26,28 @@ request is popped during dispatch). UI sessions are unaffected because
 ``_get_api_key_role`` returns False when no API-key context is active.
 """
 
+import contextlib
+import string
+
 from odoo import api, models, tools
 from odoo.http import request
 
 from .. import compat
 from .ir_http import set_audit_api_key_id
+
+
+def _mcp_looks_like_api_key(passwd):
+    """True when `passwd` has the shape of an Odoo API key.
+
+    Keys are `API_KEY_SIZE` random bytes rendered as hex. Checking the
+    shape first means a normal password login never pays for the extra
+    cursor in the Odoo 17 `check()` override.
+    """
+    if not passwd:
+        return False
+    from odoo.addons.base.models.res_users import API_KEY_SIZE
+
+    return len(passwd) == API_KEY_SIZE * 2 and all(c in string.hexdigits for c in passwd)
 
 
 class ResUsers(models.Model):
@@ -119,11 +136,18 @@ class ResUsers(models.Model):
         ``@tools.ormcache('self.id')`` because the cache lookup happens
         inside the parent implementation; we never call it for the
         narrowed case.
+
+        On Odoo 17 there is no parent implementation at all (the method
+        arrived in 18), so the un-narrowed branch falls back to a plain
+        read of the user's groups. Our own overrides call this method on
+        every version, so it has to answer on 17 too.
         """
         if self == self.env.user:
             role = self._get_api_key_role()
             if role:
                 return tuple(self._mcp_role_group_ids(role).ids)
+        if compat.ODOO_VERSION < 18:
+            return tuple(compat.user_groups(self)._ids)
         return super()._get_group_ids()
 
     # ``all_group_ids`` and its compute are new in Odoo 19. On 18 the field
@@ -149,3 +173,92 @@ class ResUsers(models.Model):
                     user.all_group_ids = self._mcp_role_group_ids(active_role)
                 else:
                     user.all_group_ids = user.group_ids.all_implied_ids
+
+    def _mcp_ir_model_domain(self):
+        """Record-rule domain scoping ``ir.model`` rows for the active key.
+
+        Referenced from the global rule in
+        ``security/mcp_scoped_model_list.xml``. For a role-bound API request
+        it limits ``ir.model`` to the models the role may read, so the MCP
+        ``list_models`` tool mirrors the role instead of leaking the whole
+        catalogue (or, without the ACL grant in ``ir_model_access.py``,
+        returning nothing). For every other request -- UI sessions, unscoped
+        keys, sudo -- it returns an always-true domain, so ``ir.model`` stays
+        fully visible and nothing else changes.
+
+        The introspection models themselves (see ``MCP_INTROSPECTION_MODELS``)
+        are excluded from the visible rows: they are granted for the ACL check
+        only, and would just be noise in ``list_models``.
+        """
+        from .ir_model_access import MCP_INTROSPECTION_MODELS
+
+        role = self._get_api_key_role()
+        if not role:
+            return [(1, "=", 1)]
+        allowed = self.env["ir.model.access"]._get_allowed_models("read")
+        allowed = allowed - frozenset(MCP_INTROSPECTION_MODELS)
+        return [("model", "in", sorted(allowed))]
+
+    # ------------------------------------------------------------------
+    # Odoo 17 only — 17 has no group-resolution seam
+    # ------------------------------------------------------------------
+    # From Odoo 18 on, `ir.model.access._get_allowed_models`,
+    # `ir.rule._get_rules` and `res.users._has_group` all resolve groups
+    # through `_get_group_ids()`, so overriding that one method narrows
+    # every permission path. Odoo 17 has no such method: each of those
+    # call sites runs its own SQL against `res_groups_users_rel` keyed on
+    # `uid`. Without the overrides below, a role-bound API key on 17 is
+    # authenticated but never narrowed — the key keeps the owner's full
+    # rights. See docs/dev/odoo-17-narrowing.md.
+    if compat.ODOO_VERSION < 18:
+
+        @api.model
+        def _has_group(self, group_ext_id):
+            """Answer group checks from the role's groups when one is active.
+
+            Core's 17 implementation is `@ormcache('self._uid', ...)`; we
+            return before calling it so the cache is never consulted for a
+            narrowed request, exactly as `_get_group_ids` does.
+
+            Like core, the subject is `self.env.user` — a `with_user()`
+            check inside a narrowed request therefore answers for the role,
+            not for that other user. Same shape as the `_get_group_ids`
+            override on 18/19.
+            """
+            role = self._get_api_key_role()
+            if not role:
+                return super()._has_group(group_ext_id)
+            group_id = self.env["ir.model.data"]._xmlid_to_res_id(
+                group_ext_id, raise_if_not_found=False
+            )
+            return bool(group_id) and group_id in self.env.user._get_group_ids()
+
+        @classmethod
+        def check(cls, db, uid, passwd):
+            """Odoo 17 equivalent of the `_check_uid_passwd` override.
+
+            17 authenticates RPC through this classmethod, which is
+            `@ormcache('uid', 'passwd')`. On a cache hit the
+            `_check_credentials` chain — where the role and the audit
+            api-key id are normally wired up — is skipped, so a role-bound
+            key narrowed only on its first call per worker. That is what
+            made the behaviour on the customer's staging intermittent.
+
+            Re-resolve on every call, from our own ormcached resolver so a
+            hit costs no SQL. The cursor is only opened for credentials
+            shaped like an API key, which keeps ordinary password logins
+            on exactly the path they had before.
+            """
+            result = super().check(db, uid, passwd)
+            if not _mcp_looks_like_api_key(passwd):
+                return result
+            with contextlib.closing(cls.pool.cursor()) as cr:
+                env = api.Environment(cr, api.SUPERUSER_ID, {})
+                api_key_id, role_id = env["res.users"]._mcp_resolve_api_key(uid, passwd)
+            if api_key_id:
+                set_audit_api_key_id(api_key_id)
+            if role_id:
+                from .res_users_apikeys import set_thread_api_key_role_id
+
+                set_thread_api_key_role_id(role_id)
+            return result

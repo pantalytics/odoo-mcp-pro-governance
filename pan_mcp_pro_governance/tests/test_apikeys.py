@@ -41,6 +41,15 @@ class TestApiKeyRoleBinding(TransactionCase):
                 "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
             }
         )
+        # base_user_role normally syncs a role's groups onto the user that
+        # holds it, which is what makes the role a subset of the owner. Do it
+        # explicitly here so the fixture does not depend on that side effect
+        # having fired: another addon's class patches on res.users can
+        # suppress it, and then these tests fail for a reason that has
+        # nothing to do with what they assert. See #14.
+        cls.user.sudo().write(
+            {compat.USER_GROUPS_FIELD: [(4, gid) for gid in compat.implied_groups(cls.role).ids]}
+        )
 
     def _make_key(self):
         """Generate one key for self.user and return its ORM record.
@@ -96,3 +105,39 @@ class TestApiKeyRoleBinding(TransactionCase):
         self.assertEqual(key.x_state, "suspended")
         key.x_state = "revoked"
         self.assertEqual(key.x_state, "revoked")
+
+
+class TestApiKeyFieldsOnTotpDevice(TransactionCase):
+    """`auth_totp.device` inherits `res.users.apikeys` by prototype, so Odoo
+    copies our x_* fields onto its own `auth_totp_device` table. The columns
+    must physically exist there too, otherwise any ORM read of a TOTP device
+    (e.g. the user form snapshotting `totp_trusted_device_ids` during an
+    onchange) raises `UndefinedColumn: auth_totp_device.x_role_id`.
+
+    Regression for the DCBO / Mil Cuyvers report, 2026-07-09.
+    """
+
+    def _columns(self, table):
+        self.env.cr.execute(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
+            (table,),
+        )
+        return {row[0] for row in self.env.cr.fetchall()}
+
+    def test_x_columns_exist_on_totp_device_table(self):
+        if "auth_totp.device" not in self.env.registry:
+            self.skipTest("auth_totp not installed in this database")
+        expected = {"x_role_id", "x_state", "x_last_used", "x_use_count"}
+        columns = self._columns("auth_totp_device")
+        missing = expected - columns
+        self.assertFalse(
+            missing,
+            f"auth_totp_device is missing inherited apikeys columns: {missing}",
+        )
+
+    def test_reading_inherited_field_does_not_crash(self):
+        if "auth_totp.device" not in self.env.registry:
+            self.skipTest("auth_totp not installed in this database")
+        # A bare search_read of the leaked field is enough to hit the SQL
+        # column that used to be absent; it must not raise.
+        self.env["auth_totp.device"].sudo().search_read([], ["x_role_id", "x_state"], limit=1)
