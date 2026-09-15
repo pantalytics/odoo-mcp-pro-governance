@@ -2,15 +2,44 @@ name: CI
 
 on:
   push:
-    branches: [main, "19.0"]
+    branches: [main, "17.0", "18.0", "19.0"]
   pull_request:
-    branches: [main, "19.0"]
+    branches: [main, "17.0", "18.0", "19.0"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  series:
+    name: Detect Odoo series
+    runs-on: ubuntu-latest
+    outputs:
+      odoo: ${{ steps.detect.outputs.odoo }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the Odoo series from the manifest
+        id: detect
+        # Each release branch pins its Odoo series in the manifest version
+        # (17.0.x.y.z / 18.0.x.y.z / 19.0.x.y.z), so one workflow file works
+        # on every branch and stays correct when synced between them.
+        # Same idea as `compat.ODOO_VERSION` in the addon: derive it, never
+        # hard-code it in two places that can drift apart.
+        run: |
+          SERIES=$(sed -n \
+            's/.*"version"[[:space:]]*:[[:space:]]*"\([0-9][0-9]*\)\.0\..*/\1/p' \
+            pan_mcp_pro_governance/__manifest__.py | head -1)
+          case "$SERIES" in
+            17|18|19) ;;
+            *)
+              echo "::error::Could not derive a supported Odoo series from pan_mcp_pro_governance/__manifest__.py (got '$SERIES')."
+              exit 1
+              ;;
+          esac
+          echo "Odoo series: $SERIES"
+          echo "odoo=$SERIES" >> "$GITHUB_OUTPUT"
+
   lint:
     name: Lint (pre-commit)
     runs-on: ubuntu-latest
@@ -35,9 +64,11 @@ jobs:
         run: pre-commit run --all-files --show-diff-on-failure
 
   test:
-    name: Odoo 19 module tests
+    # Renders to "Odoo 19 module tests" on trunk, so any branch protection
+    # that already requires that check keeps matching.
+    name: Odoo ${{ needs.series.outputs.odoo }} module tests
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [series, lint]
 
     services:
       postgres:
@@ -60,11 +91,11 @@ jobs:
         with:
           path: pan_mcp_pro_governance_repo
 
-      - name: Checkout Odoo 19.0 (Community)
+      - name: Checkout Odoo ${{ needs.series.outputs.odoo }}.0 (Community)
         uses: actions/checkout@v4
         with:
           repository: odoo/odoo
-          ref: "19.0"
+          ref: "${{ needs.series.outputs.odoo }}.0"
           path: odoo
           # Shallow clone is fine — we only need the source tree to import.
           fetch-depth: 1

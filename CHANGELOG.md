@@ -41,6 +41,14 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 - [docs/dev/odoo-17-narrowing.md](docs/dev/odoo-17-narrowing.md) — the
   per-version seam table and what to re-check on a major upgrade.
 
+### Changed
+- CI now runs on the `17.0` and `18.0` branches, not only `main` and
+  `19.0`. The workflow derives the Odoo series from the manifest version
+  instead of hard-coding `19.0`, so one file works on every release
+  branch and stays correct when synced between them. The trunk job keeps
+  the name "Odoo 19 module tests", so existing branch protection still
+  matches.
+
 ### Backported from trunk
 - The five fixes released on 19.0 between 19.0.1.20.1 and 19.0.1.20.5:
   TOTP column leak, auditlog rule collision on install, API-key usage
