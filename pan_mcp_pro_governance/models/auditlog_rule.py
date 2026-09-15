@@ -2,7 +2,8 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
-from odoo.http import request
+
+from .ir_http import current_request_api_key_id
 
 
 class AuditlogRule(models.Model):
@@ -108,7 +109,11 @@ class AuditlogRule(models.Model):
         superuser instead of the originator.
         """
         self.ensure_one()
-        api_key_id = request.session.get("x_mcp_api_key_id") if request else None
+        # Resolves the api-key id across modern and legacy RPC paths
+        # (see current_request_api_key_id). Reading only request.session
+        # here would misclassify legacy /jsonrpc + /xmlrpc API-key calls
+        # as browser sessions.
+        api_key_id = current_request_api_key_id()
         is_api = bool(api_key_id)
         scope = self.x_scope or "all"
         if scope == "all":
