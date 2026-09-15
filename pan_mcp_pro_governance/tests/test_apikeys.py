@@ -41,6 +41,15 @@ class TestApiKeyRoleBinding(TransactionCase):
                 "role_line_ids": [(0, 0, {"role_id": cls.role.id})],
             }
         )
+        # base_user_role normally syncs a role's groups onto the user that
+        # holds it, which is what makes the role a subset of the owner. Do it
+        # explicitly here so the fixture does not depend on that side effect
+        # having fired: another addon's class patches on res.users can
+        # suppress it, and then these tests fail for a reason that has
+        # nothing to do with what they assert. See #14.
+        cls.user.sudo().write(
+            {compat.USER_GROUPS_FIELD: [(4, gid) for gid in compat.implied_groups(cls.role).ids]}
+        )
 
     def _make_key(self):
         """Generate one key for self.user and return its ORM record.

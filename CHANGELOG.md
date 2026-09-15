@@ -3,6 +3,31 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [17.0.1.23.1] - 2026-09-15
+
+### Fixed
+- **Audit-rule scoping did nothing on Odoo 17.** The scope filter read the
+  authenticating api-key id from `request.session` only, and Odoo 17 has
+  no `/json/2` routes, so every scoped API call takes the legacy
+  `/jsonrpc` or `/xmlrpc` path where `borrow_request()` has popped that
+  request. An "Only API key calls" rule therefore logged nothing at all on
+  this branch, and an "Only browser sessions" rule logged those calls by
+  mistake. The lookup now goes through
+  `ir_http.current_request_api_key_id()`.
+- **The API-key role subset check compared unlike group sets.** A role
+  implying `base.group_user` was reported as granting more than its owner,
+  because the role's side was a transitive closure while the owner's was
+  the raw list of groups ticked on their form.
+
+### Added
+- `ir.model` scoping for the MCP `list_models` tool: a scoped read-only
+  key now sees exactly the models its role may read, instead of an empty
+  list.
+
+With this the `17.0`, `18.0` and `19.0` branches carry identical
+`models/` and `tests/`; the only differences left are view tags, the
+manifest and the per-version data list.
+
 ## [17.0.1.21.0] - 2026-09-15
 
 ### Fixed
