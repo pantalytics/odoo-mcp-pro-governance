@@ -30,6 +30,13 @@
 >   compute nooit in, dus het veld bleef op z'n lege default (19 compute't lazy
 >   bij read, wat de gap verborg). Nu `@api.depends("name")` → compute draait op
 >   beide versies; de test draait weer mee (geen skip).
+> - ⚠️ **Odoo 17 was groen maar deed niets** (2026-09-15). De suite stond op
+>   `0 failed of 72` terwijl scoped API keys op 17 geen enkele beperking
+>   oplegden: 17 heeft geen `res.users._get_group_ids`, dus alle overrides
+>   hingen aan een methode die core nooit aanroept. Opgelost in
+>   17.0.1.21.0, inclusief een `_compute_domain`-gat dat ook op 18 zat.
+>   Zie [odoo-17-narrowing.md](odoo-17-narrowing.md). Les: tests die onze
+>   eigen methodes aanroepen bewijzen niets over de koppeling met core.
 > - ✅ **Odoo 17 toegevoegd** — `17.0`-release-branch, volledige suite groen
 >   (`0 failed of 72`). 17 vergde meer dan 18; vier extra 17-breuken:
 >   - **view-tag** `<list>` → `<tree>` (Odoo 18 hernoemde 'm) — per-branch in álle

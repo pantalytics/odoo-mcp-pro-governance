@@ -7,5 +7,6 @@ from . import (
     test_governance_tour,
     test_hooks,
     test_migrations,
+    test_role_narrowing,
     test_ui_contract,
 )

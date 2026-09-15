@@ -3,6 +3,51 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [17.0.1.21.0] - 2026-09-15
+
+### Fixed
+- **Scoped API keys did nothing on Odoo 17.** A key bound to a role was
+  authenticated and then kept its owner's full rights, so an
+  administrator's key could still read and write everything. From Odoo 18
+  on, every permission path resolves groups through
+  `res.users._get_group_ids()`, and overriding that one method narrows a
+  whole request. Odoo 17 has no such method: `ir.model.access
+  ._get_allowed_models`, `ir.rule._get_rules` and `res.users._has_group`
+  each run their own SQL against `res_groups_users_rel`. All three are now
+  overridden below 18. Reported by Boris van der Hoeven (Pressure Control
+  Solutions).
+- **`AttributeError: 'Environment' object has no attribute
+  'execute_query'` on scoped requests.** `env.execute_query` arrived in
+  Odoo 18; the ACL override now uses `cr.execute`, which works on every
+  supported version.
+- **Role context was lost after the first call per worker on `/jsonrpc`
+  and `/xmlrpc`.** Odoo 17 authenticates RPC through the classmethod
+  `res.users.check(db, uid, passwd)`, which is `ormcache('uid', 'passwd')`;
+  on a cache hit the `_check_credentials` chain that sets the role is
+  skipped. 17 now gets the same re-application override that 18/19 get via
+  `_check_uid_passwd`. This is what made the failure intermittent.
+- **Record rules were intersected with the user's own groups, not the
+  role's, on Odoo 17 *and* 18.** Core reads `self.env.user.groups_id` in
+  `ir.rule._compute_domain` below 19 (19 reads `all_group_ids`, which we
+  narrow). Rules bound to the user's non-role groups were dropped from the
+  domain, so a narrowed key saw more rows than its role allowed.
+
+### Added
+- `tests/test_role_narrowing.py` — narrowing tests that ask Odoo the
+  questions Odoo asks itself during a real RPC call (allowed models, group
+  membership, record-rule filtering), instead of calling our own methods
+  and asserting on their return values. The old suite was green on 17
+  precisely because nothing tested the wiring to core.
+- [docs/dev/odoo-17-narrowing.md](docs/dev/odoo-17-narrowing.md) — the
+  per-version seam table and what to re-check on a major upgrade.
+
+### Backported from trunk
+- The five fixes released on 19.0 between 19.0.1.20.1 and 19.0.1.20.5:
+  TOTP column leak, auditlog rule collision on install, API-key usage
+  counter denying authentication, full-log audit rules reading
+  attachment-backed binary fields, non-admin access to the New API Key
+  wizard, and the structural anchor for the wizard Role field.
+
 ## [19.0.1.20.5] - 2026-09-08
 
 ### Fixed
