@@ -11,6 +11,7 @@ does at runtime.
 
 from odoo.tests.common import TransactionCase
 
+from .. import compat
 from ..models.res_users_apikeys import (
     clear_thread_api_key_role_id,
     set_thread_api_key_role_id,
@@ -50,7 +51,11 @@ class TestScopedModelList(TransactionCase):
             {
                 "name": "MCP Scoped User",
                 "login": "mcp_scoped_user",
-                "group_ids": [(6, 0, [cls.env.ref("base.group_user").id, cls.scoped_group.id])],
+                # `group_ids` on 19, `groups_id` on 17/18 -- hard-coding the 19
+                # name made this fixture fail to create the user at all on 18.
+                compat.USER_GROUPS_FIELD: [
+                    (6, 0, [cls.env.ref("base.group_user").id, cls.scoped_group.id])
+                ],
             }
         )
 
