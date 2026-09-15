@@ -3,6 +3,57 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.20.5] - 2026-09-08
+
+### Fixed
+- **User form crashed (`UndefinedColumn: auth_totp_device.x_role_id`)
+  when 2FA is in use.** `auth_totp.device` inherits `res.users.apikeys`
+  by prototype inheritance, so Odoo copies this module's `x_role_id`,
+  `x_state`, `x_last_used` and `x_use_count` fields onto its own
+  `auth_totp_device` table. Our `init()` hard-coded `res_users_apikeys`
+  as the target table, so those columns were never created on
+  `auth_totp_device`; reading a user's trusted TOTP devices (e.g. while
+  granting another user MCP Pro admin rights) then raised
+  `psycopg2.errors.UndefinedColumn`. `init()` now keys every DDL
+  statement on `self._table`, so the columns are provisioned on both
+  tables. Existing databases are healed on upgrade — no manual migration
+  needed. Reported by Mil Cuyvers (DCBO Open Solutions).
+- **Install aborted on databases with a pre-existing `auditlog` rule.**
+  `post_init_hook` seeds a draft `auditlog.rule` per AI-target model, but
+  `auditlog.rule` enforces `unique(model_id)` (one rule per model). The
+  hook only skipped a model when a rule with *our* exact name already
+  existed, so a database that already had an audit rule on that model
+  under a different name (e.g. migrated from a pre-existing OCA
+  `auditlog` install) hit the constraint and the whole install failed.
+  The hook now skips a model when *any* rule already exists for it,
+  leaving the operator's rule untouched. Also reported by Mil Cuyvers.
+
+## [19.0.1.20.3] - 2026-08-14
+
+### Fixed
+- **Full-log audit rules could roll back a whole transaction.**
+  Confirming a sales order that creates a project (with a document
+  folder) and a delivery in one transaction failed with
+  `AssertionError: Could not find all values of ir.attachment(N,) to
+  flush them`. A `log_type = full` rule snapshots every audited field
+  of the new record; that set included `stock.picking.signature`, a
+  `fields.Image` and therefore attachment-backed. Reading it is not a
+  column read — `Binary.read` resolves the value through
+  `ir.attachment.search_fetch`, and a search flushes the model it
+  searches. With a deferred `ir.attachment.res_id` write still open
+  from `documents_project`, that flush could not find the pending
+  value in the cache and the transaction rolled back.
+  `auditlog.rule.get_auditlog_fields` now drops binary fields, so the
+  audit path never touches `ir.attachment`. One override covers
+  `create_full`, `write_full` and `unlink_full`, which share that
+  method. As a side effect file contents no longer land in
+  `auditlog_log_line`.
+  The rule's `fields_to_exclude_ids` does not help here — it is applied
+  in `create_logs`, after the values have already been read.
+  Reported by Daniël Roos (Roos AI) against Odoo 19 / odoo.sh.
+  Upstream OCA `auditlog` has no equivalent filter yet; this override
+  can be dropped once it does.
+
 ## [19.0.1.20.1] - 2026-07-06
 
 ### Fixed

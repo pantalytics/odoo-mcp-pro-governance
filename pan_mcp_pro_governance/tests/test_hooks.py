@@ -52,6 +52,35 @@ class TestPostInitHook(TransactionCase):
         )
         self.assertEqual(before, after)
 
+    def test_preexisting_rule_on_model_does_not_break_install(self):
+        """A model that already has an audit rule under a different name
+        (e.g. migrated from a pre-existing OCA `auditlog` install) must be
+        skipped, not have a second rule created. auditlog.rule enforces
+        unique(model_id), so seeding a second one would abort the install.
+
+        Regression for the DCBO / Mil Cuyvers report, 2026-07-09.
+        """
+        partner_model = self.IrModel.search([("model", "=", "res.partner")], limit=1)
+        self.assertTrue(partner_model)
+        # Drop the rule seeded at install time and put an operator-style
+        # rule under a different name in its place.
+        self.AuditlogRule.search([("model_id", "=", partner_model.id)]).unlink()
+        own_rule = self.AuditlogRule.create(
+            {
+                "name": "Operator's own partner rule",
+                "model_id": partner_model.id,
+                "state": "draft",
+            }
+        )
+        # Must not raise: previously this hit unique(model_id).
+        post_init_hook(self.env)
+        rules = self.AuditlogRule.search([("model_id", "=", partner_model.id)])
+        self.assertEqual(
+            rules,
+            own_rule,
+            "hook must leave the pre-existing rule as the only one on the model",
+        )
+
     def test_unknown_model_is_skipped_silently(self):
         """A SEEDED_RULES entry for a missing model is a no-op, not an error."""
         # No model named "definitely.not.a.model" exists, so the helper
