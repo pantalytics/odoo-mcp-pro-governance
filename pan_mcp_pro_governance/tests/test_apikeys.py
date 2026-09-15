@@ -110,7 +110,7 @@ class TestApiKeyFieldsOnTotpDevice(TransactionCase):
 
     def _columns(self, table):
         self.env.cr.execute(
-            "SELECT column_name FROM information_schema.columns " "WHERE table_name = %s",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
             (table,),
         )
         return {row[0] for row in self.env.cr.fetchall()}

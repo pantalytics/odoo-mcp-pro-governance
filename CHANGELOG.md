@@ -3,6 +3,40 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.23.0] - 2026-09-15
+
+### Fixed
+- **Record rules were intersected with the user's own groups, not the
+  role's, on Odoo 18.** `ir.rule._compute_domain` reads
+  `self.env.user.groups_id` below Odoo 19 (19 reads `all_group_ids`, which
+  this module narrows). Rules bound to the user's non-role groups were
+  dropped from the domain, so a narrowed key saw *more* rows than its role
+  allowed. `_mcp_compute_domain_narrowed` closes it for < 19. Found while
+  fixing the same layer on Odoo 17 (17.0.1.21.0).
+- **`_get_allowed_models` used `env.execute_query`**, which only exists
+  from Odoo 18. Now `cr.execute`, which works on every supported version.
+  No behaviour change on 19.
+
+### Added
+- Odoo 17 support in the shared source: `_get_group_ids` fallback,
+  `_has_group`, `ir.rule._get_rules` and the `res.users.check` classmethod
+  are overridden below Odoo 18, where core has no group-resolution seam.
+  Inert on 18 and 19.
+- `tests/test_role_narrowing.py` — narrowing tests that ask Odoo the
+  questions Odoo asks itself during a real RPC call (allowed models, group
+  membership, which rows come back), instead of calling this module's own
+  methods and asserting on their return values.
+- [docs/dev/odoo-17-narrowing.md](docs/dev/odoo-17-narrowing.md) — the
+  per-version seam table and what to re-check on a major upgrade.
+
+### Changed
+- CI runs on the `17.0` and `18.0` branches as well, derives the Odoo
+  series from the manifest version instead of hard-coding `19.0`, and
+  invokes `odoo-bin` rather than `python -m odoo` (which put the CWD first
+  on `sys.path`, where a directory named `odoo/` shadowed the package).
+  The trunk job still renders as "Odoo 19 module tests", so existing
+  branch protection keeps matching.
+
 ## [19.0.1.20.5] - 2026-09-08
 
 ### Fixed
