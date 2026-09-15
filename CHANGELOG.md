@@ -16,6 +16,13 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 - **`_get_allowed_models` used `env.execute_query`**, which only exists
   from Odoo 18. Now `cr.execute`, which works on every supported version.
   No behaviour change on 19.
+- **The API-key role subset check compared a closure against a raw
+  assignment list.** `_mcp_excess_group_ids` closed the role's groups
+  transitively but read only the groups explicitly ticked on the owner's
+  form. A user holding `base.group_user` implicitly holds everything it
+  implies, so a role implying that group was reported as granting more
+  than its owner ("Technical Features") and refused. Both sides are now
+  compared as effective group sets.
 
 ### Added
 - Odoo 17 support in the shared source: `_get_group_ids` fallback,
