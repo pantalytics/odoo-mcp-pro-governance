@@ -122,7 +122,7 @@ jobs:
         run: |
           pip install --upgrade pip wheel
           pip install -r requirements.txt
-          # Editable install so `python -m odoo` works.
+          # Editable install so Odoo's dependencies resolve against it.
           pip install -e .
 
       - name: Wait for Postgres
@@ -151,13 +151,23 @@ jobs:
         # This is what the Odoo App Store reviewer actually does; if it
         # fails the listing is rejected, so we keep it as a distinct
         # gate from the test run.
+        #
+        # Run `odoo-bin`, not `python -m odoo`: `-m` puts the CWD first on
+        # sys.path, and the CWD here is the workspace root, which holds the
+        # Odoo checkout in a directory literally named `odoo/`. Python then
+        # binds the name `odoo` to that directory as a namespace package,
+        # shadowing the editable install, and any `from odoo import X` fails
+        # with "cannot import name X from 'odoo' (unknown location)". Odoo 17
+        # hits this on `odoo.tools._monkeypatches`; 19 happens not to, which
+        # is why it stayed hidden. Invoking the script by path puts the Odoo
+        # source root on sys.path instead of the CWD.
         env:
           PGHOST: localhost
           PGPORT: "5432"
           PGUSER: odoo
           PGPASSWORD: odoo
         run: |
-          python -m odoo \
+          python "$GITHUB_WORKSPACE/odoo/odoo-bin" \
             --addons-path="$GITHUB_WORKSPACE/odoo/addons,$GITHUB_WORKSPACE/extra-addons" \
             --db_host=localhost --db_port=5432 --db_user=odoo --db_password=odoo \
             -d install_gate \
@@ -175,7 +185,7 @@ jobs:
           PGUSER: odoo
           PGPASSWORD: odoo
         run: |
-          python -m odoo \
+          python "$GITHUB_WORKSPACE/odoo/odoo-bin" \
             --addons-path="$GITHUB_WORKSPACE/odoo/addons,$GITHUB_WORKSPACE/extra-addons" \
             --db_host=localhost --db_port=5432 --db_user=odoo --db_password=odoo \
             -d test_ci \
