@@ -3,27 +3,25 @@
      License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
  -->
 <odoo>
+    <!-- MCP Pro (issue #26): the upstream OCA "User Roles" page, which put
+         `role_line_ids` (and the helper `role_ids`) on the user form, is
+         deliberately NOT rendered by this inherit.
+
+         Assigning a role to a *user* makes `set_groups_from_roles()` replace
+         that employee's groups with the role's closure — correct OCA
+         behaviour, but not something this product promises. MCP Pro binds a
+         role to an API key (`res.users.apikeys.x_role_id`), which reads
+         `role.group_id | role.implied_ids` and never needs the role to be
+         assigned to the user.
+
+         The model fields are untouched on purpose: pre-existing role lines
+         keep working, and the "managed by roles" alert below still explains
+         them. Do not re-add that page when re-vendoring OCA base_user_role. -->
     <record id="view_res_users_form_inherit" model="ir.ui.view">
         <field name="name">res.users.form.inherit</field>
         <field name="model">res.users</field>
         <field name="inherit_id" ref="base.view_users_form" />
         <field name="arch" type="xml">
-            <xpath expr="//notebook/page[1]" position="before">
-                <page string="User Roles">
-                    <field name="role_ids" invisible="1" />
-                    <field name="role_line_ids" nolabel="1">
-                        <list editable="bottom" decoration-muted="not is_enabled">
-                            <field
-                                name="role_id"
-                                domain="[('id', 'not in', parent.role_ids)]"
-                            />
-                            <field name="date_from" />
-                            <field name="date_to" />
-                            <field name="is_enabled" />
-                        </list>
-                    </field>
-                </page>
-            </xpath>
             <xpath expr="//page[@name='access_rights']/group" position="before">
                 <field name="show_alert" invisible="1" />
                 <div

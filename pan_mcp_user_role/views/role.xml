@@ -50,19 +50,17 @@
                                 options="{'no_create': True}"
                             />
                         </page>
-                        <page string="Users">
-                            <field name="line_ids" nolabel="1">
-                                <list
-                                    editable="bottom"
-                                    decoration-muted="not is_enabled"
-                                >
-                                    <field name="user_id" />
-                                    <field name="date_from" />
-                                    <field name="date_to" />
-                                    <field name="is_enabled" />
-                                </list>
-                            </field>
-                        </page>
+                        <!-- MCP Pro (issue #26): the upstream OCA "Users"
+                             page, which edited `line_ids` (role -> user
+                             assignment), is deliberately NOT rendered here.
+                             Assigning a role to an employee replaces that
+                             employee's groups with the role's closure. In
+                             MCP Pro a role is a scope for an API key
+                             (`res.users.apikeys.x_role_id`), never a way to
+                             manage a person's rights. The `line_ids` field
+                             itself is untouched, so pre-existing assignments
+                             keep working. Do not re-add this page when
+                             re-vendoring OCA base_user_role. -->
                         <page name="page_internal_notes" string="Internal Notes">
                             <field name="comment" />
                         </page>
