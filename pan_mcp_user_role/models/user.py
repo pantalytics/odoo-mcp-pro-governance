@@ -64,8 +64,16 @@ class ResUsers(models.Model):
 
     def set_groups_from_roles(self, force=False):
         """Set (replace) the groups following the roles defined on users.
-        If no role is defined on the user, its groups are let untouched unless
-        the `force` parameter is `True`.
+
+        If no role is defined on the user, its groups are left untouched.
+        This holds under `force` as well: "no roles" always means "leave the
+        groups alone" (see the guard in the loop below).
+
+        The `force` parameter is kept for API compatibility -- callers such as
+        `res.users.role.unlink()` and `res.users.role.line.unlink()` still pass
+        `force=True` -- but it no longer bypasses that guard. Users that do
+        carry role lines are recomputed either way, so a role edit still
+        propagates to its users exactly as before.
         """
         role_groups = {}
         # We obtain all the groups associated to each role first, so that
@@ -75,7 +83,15 @@ class ResUsers(models.Model):
             # (all_implied_ids on 19, trans_implied_ids on <= 18).
             role_groups[role] = list(set(compat.implied_groups(role).ids))
         for user in self:
-            if not user.role_line_ids and not force:
+            # A user without role lines is not managed by this module, so its
+            # groups are none of our business -- not even under `force`.
+            # Without this, `role_line_ids.unlink()` (which calls
+            # `set_groups_from_roles(force=True)`) computes an empty group set
+            # for the now role-less user and strips *every* group off it,
+            # turning an internal user into a share user. See issue #27.
+            # Users that still have role lines fall through and are recomputed
+            # as before, which is what `force` was there for.
+            if not user.role_line_ids:
                 continue
             user_group_ids = compat.user_groups(user).ids
             group_ids = []
