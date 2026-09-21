@@ -73,7 +73,7 @@ class ResGroups(models.Model):
             action["domain"] = [("id", "in", self.role_ids.ids)]
         elif self.role_ids:
             form_view = [
-                (self.env.ref("base_user_role.view_res_users_role_form").id, "form")
+                (self.env.ref("pan_mcp_user_role.view_res_users_role_form").id, "form")
             ]
             if "views" in action:
                 action["views"] = form_view + [
