@@ -3,6 +3,45 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.24.0] - 2026-09-21
+
+Four defects reported by Pressure Control Solutions from an Odoo 17
+staging database. All four reproduced on 19.0, so they are fixed here
+first. Issues #26, #27, #28, #29.
+
+### Fixed
+- **Revoking an API key broke the audit log.**
+  `auditlog.http.request.x_api_key_id` declared `ondelete="set null"`, but
+  core defines `res.users.apikeys` with `_auto = False` and builds that
+  table by hand, so no foreign key exists and the rule never fired. A
+  revoked key left the column pointing at a deleted row, and every view
+  rendering it raised `MissingError`. The key's id and description are now
+  snapshotted as plain data (`x_api_key_ref`, `x_api_key_name`) at write
+  time, on `auditlog.http.request` and on `auditlog.log`, and the views
+  show those instead. Domains keep using the many2one -- a domain never
+  reads the target row. No backfill: rows logged before this version show
+  a blank key rather than crashing.
+- **Unlinking a role line wiped every group on the user and set
+  `share = True`.** `role_line_ids.unlink()` calls
+  `set_groups_from_roles(force=True)`, and `force` bypassed the "no role
+  lines -> leave the groups alone" guard. The guard now holds
+  unconditionally; users that still carry role lines are recomputed as
+  before. Consequence, and the one the reporter asked for: removing the
+  last role line no longer withdraws the groups that role granted.
+- **The role form button raised `ValueError`.**
+  `res_groups.action_view_roles()` still referenced
+  `base_user_role.view_res_users_role_form`, a prefix that stopped
+  existing when the OCA module was vendored in v1.2.0.
+
+### Changed
+- **Role-to-user assignment is no longer exposed in the UI.** Assigning a
+  role to a user replaces that employee's groups with the role's closure
+  -- documented OCA behaviour, but not what this module promises. The
+  "User Roles" page on the user form, the "Users" page on the role form
+  and the wizard's "Assign to user" option are gone. Model fields are
+  untouched, so existing role lines keep working. A role here scopes an
+  API key (`res_users_apikeys.x_role_id`).
+
 ## [19.0.1.23.2] - 2026-09-21
 
 ### Fixed

@@ -8,7 +8,10 @@ from . import (
     test_hooks,
     test_migrations,
     test_request_api_key_id,
+    test_role_form_exposure,
+    test_role_group_action,
     test_role_narrowing,
+    test_role_unlink_groups,
     test_scoped_model_list,
     test_ui_contract,
 )

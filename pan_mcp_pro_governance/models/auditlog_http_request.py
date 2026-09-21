@@ -3,7 +3,7 @@
 
 import re
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.http import request
 
 from .ir_http import (
@@ -22,14 +22,37 @@ _RPC_PATH_RE = re.compile(r"^/(?:web/dataset/call_kw|json/2)/([\w.]+)/(\w+)/?$")
 class AuditlogHTTPRequest(models.Model):
     _inherit = "auditlog.http.request"
 
+    # NOTE — this many2one can dangle. `res.users.apikeys` is `_auto = False`,
+    # so Odoo skips the foreign key for it (`Many2one.update_db_foreign_key`
+    # bails out on a comodel without `_auto`), which means no `ondelete` rule
+    # can ever fire. Revoking a key runs a raw `DELETE FROM res_users_apikeys`
+    # in core's `_remove()`, leaving this column pointing at a row that is
+    # gone; rendering it then raises MissingError. Keep it for domains and
+    # back-compat, but display the x_api_key_ref / x_api_key_name snapshot
+    # below instead. See issue #28.
     x_api_key_id = fields.Many2one(
         comodel_name="res.users.apikeys",
-        string="API Key",
+        string="API Key (link)",
         index=True,
-        ondelete="set null",
         readonly=True,
         help="The API key used to authenticate this request, if any. "
-        "Empty for requests made through a browser session (cookie auth).",
+        "Empty for requests made through a browser session (cookie auth). "
+        "May point at a key that has since been revoked — the audit trail "
+        "reads the API Key / API Key ID snapshot instead.",
+    )
+    x_api_key_ref = fields.Integer(
+        string="API Key ID",
+        index=True,
+        readonly=True,
+        help="Database id the API key had when this request was logged. "
+        "Stored as a plain integer so it survives revocation of the key.",
+    )
+    x_api_key_name = fields.Char(
+        string="API Key",
+        readonly=True,
+        help="Description the API key carried when this request was logged. "
+        "Stored as text so the audit trail stays readable after the key "
+        "is revoked.",
     )
     x_model = fields.Char(
         string="Model",
@@ -56,9 +79,24 @@ class AuditlogHTTPRequest(models.Model):
         # dispatch_rpc). Shared with the audit-rule scope filter.
         api_key_id = current_request_api_key_id()
         if api_key_id:
+            # Snapshot the key identity as plain data in the same breath:
+            # the many2one above outlives the key row it points at.
+            api_key_name = self._mcp_api_key_name(api_key_id)
             for vals in vals_list:
                 vals.setdefault("x_api_key_id", api_key_id)
+                vals.setdefault("x_api_key_ref", api_key_id)
+                vals.setdefault("x_api_key_name", api_key_name)
         return super().create(vals_list)
+
+    @api.model
+    def _mcp_api_key_name(self, api_key_id):
+        """Description of ``api_key_id``, or a stable fallback label.
+
+        sudo: the audit row must record the key that authenticated the
+        request even when the acting user cannot read that key row.
+        """
+        key = self.env["res.users.apikeys"].sudo().browse(api_key_id).exists()
+        return key.name or _("API key #%s", api_key_id)
 
     @api.model
     def current_http_request(self):
