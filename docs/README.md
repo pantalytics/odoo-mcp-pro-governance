@@ -1,6 +1,6 @@
 # Documentation
 
-End-user help for this module lives in **Odoo Knowledge** (`pantalytics.odoo.com` → Help → MCP Pro Governance). Knowledge is the single source of truth — edit articles there, not here. This folder is for developer-facing material only.
+End-user help for this module lives in **Odoo Knowledge** (`odoo.pantalytics.com` → Help → MCP Pro Governance). Knowledge is the single source of truth — edit articles there, not here. This folder is for developer-facing material only.
 
 The Pantalytics website does **not** host docs — only marketing and the app listing.
 
@@ -28,10 +28,10 @@ docs/
 Inline help in views and Python code should link to the **public Knowledge article URL**:
 
 ```
-https://pantalytics.odoo.com/knowledge/article/<id>
+https://odoo.pantalytics.com/knowledge/article/<id>
 ```
 
-The article id is database-stable on `pantalytics.odoo.com`. If we ever recreate an article it gets a new id, so re-grep the codebase for the old number and update the references. Article ids in code should be rare — only used where the inline UX cannot reasonably explain the concept on its own.
+The article id is database-stable on `odoo.pantalytics.com`. If we ever recreate an article it gets a new id, so re-grep the codebase for the old number and update the references. Article ids in code should be rare — only used where the inline UX cannot reasonably explain the concept on its own.
 
 For internal docs (this folder), use relative paths (`[the design rules](dev/design.md)`).
 

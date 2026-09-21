@@ -3,6 +3,13 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.23.2] - 2026-09-21
+
+### Fixed
+- **Help links pointed at the retired `pantalytics.odoo.com` (HTTP 402).**
+  Our Odoo moved to `odoo.pantalytics.com`; article ids came along, so only
+  the domain changed.
+
 ## [19.0.1.23.0] - 2026-09-15
 
 ### Fixed
