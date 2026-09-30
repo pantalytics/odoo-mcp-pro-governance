@@ -7,6 +7,11 @@ from odoo.addons.base.tests.common import BaseCommon
 
 
 class TestModelAuditlogRule(BaseCommon):
+    # Odoo 20's BaseCommon runs as an independent test user with these groups
+    # (earlier versions ignore the attribute and run as admin). Rules touch
+    # window actions and ir.actions.todo, so it needs Settings rights.
+    _test_user_groups = ("base.group_user", "base.group_system")
+
     def test_model_required(self):
         """Model is required, but not as a field property."""
         model_id = self.env.ref("base.model_res_groups").id

@@ -16,7 +16,7 @@
        t-inherit="web.ListView"
        t-inherit-mode="extension">
         <xpath expr="//t[@t-set-slot='control-panel-selection-actions']" position="after">
-            <div t-if="props.context and props.context.mcp_pro_apikeys_help"
+            <div t-if="this.props.context and this.props.context.mcp_pro_apikeys_help"
                  class="alert alert-info mb-2 mx-2 mt-2"
                  role="alert">
                 <p class="mb-1">

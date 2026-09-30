@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.24.0",
+    "version": "19.0.1.25.0",
     "license": "AGPL-3",
     "depends": [
         "base",
@@ -75,6 +75,10 @@
     #   - security/groups_privilege_v19.xml  ->  security/groups_legacy.xml
     #   - drops views/mcp_governance_role_views.xml  (res_user_group_ids widget
     #     is 19-only; 18 uses the OCA default flat tags)
+    # The 20.0 branch swaps every addon's ir.model.access.csv for
+    # ir.access.csv and drops security/mcp_scoped_model_list.xml (Odoo 20
+    # merged ir.model.access + ir.rule into ir.access; the scoping moved to
+    # models/ir_access.py).
     # All Python stays identical across branches via compat.py.
     "data": [
         "security/mcp_pro_governance_groups.xml",

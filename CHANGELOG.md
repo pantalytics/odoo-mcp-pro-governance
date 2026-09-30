@@ -3,6 +3,29 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.25.0] - 2026-09-30
+
+Odoo 20 support. Shared, version-tolerant code on trunk; the `20.0` release
+branch only swaps data files (see docs/dev/multi-version-port-plan.md).
+
+### Added
+- **Scoped API keys on Odoo 20.** Odoo 20 merged `ir.model.access` and
+  `ir.rule` into one `ir.access` model. `models/ir_access.py` adds the role
+  id to the access-cache key, keeps the role-specific error message and the
+  scoped `ir.model` list for the MCP `list_models` tool. Verified end to end
+  on a live Odoo 20 server over `/json/2` and legacy `/jsonrpc`.
+- `security/ir.access.csv` in all three addons (loaded on the 20.0 branch).
+
+### Fixed
+- Audit log line view: Odoo 20 replaced `_table_query` with `_table_sql`;
+  without it the fresh install failed on "has no table".
+- User roles: the Access Rights / Record Rules buttons read `ir.access` on
+  Odoo 20.
+- API Keys help banner crashed the list view on Odoo 20 (Owl 3 needs
+  `this.props` in templates).
+- The audit HTTP request/session fallback now asks OCA's implementation
+  first, so a bound request is always handled there.
+
 ## [19.0.1.24.0] - 2026-09-21
 
 Four defects reported by Pressure Control Solutions from an Odoo 17

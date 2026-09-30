@@ -1,4 +1,7 @@
 from odoo import fields, models
+from odoo.tools import SQL
+
+from .. import compat
 
 
 class AuditlogLogLineView(models.Model):
@@ -62,3 +65,11 @@ class AuditlogLogLineView(models.Model):
     @property
     def _table_query(self):
         return f"SELECT {self._select_query()} FROM {self._from_query()}"
+
+    # Odoo 20 dropped `_table_query` in favour of `_table_sql`; without this
+    # the view has no backing SQL and the install fails on "has no table".
+    if compat.ODOO_VERSION >= 20:
+
+        @property
+        def _table_sql(self):
+            return SQL("(%s)", SQL(self._table_query))

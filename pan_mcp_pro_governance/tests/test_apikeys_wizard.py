@@ -65,8 +65,9 @@ class TestApiKeyWizardValidation(TransactionCase):
         self.assertFalse(plain.has_group("base.group_erp_manager"))
         Desc = self.env["res.users.apikeys.description"]
         values = {"name": "member key"}
+        # 1 day: Odoo 20 caps a user without api_key_duration groups at 1 day.
         if "duration" in Desc._fields:
-            values["duration"] = "30"
+            values["duration"] = "1"
         wiz = Desc.with_user(plain).create(values)
         # Reading the roles the wizard offers must not raise
         # "not allowed to access 'Role' records" for a non-admin.
