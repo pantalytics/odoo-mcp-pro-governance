@@ -16,6 +16,15 @@ registry.category("web_tour.tours").add("pan_mcp_pro_governance.smoke", {
     test: true,
     url: "/odoo",
     steps: () => [
+        // Community 20 lists apps in the navbar apps menu, not on a home
+        // screen: open it first. Inlined `stepUtils.showAppsMenuItem()`,
+        // whose module path differs between Odoo versions.
+        {
+            isActive: ["community", "desktop"],
+            trigger: ".o_navbar_apps_menu button:enabled",
+            content: "Open the apps menu",
+            run: "click",
+        },
         {
             trigger: ".o_app[data-menu-xmlid='pan_mcp_pro_governance.menu_mcp_governance_root']",
             content: "Open the MCP Pro app",

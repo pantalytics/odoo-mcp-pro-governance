@@ -71,7 +71,7 @@
     # Odoo parses __manifest__.py with ast.literal_eval, so this list cannot
     # branch on the running version. The few version-specific data files are
     # therefore the ONE legitimate per-release-branch difference. This is the
-    # **18.0** release branch: it loads the legacy (<= 18) variants —
+    # **17.0** release branch (18.0 is the same): it loads the legacy (<= 18) variants —
     #   - security/groups_legacy.xml          (category_id, no res.groups.privilege)
     #   - no views/mcp_governance_role_views.xml  (res_user_group_ids widget is
     #     19-only; 18 uses the OCA default flat tags)

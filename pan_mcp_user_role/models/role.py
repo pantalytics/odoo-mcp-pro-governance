@@ -29,15 +29,18 @@ class ResUsersRole(models.Model):
     role_user_ids = fields.One2many(
         comodel_name="res.users", string="Users list", compute="_compute_role_user_ids"
     )
+    # Odoo 20 merged ir.model.access and ir.rule into one ir.access model.
+    # There, "Access Rights" are the accesses without a domain and "Record
+    # Rules" the ones with a domain, so the form keeps both buttons.
     rule_ids = fields.Many2many(
-        comodel_name="ir.rule",
+        comodel_name="ir.access" if compat.ODOO_VERSION >= 20 else "ir.rule",
         compute="_compute_rule_ids",
         string="Record Rules",
         required=False,
     )
     rules_count = fields.Integer(compute="_compute_rule_ids")
     model_access_ids = fields.Many2many(
-        comodel_name="ir.model.access",
+        comodel_name="ir.access" if compat.ODOO_VERSION >= 20 else "ir.model.access",
         compute="_compute_model_access_ids",
         string="Access Rights",
         required=False,
@@ -62,17 +65,35 @@ class ResUsersRole(models.Model):
         for role in self.sudo() if self._bypass_rules() else self:
             role.role_user_ids = role.line_ids.mapped("user_id")
 
-    @api.depends("implied_ids", "implied_ids.model_access")
-    def _compute_model_access_ids(self):
-        for rec in self:
-            rec.model_access_ids = rec.implied_ids.model_access.ids
-            rec.model_access_count = len(rec.model_access_ids)
+    if compat.ODOO_VERSION >= 20:
 
-    @api.depends("implied_ids", "implied_ids.rule_groups")
-    def _compute_rule_ids(self):
-        for rec in self:
-            rec.rule_ids = rec.implied_ids.rule_groups.ids
-            rec.rules_count = len(rec.rule_ids)
+        @api.depends("implied_ids", "implied_ids.access_ids")
+        def _compute_model_access_ids(self):
+            for rec in self:
+                rec.model_access_ids = rec.implied_ids.access_ids.filtered(
+                    lambda a: not a.domain
+                )
+                rec.model_access_count = len(rec.model_access_ids)
+
+        @api.depends("implied_ids", "implied_ids.access_ids")
+        def _compute_rule_ids(self):
+            for rec in self:
+                rec.rule_ids = rec.implied_ids.access_ids.filtered("domain")
+                rec.rules_count = len(rec.rule_ids)
+
+    else:
+
+        @api.depends("implied_ids", "implied_ids.model_access")
+        def _compute_model_access_ids(self):
+            for rec in self:
+                rec.model_access_ids = rec.implied_ids.model_access.ids
+                rec.model_access_count = len(rec.model_access_ids)
+
+        @api.depends("implied_ids", "implied_ids.rule_groups")
+        def _compute_rule_ids(self):
+            for rec in self:
+                rec.rule_ids = rec.implied_ids.rule_groups.ids
+                rec.rules_count = len(rec.rule_ids)
 
     @api.model
     def _bypass_rules(self):
@@ -136,12 +157,14 @@ class ResUsersRole(models.Model):
             offset += batch
 
     def show_rule_ids(self):
-        action = self.env["ir.actions.actions"]._for_xml_id("base.action_rule")
+        xmlid = "base.ir_access_action" if compat.ODOO_VERSION >= 20 else "base.action_rule"
+        action = self.env["ir.actions.actions"]._for_xml_id(xmlid)
         action["domain"] = [("id", "in", self.rule_ids.ids)]
         return action
 
     def show_model_access_ids(self):
-        action = self.env["ir.actions.actions"]._for_xml_id("base.ir_access_act")
+        xmlid = "base.ir_access_action" if compat.ODOO_VERSION >= 20 else "base.ir_access_act"
+        action = self.env["ir.actions.actions"]._for_xml_id(xmlid)
         action["domain"] = [("id", "in", self.model_access_ids.ids)]
         return action
 
