@@ -102,9 +102,12 @@ class AuditlogHTTPRequest(models.Model):
     def current_http_request(self):
         # Fast path: when werkzeug request is bound (UI + modern /json/2),
         # defer entirely to OCA's implementation, which also caches the id
-        # on the httprequest object so repeated calls reuse it.
-        if request:
-            return super().current_http_request()
+        # on the httprequest object so repeated calls reuse it. Asking OCA
+        # first (rather than testing `request` here) keeps its own request
+        # lookup authoritative, which its tests patch.
+        result = super().current_http_request()
+        if result or request:
+            return result
 
         # Legacy /jsonrpc and /xmlrpc dispatch through borrow_request(),
         # which unsets the werkzeug threadlocal. Fall back to the snapshot

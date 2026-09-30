@@ -16,8 +16,11 @@ class AuditlogHTTPSession(models.Model):
 
     @api.model
     def current_http_session(self):
-        if request:
-            return super().current_http_session()
+        # OCA first: it handles every call with a bound request (see
+        # auditlog_http_request.current_http_request).
+        result = super().current_http_session()
+        if result or request:
+            return result
 
         snapshot = get_audit_request_snapshot()
         if not snapshot:

@@ -11,7 +11,12 @@ class AuditLogRuleCommon(TransactionCase):
 
     @classmethod
     def create_rule(cls, vals):
-        rule = cls.env["auditlog.rule"].with_context(tracking_disable=True).create(vals)
+        # Odoo 20 runs at_install tests after every module is loaded, so a
+        # rule seeded by a dependent addon (the governance post_init_hook
+        # seeds res.partner) can already exist. One rule per model.
+        Rule = cls.env["auditlog.rule"].with_context(tracking_disable=True)
+        Rule.search([("model_id", "=", vals.get("model_id"))]).unlink()
+        rule = Rule.create(vals)
         # Keep track of patched models
         cls.models |= set(rule.model_id.mapped("model"))
         return rule

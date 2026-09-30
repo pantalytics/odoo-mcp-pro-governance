@@ -42,6 +42,36 @@
 >   - **`env._()`** translation-shortcut is Odoo 18+ → vervangen door de globale
 >     `_()` (werkt op alle versies; gedeelde wijziging).
 
+## Odoo 20 (2026-09-30)
+
+Status: gedeelde code op trunk (`19.0.1.25.0`), lokaal groen op 20.0
+(`0 failed of 112`, governance + auditlog + user_role, incl. tour) en op
+19.0 (`0 failed of 110`). End-to-end op een live 20-server: scoped key
+wordt genarrowed via `/json/2` en `/jsonrpc` (ook op de ormcache-hit),
+audit-log koppelt de key.
+
+Wat er in 20 brak en hoe het is opgelost:
+
+| Breuk in 20 | Oplossing |
+|---|---|
+| `ir.model.access` + `ir.rule` samengevoegd tot `ir.access` | `models/ir_access.py` (alleen geïmporteerd op >= 20): role-id in `_get_access_context` (cache-key), role-foutmelding, `ir.model._access_domain` voor de scoped modellijst. 17-19 houden `ir_model_access.py` / `ir_rule.py`. |
+| Access-CSV heet `ir.access.csv` (kolommen `operation`, `domain`) | `security/ir.access.csv` naast de oude CSV; manifest van `20.0` wisselt. |
+| `_table_query` weg, `_table_sql` in de plaats | `auditlog_log_line_view.py` levert `_table_sql` op >= 20 |
+| API-key wizard + "key ready" scherm opnieuw ontworpen | per-branch xpath (zoals 17.0) |
+| Owl 3: `props` zonder `this.` faalt in templates | `this.props` (werkt ook op 17-19) |
+| Community-home toont apps in het navbar-appsmenu | tour opent eerst het appsmenu |
+| `at_install`-tests draaien pas na álle modules | OCA-tests ruimen de door governance geseede rule op; `BaseCommon` draait als losse user |
+| Python >= 3.12 | CI kiest 3.12 voor serie 20 |
+
+**`20.0`-release-branch delta t.o.v. trunk** (alleen data, geen Python):
+
+1. Drie manifests: `version` → `20.0.…`, `security/ir.model.access.csv` →
+   `security/ir.access.csv`; governance laat
+   `security/mcp_scoped_model_list.xml` weg.
+2. `views/mcp_governance_apikeys_views.xml`: tip-alert anker
+   `//sheet/group[1]`, role-blok anker `//footer`, key-ready anker
+   `//sheet/p[1]`.
+
 ## Fase 3 — bevindingen op echte Odoo 18 (2026-06-18)
 
 De v18-testopstelling (herbruikbaar):

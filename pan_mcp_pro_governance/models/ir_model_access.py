@@ -18,20 +18,13 @@ Two pieces:
 
 We no longer override ``check()`` itself: parent's ``check`` reads from
 ``_get_allowed_models``, which we now narrow at the source.
+
+Odoo 17-19 only: 20 has no ``ir.model.access`` (see ``ir_access.py``).
 """
 
-from odoo import _, models
-from odoo.exceptions import AccessError
+from odoo import models
 
-# Models the MCP introspection tools (notably the server's ``list_models``
-# tool, which does a ``search_read`` on ``ir.model``) must be able to read to
-# enumerate the catalogue -- even for a scoped read-only role that holds none
-# of the technical-model groups. We add these to the role's read set below so
-# the ACL check passes; the *rows* of ``ir.model`` are then scoped back to the
-# role's own models by the global rule in
-# ``security/mcp_scoped_model_list.xml`` (see ``res.users._mcp_ir_model_domain``),
-# so this never widens what a key can actually read.
-MCP_INTROSPECTION_MODELS = ("ir.model",)
+from .res_users import MCP_INTROSPECTION_MODELS
 
 
 class IrModelAccess(models.Model):
@@ -82,22 +75,4 @@ class IrModelAccess(models.Model):
             role = self.env.user._get_api_key_role()
         if not role:
             return super()._make_access_error(model, mode)
-
-        operation_labels = {
-            "read": _("read"),
-            "write": _("write"),
-            "create": _("create"),
-            "unlink": _("delete"),
-        }
-        op_label = operation_labels.get(mode, mode)
-        return AccessError(
-            _(
-                "The API key you are using is bound to the role '%(role)s', "
-                "which does not allow %(operation)s on model '%(model)s'.\n\n"
-                "To fix: either add the required groups to this role in "
-                "MCP Pro → Roles, or use an API key bound to a broader role.",
-                role=role.display_name,
-                operation=op_label,
-                model=model,
-            )
-        )
+        return self.env.user._mcp_role_access_error(role, model, mode)
