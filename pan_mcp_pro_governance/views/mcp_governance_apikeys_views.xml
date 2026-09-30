@@ -59,7 +59,7 @@
             <!-- Surface the "one key per use case" guideline at the very top
                  of the wizard, before any field. This is the moment of
                  creation, so it's where the naming advice belongs. -->
-            <xpath expr="//field[@name='name']" position="before">
+            <xpath expr="//sheet/group[1]" position="before">
                 <div class="alert alert-info" role="alert">
                     <p class="mb-0">
                         <strong>Tip:</strong> use one key per use case
@@ -70,7 +70,10 @@
                     </p>
                 </div>
             </xpath>
-            <!-- Insert before the parent's duration section so the order is:
+            <!-- Odoo 20: the core wizard was redesigned (name in an h1,
+                 scope + expiry in one group), so the Role block anchors just
+                 before the footer, as on 17.0.
+                 Trunk (18/19) inserts before the parent's duration section so the order is:
                  Name → Role → Duration. Anchor structurally on the heading
                  that precedes the `duration` field — NOT on its text.
                  View inheritance runs against the *translated* arch, so an
@@ -79,7 +82,7 @@
                  on any translated instance (e.g. nl_NL). Matching by the
                  `duration` field name is language-independent and also robust
                  to other modules inserting extra h3 headings. -->
-            <xpath expr="//field[@name='duration']/preceding-sibling::h3[1]" position="before">
+            <xpath expr="//footer" position="before">
                 <h3 class="fw-bold">Role <span class="text-muted fw-normal">(optional)</span></h3>
                 <p>
                     Pick a role to scope this key down to a narrower set of
@@ -118,7 +121,7 @@
              or invisible toggle that achieves the same. -->
         <field name="priority">99</field>
         <field name="arch" type="xml">
-            <xpath expr="//p[hasclass('alert-warning')]" position="replace">
+            <xpath expr="//sheet/p[1]" position="replace">
                 <p class="alert alert-warning" role="alert">
                     <strong>Important:</strong>
                     The key cannot be retrieved later. Store it securely.
