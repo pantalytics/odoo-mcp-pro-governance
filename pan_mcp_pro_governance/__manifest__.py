@@ -1,5 +1,5 @@
 {
-    "name": "MCP Pro — Audit Log & Scoped API Keys for AI Agents (Claude, ChatGPT, Gemini)",
+    "name": "MCP Pro Governance — Audit Log & Scoped API Keys for AI Agents (Claude, ChatGPT, Gemini)",
     "summary": "Audit log and scoped API keys for AI agents in Odoo — Claude, ChatGPT, Gemini, Copilot. Free companion to MCP Pro server.",
     "description": """
         MCP Pro - Audit Log & Scoped API Keys for AI Agents in Odoo
