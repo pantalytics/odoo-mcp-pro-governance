@@ -4,7 +4,7 @@ Project context for Claude Code AI assistant working in this repo.
 
 ## Module Overview
 
-**pan_mcp_pro_governance** — Free €0 companion app to **MCP Pro**, the AI connector for Odoo. Distributed via Odoo App Store under the listing name "MCP Pro".
+**pan_mcp_pro_governance** — Free €0 companion app to **MCP Pro**, the AI connector for Odoo. Distributed via Odoo App Store under the listing name "MCP Pro Governance". The manifest name starts with the app's name: the Pantalytics app store reads everything before the first dash as the name, the rest is the search tail.
 
 The actual MCP server (which connects Odoo to Claude/ChatGPT/Cursor/Gemini) runs *outside* Odoo — see [odoo-mcp-pro](https://github.com/pantalytics/odoo-mcp-pro) (open source) and the hosted SaaS at `pantalytics.com/apps/odoo-mcp-server`. This addon installs *inside* the customer's Odoo and is the operator-facing visibility/oversight surface.
 
@@ -237,7 +237,7 @@ make clean        # drop test_* databases
 
 ## App Store positioning rules
 
-- This app is €0, AGPL-3, listed under name "MCP Pro" on Odoo App Store. License is AGPL-3 from v0.2.0 because we depend on OCA `auditlog` (AGPL-3).
+- This app is €0, AGPL-3, listed under name "MCP Pro Governance" on Odoo App Store. License is AGPL-3 from v0.2.0 because we depend on OCA `auditlog` (AGPL-3).
 - `static/description/index.html` allows ONLY `mailto:` and YouTube canonical anchors. **No `https://pantalytics.com` anchors** in listing HTML.
 - The in-app CTA promoting the MCP Pro SaaS lives in a single discreet menu item (planned: Configuration → About) — not banners on every view.
 - Manifest must drop "promised future features" before submission — reviewers flag those as misleading.

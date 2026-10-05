@@ -1,5 +1,5 @@
 {
-    "name": "MCP Pro — Audit Log & Scoped API Keys for AI Agents (Claude, ChatGPT, Gemini)",
+    "name": "MCP Pro Governance — Audit Log & Scoped API Keys for AI Agents (Claude, ChatGPT, Gemini)",
     "summary": "Audit log and scoped API keys for AI agents in Odoo — Claude, ChatGPT, Gemini, Copilot. Free companion to MCP Pro server.",
     "description": """
         MCP Pro - Audit Log & Scoped API Keys for AI Agents in Odoo
@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.25.0",
+    "version": "19.0.1.25.1",
     "license": "AGPL-3",
     "depends": [
         "base",
