@@ -3,7 +3,7 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [19.0.1.25.1] - 2026-10-05
 
 ### Changed
 - Manifest name starts with the app's name, "MCP Pro Governance", so the
