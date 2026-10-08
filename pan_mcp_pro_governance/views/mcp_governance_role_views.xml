@@ -30,10 +30,18 @@
                     This role becomes selectable as an API-key scope for any
                     user whose own access groups already include all the
                     groups ticked below.
-                    <a href="https://odoo.pantalytics.com/knowledge/article/82"
-                       target="_blank" rel="noopener">Learn more</a>.
                 </p>
             </field>
+            <!-- Smart button: the keys scoped to this role. The Users
+                 button next to it lives in pan_mcp_user_role. -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_mcp_show_apikeys"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-key">
+                    <field name="x_apikey_count" widget="statinfo" string="API Keys"/>
+                </button>
+            </xpath>
             <!--
                 Progressive-disclosure helper: visible only while the role is
                 new (id is falsy). Picking a user pre-fills implied_ids via

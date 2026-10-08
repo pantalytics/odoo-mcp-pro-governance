@@ -29,6 +29,7 @@ class ResUsersRole(models.Model):
     role_user_ids = fields.One2many(
         comodel_name="res.users", string="Users list", compute="_compute_role_user_ids"
     )
+    user_count = fields.Integer(compute="_compute_role_user_ids")
     # Odoo 20 merged ir.model.access and ir.rule into one ir.access model.
     # There, "Access Rights" are the accesses without a domain and "Record
     # Rules" the ones with a domain, so the form keeps both buttons.
@@ -64,6 +65,12 @@ class ResUsersRole(models.Model):
     def _compute_role_user_ids(self):
         for role in self.sudo() if self._bypass_rules() else self:
             role.role_user_ids = role.line_ids.mapped("user_id")
+            role.user_count = len(role.role_user_ids)
+
+    def show_role_user_ids(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("base.action_res_users")
+        action["domain"] = [("id", "in", self.role_user_ids.ids)]
+        return action
 
     if compat.ODOO_VERSION >= 20:
 
