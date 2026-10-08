@@ -49,11 +49,15 @@ class TestRoleFormExposure(TransactionCase):
             f"//page[@name='access_rights']//field[@name='{compat.USER_GROUPS_FIELD}']"
         )
         self.assertTrue(widgets, "the standard group widget must still be in the view")
+        # get_view rewrites a node whose `groups` the viewer lacks to
+        # invisible="1" (the debug-only twin); the other one must carry the
+        # switch.
+        switched = [n for n in widgets if "show_alert" in (n.get("invisible") or "")]
+        self.assertTrue(switched, "no group widget hides when a role line is enabled")
         for node in widgets:
-            self.assertIn(
-                "show_alert",
-                node.get("invisible") or "",
-                "every group widget must hide once a role line is enabled",
+            self.assertTrue(
+                node in switched or node.get("invisible") == "1",
+                "a group widget stays visible with a role line enabled",
             )
 
     def test_show_alert_follows_role_lines(self):
