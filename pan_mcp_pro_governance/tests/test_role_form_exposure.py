@@ -37,7 +37,7 @@ class TestRoleFormExposure(TransactionCase):
         tree = self._arch("res.users", "base.view_users_form")
         nodes = tree.xpath("//page[@name='access_rights']//field[@name='role_line_ids']")
         self.assertEqual(len(nodes), 1, "role_line_ids must sit on the Access Rights page")
-        self.assertIn("MCP Pro Governance", nodes[0].get("help") or "")
+        self.assertIn("Roles are additive", nodes[0].get("help") or "")
         self.assertFalse(
             tree.xpath("//page[@name='access_rights']//div[hasclass('alert')]"),
             "the OCA 'managed by roles' alert must be gone",
