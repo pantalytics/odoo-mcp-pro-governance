@@ -47,6 +47,24 @@ MCP Pro
 - Lifecycle-acties als knoppen in de header, alleen zichtbaar in de juiste state. Geen knoppen die niets doen.
 - Smart buttons rechtsboven voor "hoeveel gerelateerde records heeft dit ding" (bv. # API calls vanuit deze agent). Eén klik = de gefilterde lijst.
 
+### Gebruikersformulier: rol of rechten, nooit allebei
+
+- Op het tabblad Access Rights staat één veld, "Access role". Leeg betekent
+  "rechten handmatig" en de standaard Odoo-widget staat eronder. Gevuld
+  betekent "rechten uit de rol" en de widget is weg. Het veld is zelf de
+  schakelaar; geen toggle "Use role" ernaast (twee controls voor één
+  keuze, plus een ongeldige stand).
+- Verbergen, niet read-only. Wie de rechten wil zien, klikt via het
+  standaard Many2one-pijltje door naar de rol.
+- Uitleg zit in de `help=` van het veld (het ?-icoontje), niet in een
+  alert boven het formulier.
+- Een API-key mag optioneel een kleinere rol dragen. Dat is de tweede,
+  optionele laag; de gebruikersrol is de eerste.
+- Het rolformulier heeft geen "Users"-tabblad. Toewijzen gebeurt op de
+  gebruiker; de rol telt alleen (smart buttons Users en API Keys).
+- Wizards (API-key aanmaken, API Key Ready): per stap één kop, één veld,
+  uitleg in de tooltip. Geen tip-banners, geen "Learn more"-links.
+
 ### Tekst & toon
 
 - Engels. Korte zinnen. Geen Latijnse leenwoorden waar een Germaans alternatief bestaat ("set up", niet "configure"; "more info", niet "additional information").

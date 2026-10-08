@@ -1,90 +1,143 @@
-"""Roles must not be assignable to users through the UI (issue #26).
+"""Role or rights on the user form, never both.
 
-OCA ``base_user_role`` (vendored as ``pan_mcp_user_role``) ships a
-``role_line_ids`` page on the user form and a ``line_ids`` ("Users") page
-on the role form. Assigning a role to a real employee makes
-``set_groups_from_roles()`` *replace* that employee's groups with the
-role's closure — documented OCA behaviour, but not something MCP Pro
-promises. Our manifest promises one thing about roles: "bind each API key
-to a single OCA user role", and ``res.users.apikeys.x_role_id`` reads
-``role.group_id | role.implied_ids`` without the role ever being assigned
-to the user.
+A user's rights come from a role (``role_line_ids`` on the Access Rights
+page) or from the standard group widget, and the form shows one of the
+two. ``show_alert`` (OCA: "has an enabled role line") is the switch that
+hides the widget. The role form has no "Users" page: assignment happens
+on the user, the role only counts its users and keys in smart buttons.
 
-So both assignment surfaces are removed from the views. The *model*
-fields stay: this is a view-level change, pre-existing role lines keep
-working, and the "access rights are managed by roles" alert still
-explains them on the user form.
+The API-key wizard and the "API Key Ready" form follow the same rule:
+one heading and one field per step, help in the field tooltip, no
+banners, no external links.
 """
+
+import datetime
 
 from lxml import etree
 from odoo.tests.common import TransactionCase
 
+from .. import compat
+
 
 class TestRoleFormExposure(TransactionCase):
-    """The role<->user assignment fields are not rendered anywhere."""
-
     def _arch(self, model, xmlid):
         """Return the combined, post-processed arch of ``xmlid`` as an etree."""
         view = self.env.ref(xmlid)
         arch = self.env[model].get_view(view.id, "form")["arch"]
         return etree.fromstring(arch)
 
-    def test_role_line_ids_absent_from_user_form(self):
-        """`role_line_ids` must not be reachable on the res.users form."""
-        tree = self._arch("res.users", "base.view_users_form")
-        self.assertFalse(
-            tree.xpath("//field[@name='role_line_ids']"),
-            "res.users form still exposes role_line_ids — assigning a role to a "
-            "user replaces that user's groups. See issue #26 and "
-            "pan_mcp_user_role/views/user.xml.",
-        )
-        self.assertFalse(
-            tree.xpath("//field[@name='role_ids']"),
-            "res.users form still exposes role_ids (the helper the removed "
-            "'User Roles' page used). See issue #26.",
+    def _make_role(self, name, groups):
+        return self.env["res.users.role"].create(
+            {"name": name, "implied_ids": [(6, 0, [g.id for g in groups])]}
         )
 
-    def test_users_list_absent_from_role_form(self):
-        """The role form must not offer the OCA 'Users' assignment list."""
+    # -- user form ----------------------------------------------------------
+
+    def test_role_lines_on_access_rights_page(self):
+        tree = self._arch("res.users", "base.view_users_form")
+        nodes = tree.xpath("//page[@name='access_rights']//field[@name='role_line_ids']")
+        self.assertEqual(len(nodes), 1, "role_line_ids must sit on the Access Rights page")
+        self.assertIn("MCP Pro Governance", nodes[0].get("help") or "")
+        self.assertFalse(
+            tree.xpath("//page[@name='access_rights']//div[hasclass('alert')]"),
+            "the OCA 'managed by roles' alert must be gone",
+        )
+
+    def test_group_widget_hidden_when_a_role_is_set(self):
+        tree = self._arch("res.users", "base.view_users_form")
+        widgets = tree.xpath(
+            f"//page[@name='access_rights']//field[@name='{compat.USER_GROUPS_FIELD}']"
+        )
+        self.assertTrue(widgets, "the standard group widget must still be in the view")
+        for node in widgets:
+            self.assertIn(
+                "show_alert",
+                node.get("invisible") or "",
+                "every group widget must hide once a role line is enabled",
+            )
+
+    def test_show_alert_follows_role_lines(self):
+        user = self.env["res.users"].create({"name": "mcp_probe", "login": "mcp_probe"})
+        self.assertFalse(user.show_alert)
+        role = self._make_role("MCP Probe Role", [self.env.ref("base.group_user")])
+        user.write({"role_line_ids": [(0, 0, {"role_id": role.id})]})
+        self.assertTrue(user.show_alert)
+        self.assertIn(self.env.ref("base.group_user"), compat.user_groups(user))
+        user.role_line_ids.unlink()
+        self.assertFalse(user.show_alert)
+        # Removing the role keeps the groups (issue #27).
+        self.assertIn(self.env.ref("base.group_user"), compat.user_groups(user))
+
+    # -- role form ----------------------------------------------------------
+
+    def test_role_form_counts_instead_of_listing(self):
         tree = self._arch("res.users.role", "pan_mcp_user_role.view_res_users_role_form")
         self.assertFalse(
             tree.xpath("//field[@name='line_ids']"),
-            "res.users.role form still exposes line_ids — a role is an API-key "
-            "scope, not a way to manage a person's rights. See issue #26 and "
-            "pan_mcp_user_role/views/role.xml.",
+            "the role form must not carry the OCA 'Users' assignment list",
         )
-
-    def test_role_form_still_shows_its_groups(self):
-        """Regression guard: removing the Users page must not touch the Groups page."""
-        tree = self._arch("res.users.role", "pan_mcp_user_role.view_res_users_role_form")
+        self.assertTrue(tree.xpath("//button[@name='show_role_user_ids']"))
+        self.assertTrue(tree.xpath("//button[@name='action_mcp_show_apikeys']"))
         self.assertTrue(
             tree.xpath("//field[@name='implied_ids']"),
-            "The role form lost its Access Rights widget on implied_ids.",
+            "the role form lost its Access Rights widget on implied_ids",
         )
+        self.assertFalse(tree.xpath("//a[starts-with(@href, 'http')]"))
 
-    def test_assignment_fields_still_exist_on_the_models(self):
-        """This is a view-level change — the OCA fields stay on the models.
-
-        Pre-existing role lines (seeded before the upgrade, or created by
-        the ``wizard.create.role.from.user`` wizard) must keep resolving.
-        """
-        self.assertIn("role_line_ids", self.env["res.users"]._fields)
-        self.assertIn("line_ids", self.env["res.users.role"]._fields)
-
-    def test_create_from_user_wizard_cannot_assign(self):
-        """The Action-menu wizard must not offer role assignment (issue #26).
-
-        `wizard.create.role.from.user` is bound to the user form, and its
-        upstream `assign_to_user` option defaulted to True -- reopening the
-        exact assignment path this issue closes, from a menu that is still
-        visible. Reading a user's groups into a fresh role stays useful, so
-        the wizard survives without the option.
-        """
-        self.assertNotIn(
-            "assign_to_user",
-            self.env["wizard.create.role.from.user"]._fields,
-            "the wizard must not carry an assign-to-user option",
+    def test_role_smart_button_counts(self):
+        role = self._make_role("MCP Count Role", [self.env.ref("base.group_user")])
+        self.assertEqual(role.user_count, 0)
+        self.assertEqual(role.x_apikey_count, 0)
+        user = self.env["res.users"].create(
+            {
+                "name": "mcp_count",
+                "login": "mcp_count",
+                "role_line_ids": [(0, 0, {"role_id": role.id})],
+            }
         )
+        role.invalidate_recordset()
+        self.assertEqual(role.user_count, 1)
+        self.assertIn(user, role.role_user_ids)
+        api = self.env["res.users.apikeys"].with_user(user)
+        if compat.ODOO_VERSION >= 18:
+            api._generate("rpc", "k", datetime.datetime.now() + datetime.timedelta(days=1))
+        else:
+            api._generate("rpc", "k")
+        self.env["res.users.apikeys"].sudo().search(
+            [("user_id", "=", user.id)], order="id desc", limit=1
+        ).write({"x_role_id": role.id})
+        role.invalidate_recordset()
+        self.assertEqual(role.x_apikey_count, 1)
+        action = role.action_mcp_show_apikeys()
+        self.assertEqual(action["domain"], [("x_role_id", "in", [role.id])])
+        action = role.show_role_user_ids()
+        self.assertEqual(action["domain"], [("id", "in", [user.id])])
+
+    # -- API-key wizard and ready form ---------------------------------------
+
+    def test_apikey_wizard_is_plain(self):
+        tree = self._arch("res.users.apikeys.description", "base.form_res_users_key_description")
+        self.assertFalse(tree.xpath("//div[hasclass('alert')]"), "no tip banner")
+        self.assertFalse(tree.xpath("//a[starts-with(@href, 'http')]"), "no external links")
+        role = tree.xpath("//field[@name='x_role_id']")
+        self.assertEqual(len(role), 1)
+        self.assertEqual(role[0].get("placeholder"), "No role, same rights as you")
+        self.assertTrue(role[0].get("help"))
+        name = tree.xpath("//field[@name='name']")[0]
+        self.assertTrue(name.get("help"))
+
+    def test_apikey_ready_form_names_the_rights(self):
+        tree = self._arch("res.users.apikeys.show", "base.form_res_users_key_show")
+        self.assertTrue(tree.xpath("//field[@name='x_role_id']"))
+        warnings = tree.xpath("//p[hasclass('alert-warning')]")
+        self.assertEqual(len(warnings), 1)
+        self.assertNotIn("full access", etree.tostring(warnings[0], encoding="unicode"))
+
+    # -- unchanged on purpose -----------------------------------------------
+
+    def test_create_from_user_wizard_does_not_assign(self):
+        """ "Create role from user" reads the groups; assigning is done on the user."""
+        self.assertNotIn("assign_to_user", self.env["wizard.create.role.from.user"]._fields)
         user = self.env["res.users"].create(
             {"name": "mcp_wizard_probe", "login": "mcp_wizard_probe"}
         )
@@ -95,7 +148,4 @@ class TestRoleFormExposure(TransactionCase):
         )
         wizard.create_from_user()
         user.invalidate_recordset()
-        self.assertFalse(
-            user.role_line_ids,
-            "creating a role from a user must not assign that role to them",
-        )
+        self.assertFalse(user.role_line_ids)

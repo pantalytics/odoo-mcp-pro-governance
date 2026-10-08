@@ -89,4 +89,8 @@ class ResUsersApikeysDescription(models.TransientModel):
                 vals["x_role_id"] = role_id
             new_key.write(vals)
 
+        # The "API Key Ready" form shows which rights the key carries.
+        if role_id and isinstance(action, dict):
+            action.setdefault("context", {})["default_x_role_id"] = role_id
+
         return action

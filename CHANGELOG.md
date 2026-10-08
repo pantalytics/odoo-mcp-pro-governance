@@ -3,6 +3,30 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.26.0] - 2026-10-08
+
+Roles are back on users. v1.24 hid role assignment (#26) because
+assigning a role replaces the user's groups; that is now the point.
+
+### Changed
+- **User form: role or rights, never both.** The Access Rights page
+  starts with one field, "Access role". Empty: the standard group widget
+  shows below it. Set: the widget is hidden and rights come from the role
+  (one click through the field's arrow). The OCA "managed by roles" alert
+  is gone. Validity dates are optional, hidden list columns.
+- **Role form** counts instead of listing: smart buttons "Users" and
+  "API Keys", no "Users" page. The "Learn more" link is gone.
+- **API-key wizard**: one heading and one field per step. The tip banner,
+  the three explainer paragraphs, the "Learn more" link and the italic
+  "No role" line are replaced by a placeholder ("No role, same rights as
+  you") and a one-sentence tooltip on each field.
+- **API Key Ready** shows "Rights: <role>" (or "Same as your account")
+  and a one-sentence warning.
+
+pan_mcp_pro_governance 19.0.1.26.0, pan_mcp_user_role 19.0.1.0.7.
+Existing databases need `-u pan_mcp_user_role` as well. Supersedes #26
+and #38.
+
 ## [19.0.1.25.1] - 2026-10-05
 
 ### Changed

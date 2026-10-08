@@ -11,6 +11,18 @@
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button
+                            name="show_role_user_ids"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-users"
+                        >
+                            <field
+                                name="user_count"
+                                widget="statinfo"
+                                string="Users"
+                            />
+                        </button>
+                        <button
                             name="show_model_access_ids"
                             type="object"
                             class="oe_stat_button"
@@ -50,17 +62,9 @@
                                 options="{'no_create': True}"
                             />
                         </page>
-                        <!-- MCP Pro (issue #26): the upstream OCA "Users"
-                             page, which edited `line_ids` (role -> user
-                             assignment), is deliberately NOT rendered here.
-                             Assigning a role to an employee replaces that
-                             employee's groups with the role's closure. In
-                             MCP Pro a role is a scope for an API key
-                             (`res.users.apikeys.x_role_id`), never a way to
-                             manage a person's rights. The `line_ids` field
-                             itself is untouched, so pre-existing assignments
-                             keep working. Do not re-add this page when
-                             re-vendoring OCA base_user_role. -->
+                        <!-- MCP Pro: no "Users" page. A role is assigned
+                             from the user's Access Rights page; this form
+                             only counts them (smart button above). -->
                         <page name="page_internal_notes" string="Internal Notes">
                             <field name="comment" />
                         </page>
