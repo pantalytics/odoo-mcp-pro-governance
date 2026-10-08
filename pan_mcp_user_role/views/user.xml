@@ -3,42 +3,49 @@
      License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
  -->
 <odoo>
-    <!-- MCP Pro (issue #26): the upstream OCA "User Roles" page, which put
-         `role_line_ids` (and the helper `role_ids`) on the user form, is
-         deliberately NOT rendered by this inherit.
+    <!-- MCP Pro: the role sits on the Access Rights page, not on a page of
+         its own, and it replaces the group widget instead of sitting next
+         to it. One field decides: no role means "set rights below" and the
+         standard widget shows; a role means "rights come from the role"
+         and the widget is hidden (`show_alert`, the OCA compute for "has an
+         enabled role line", is the switch). The upstream alert that warned
+         "changes here will not be persistent" is gone: nothing persists
+         because nothing is shown.
 
-         Assigning a role to a *user* makes `set_groups_from_roles()` replace
-         that employee's groups with the role's closure — correct OCA
-         behaviour, but not something this product promises. MCP Pro binds a
-         role to an API key (`res.users.apikeys.x_role_id`), which reads
-         `role.group_id | role.implied_ids` and never needs the role to be
-         assigned to the user.
-
-         The model fields are untouched on purpose: pre-existing role lines
-         keep working, and the "managed by roles" alert below still explains
-         them. Do not re-add that page when re-vendoring OCA base_user_role. -->
+         Anchors are Odoo 19+ (`role` radio, `group_ids`). The 17/18 release
+         branches swap this file; see docs/dev/multi-version-port-plan.md. -->
     <record id="view_res_users_form_inherit" model="ir.ui.view">
         <field name="name">res.users.form.inherit</field>
         <field name="model">res.users</field>
         <field name="inherit_id" ref="base.view_users_form" />
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='access_rights']/group" position="before">
+            <xpath expr="//page[@name='access_rights']//field[@name='role']" position="after">
                 <field name="show_alert" invisible="1" />
-                <div
-                    class="alert alert-info text-center o_form_header"
-                    invisible="not show_alert"
-                    role="alert"
+                <field
+                    name="role_line_ids"
+                    string="Access role"
+                    colspan="2"
+                    help="Rights come from this role, not from the boxes below. Roles are part of MCP Pro Governance."
                 >
-                    <div>
-                        <strong
-                        >The access rights of this user are managed by roles.</strong>
-                    </div>
-                    <div>
-                        <em
-                        >Any configuration changes made here will not be persistent.</em>
-                    </div>
-                    <a class="close" data-bs-dismiss="alert" href="#">x</a>
-                </div>
+                    <list editable="bottom">
+                        <field name="role_id" options="{'no_create': True}" />
+                        <field name="date_from" optional="hide" />
+                        <field name="date_to" optional="hide" />
+                    </list>
+                </field>
+            </xpath>
+            <!-- Core renders the widget twice (debug / no-debug); hide both. -->
+            <xpath
+                expr="(//page[@name='access_rights']//field[@name='group_ids'])[1]"
+                position="attributes"
+            >
+                <attribute name="invisible">show_alert</attribute>
+            </xpath>
+            <xpath
+                expr="(//page[@name='access_rights']//field[@name='group_ids'])[2]"
+                position="attributes"
+            >
+                <attribute name="invisible">share or show_alert</attribute>
             </xpath>
         </field>
     </record>

@@ -48,82 +48,54 @@
         </field>
     </record>
 
-    <!-- Inherit the API-key wizard form: insert a required Role dropdown
-         between Description and Duration. The dropdown is filtered to the
-         current user's own assigned roles. -->
+    <!-- API-key wizard: one heading, one field per step. Name gets a
+         placeholder and a one-sentence tooltip (no tip banner), Role gets
+         the same treatment between Name and Duration. The empty Role field
+         reads as the choice itself: "No role, same rights as you". -->
     <record id="view_apikey_description_form_inherit" model="ir.ui.view">
         <field name="name">res.users.apikeys.description.form.mcp_pro</field>
         <field name="model">res.users.apikeys.description</field>
         <field name="inherit_id" ref="base.form_res_users_key_description"/>
         <field name="arch" type="xml">
-            <!-- Surface the "one key per use case" guideline at the very top
-                 of the wizard, before any field. This is the moment of
-                 creation, so it's where the naming advice belongs. -->
-            <xpath expr="//field[@name='name']" position="before">
-                <div class="alert alert-info" role="alert">
-                    <p class="mb-0">
-                        <strong>Tip:</strong> use one key per use case
-                        — for example <em>Claude</em>, <em>n8n</em>,
-                        <em>nightly-report-script</em>. Easier to trace
-                        in the audit log, and you can revoke one
-                        without breaking the others.
-                    </p>
-                </div>
-            </xpath>
-            <!-- Insert before the parent's duration section so the order is:
-                 Name → Role → Duration. Anchor structurally on the heading
-                 that precedes the `duration` field — NOT on its text.
-                 View inheritance runs against the *translated* arch, so an
-                 xpath like `//h3[contains(., 'Give a duration')]` matches only
-                 when the UI language is English and raises "Element not found"
-                 on any translated instance (e.g. nl_NL). Matching by the
-                 `duration` field name is language-independent and also robust
-                 to other modules inserting extra h3 headings. -->
+            <field name="name" position="attributes">
+                <attribute name="placeholder">Claude, n8n, nightly report</attribute>
+                <attribute name="help">One key per use. Name it after what uses it.</attribute>
+            </field>
+            <!-- Anchor on the `duration` field, not on the heading text:
+                 inheritance runs against the translated arch, so a text
+                 match breaks on any non-English instance. -->
             <xpath expr="//field[@name='duration']/preceding-sibling::h3[1]" position="before">
-                <h3 class="fw-bold">Role <span class="text-muted fw-normal">(optional)</span></h3>
-                <p>
-                    Pick a role to scope this key down to a narrower set of
-                    permissions. Leave empty to inherit your user's full
-                    permissions (the standard Odoo behaviour).
-                </p>
+                <h3 class="fw-bold">Role</h3>
                 <field name="x_available_role_ids" invisible="1"/>
                 <field name="x_role_id"
                        options="{'no_create': True, 'no_open': True}"
                        domain="[('id', 'in', x_available_role_ids)]"
-                       placeholder="Select a role…"/>
-                <p class="text-muted small mt-2">
-                    Only roles whose access groups fit within your own are
-                    listed — a key cannot grant more than its owner.
-                    <a href="https://odoo.pantalytics.com/knowledge/article/82"
-                       target="_blank" rel="noopener">Learn more</a>.
-                </p>
-                <p invisible="x_role_id" class="text-muted">
-                    <em>No role: this key will have the same access as your
-                    user account.</em>
-                </p>
+                       placeholder="No role, same rights as you"
+                       help="Narrows this key to the role's rights. Only roles that fit within yours are listed."/>
             </xpath>
         </field>
     </record>
 
-    <!-- Inherit the "API Key Ready" show form: rewrite the misleading
-         "full access to your user account" warning. With this addon, a
-         key's effective permissions depend on whether a role was set. -->
+    <!-- "API Key Ready": one-sentence warning plus a Rights line that names
+         the role (native arrow to open it) or says the key has the same
+         rights as the account. -->
     <record id="view_apikey_show_form_inherit" model="ir.ui.view">
         <field name="name">res.users.apikeys.show.form.mcp_pro</field>
         <field name="model">res.users.apikeys.show</field>
         <field name="inherit_id" ref="base.form_res_users_key_show"/>
-        <!-- priority &gt;= 99 silences OCA's xml-view-dangerous-replace-low-priority
-             warning. We intentionally replace the full paragraph because the
-             original text wrongly promises "full access" — there is no attribute
-             or invisible toggle that achieves the same. -->
+        <!-- priority >= 99 silences OCA's xml-view-dangerous-replace-low-priority
+             warning. The original paragraph promises "full access", which is
+             wrong once a role is set; there is no attribute that fixes that. -->
         <field name="priority">99</field>
         <field name="arch" type="xml">
             <xpath expr="//p[hasclass('alert-warning')]" position="replace">
+                <group>
+                    <field name="x_role_id" string="Rights" invisible="not x_role_id"/>
+                    <label for="x_role_id" string="Rights" invisible="x_role_id"/>
+                    <span invisible="x_role_id">Same as your account</span>
+                </group>
                 <p class="alert alert-warning" role="alert">
-                    <strong>Important:</strong>
-                    The key cannot be retrieved later. Store it securely.
-                    Its effective permissions are determined by the role you
-                    assigned — review and revoke from Settings → Users.
+                    Copy it now. It cannot be shown again.
                 </p>
             </xpath>
         </field>

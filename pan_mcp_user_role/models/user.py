@@ -18,7 +18,7 @@ class ResUsers(models.Model):
 
     show_alert = fields.Boolean(compute="_compute_show_alert")
 
-    @api.depends("role_line_ids")
+    @api.depends("role_line_ids", "role_line_ids.date_from", "role_line_ids.date_to")
     def _compute_show_alert(self):
         for user in self:
             user.show_alert = user.role_line_ids.filtered(lambda rec: rec.is_enabled)

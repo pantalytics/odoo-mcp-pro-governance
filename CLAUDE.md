@@ -21,9 +21,14 @@ For the full three-repo family map see [docs/research/07_related_repos.md](docs/
 Two product surfaces, two dependencies. Almost all of v0.4 is `_inherit`
 overrides on existing Odoo / OCA models, not new models.
 
-**Surface 1 — scoped API keys** (added in v0.3, hardened in v0.4):
+**Surface 1 — roles and scoped API keys** (added in v0.3, hardened in v0.4):
+- A user's rights come from a role (`res.users.role_line_ids`, on the
+  Access Rights page) or from the standard group widget; the form shows
+  one of the two (v1.26, see docs/dev/design.md). The OCA sync
+  `set_groups_from_roles()` replaces the user's groups with the role's
+  closure; "no roles" leaves the groups alone (#27).
 - Each `res.users.apikeys` row can bind to a single `res.users.role`
-  via `x_role_id`. State (`x_state` = active / suspended / revoked) +
+  via `x_role_id`, as an optional narrower scope. State (`x_state` = active / suspended / revoked) +
   observability fields (`x_last_used`, `x_use_count`).
 - During a request authenticated by a role-bound key, the user's
   effective groups are narrowed to the role's groups.
@@ -121,7 +126,9 @@ When a field's semantic meaning is *new* to the domain (e.g. "the technical user
 |---|---|
 | `models/res_users.py` | `_get_group_ids` and `_compute_all_group_ids` overrides — the source of narrowing. Plus `_get_api_key_role()` helper that reads role-id from session + thread-local. Overrides `_check_uid_passwd` to re-apply the role thread-local and audit api-key id on every call: the parent is `ormcache('uid', 'passwd')`, so on cache hits the `_check_credentials` chain (where role + audit are normally wired) is skipped — without this the legacy `/jsonrpc` and `/xmlrpc` endpoints would silently lose narrowing after the first call. Uses an own `@ormcache('uid', 'passwd')`-keyed resolver so the lookup invalidates together with Odoo's password cache. |
 | `models/res_users_apikeys.py` | Adds `x_role_id`, `x_state`, `x_last_used`, `x_use_count` to the native API key model. Overrides `_check_credentials` to stash role-id on both session and thread-local (cache-miss path) and to push the api-key id into the audit-request snapshot. Manages a per-thread storage in `_mcp_thread_local`. |
-| `models/res_users_apikeys_description.py` | Wizard inherit: adds the optional Role dropdown filtered to the user's own roles. Carries the role over to the freshly-generated key in `make_key`. |
+| `models/res_users_apikeys_description.py` | Wizard inherit: adds the optional Role dropdown filtered to the user's own roles. Carries the role over to the freshly-generated key in `make_key` and into the "API Key Ready" context. |
+| `models/res_users_apikeys_show.py` | Adds `x_role_id` to the abstract "API Key Ready" model so the form can show "Rights: <role>". |
+| `models/res_users_role.py` | Role-form helpers: Odoo 19 access-rights widget hierarchy, "copy from user" seed, and the API Keys smart button (`x_apikey_count`). The Users smart button lives in `pan_mcp_user_role`. |
 | `models/ir_model_access.py` | Bypasses parent's ormcache(uid, mode) when an API-key role is active, then re-runs the same SQL with the narrowed group ids. Plus `_make_access_error` rewrite for clearer role-context messages. |
 | `models/ir_rule.py` | Adds `_mcp_api_key_role_id` to `_compute_domain_keys` so the rule-domain cache differentiates per role. Threads the role id through `env.context` during a narrowed call. |
 | `models/ir_http.py` | Resets the API-key role thread-local at the start of every request so a UI session that follows an API-key request on the same worker thread is not inadvertently narrowed. Also snapshots werkzeug request context (path, url_root, session sid, uid) on a thread-local before `super()._dispatch`, so the audit-log capture can still see what was hit on legacy `/jsonrpc` and `/xmlrpc` — Odoo's `dispatch_rpc()` pops the request via `borrow_request()`, leaving `request` unbound during execute_kw. |
