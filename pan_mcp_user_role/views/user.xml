@@ -25,12 +25,13 @@
                     name="role_line_ids"
                     string="Access role"
                     colspan="2"
-                    help="Rights come from this role, not from the boxes below. Roles are part of MCP Pro Governance."
+                    help="When one or more roles are linked to this user, their rights are used. Roles are additive."
                 >
                     <list editable="bottom">
+                        <control>
+                            <create string="Add a role" />
+                        </control>
                         <field name="role_id" options="{'no_create': True}" />
-                        <field name="date_from" optional="hide" />
-                        <field name="date_to" optional="hide" />
                     </list>
                 </field>
             </xpath>
