@@ -12,6 +12,10 @@ class ResUsers(models.Model):
         comodel_name="res.users.role.line",
         inverse_name="user_id",
         string="Role lines",
+        # A line's `active` is related to its user's, which an unsaved line
+        # reads as False; with the default active_test the form would drop
+        # it and `show_alert` would only flip after Save.
+        context={"active_test": False},
         default=lambda self: self._default_role_lines(),
         groups="base.group_erp_manager",
     )
