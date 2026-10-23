@@ -29,7 +29,7 @@
                         name="role_line_ids"
                         string="Access role"
                         colspan="2"
-                        help="When one or more roles are linked to this user, their rights are used. Roles are additive."
+                        help="Leave empty to set rights by hand below. When one or more roles are linked to this user, their rights are used. Roles are additive."
                     >
                         <tree editable="bottom">
                             <control>
