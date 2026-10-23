@@ -3,6 +3,18 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.26.2] - 2026-10-23
+
+### Fixed
+- **User form: adding a role hides the rights widget right away.** It
+  only disappeared after Save, so a new user showed the role and the
+  widget side by side. A role line takes its "active" from its user, and
+  an unsaved line counted as archived.
+- The "Access role" tooltip now says that empty means rights by hand.
+
+pan_mcp_pro_governance 19.0.1.26.2, pan_mcp_user_role 19.0.1.0.9.
+Existing databases need `-u pan_mcp_user_role`.
+
 ## [19.0.1.26.0] - 2026-10-08
 
 Roles are back on users. v1.24 hid role assignment (#26) because

@@ -72,6 +72,25 @@ class TestRoleFormExposure(TransactionCase):
         # Removing the role keeps the groups (issue #27).
         self.assertIn(self.env.ref("base.group_user"), compat.user_groups(user))
 
+    def test_show_alert_flips_before_save(self):
+        """Adding a role on the form hides the widget at once, on a new user too.
+
+        A role line's ``active`` follows its user's, and an unsaved line reads
+        it as False; ``role_line_ids`` must not filter on it.
+        """
+        role = self._make_role("MCP Onchange Role", [self.env.ref("base.group_user")])
+        spec = {"show_alert": {}, "role_line_ids": {"fields": {"role_id": {}}}}
+        add = [(0, "virtual_1", {"role_id": role.id})]
+        new = self.env["res.users"].onchange(
+            {"name": "mcp_new", "login": "mcp_new", "role_line_ids": add},
+            ["role_line_ids"],
+            spec,
+        )
+        self.assertTrue(new["value"].get("show_alert"), "new user: widget stays until Save")
+        user = self.env["res.users"].create({"name": "mcp_saved", "login": "mcp_saved"})
+        saved = user.onchange({"role_line_ids": add}, ["role_line_ids"], spec)
+        self.assertTrue(saved["value"].get("show_alert"), "saved user: widget stays until Save")
+
     # -- role form ----------------------------------------------------------
 
     def test_role_form_counts_instead_of_listing(self):
