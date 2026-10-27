@@ -52,6 +52,21 @@ class TestApiKeyWizardValidation(TransactionCase):
         wiz = self._wizard()
         self.assertIn(self.role, wiz.x_available_role_ids)
 
+    def test_available_roles_include_unassigned_subset_role(self):
+        # Regression (#48): a non-empty role the owner is not assigned to was
+        # hidden, because Odoo 19 counts the role's own backing group in its
+        # implied groups and the owner does not hold that group. The owner
+        # covers every group the role grants, so it must be offered.
+        role = self.Role.create(
+            {
+                "name": "Unassigned Subset",
+                "implied_ids": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        self.assertNotIn(self.user, role.user_ids)
+        self.assertFalse(role._mcp_excess_group_ids(self.user))
+        self.assertIn(role, self._wizard().x_available_role_ids)
+
     def test_non_admin_member_can_read_available_roles(self):
         # Regression: opening the New API Key wizard as a non-admin internal
         # user raised AccessError, because the `x_available_role_ids` compute

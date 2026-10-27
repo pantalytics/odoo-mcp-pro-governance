@@ -97,9 +97,14 @@ class ResUsersRole(models.Model):
         role's whole group set onto the user, making the raw lists match by
         accident. It surfaced when the vendored auditlog tests ran first and
         that sync did not hold.
+
+        The role's own backing group is left out. On Odoo 19 a non-empty
+        role's ``all_implied_ids`` contains it, and an owner only holds it
+        once the role is assigned to them, so every unassigned role came
+        out as excess and vanished from the key wizard (#48).
         """
         self.ensure_one()
-        role_group_ids = set(compat.implied_groups(self).ids)
+        role_group_ids = set(compat.implied_groups(self).ids) - {self.group_id.id}
         user_groups = compat.user_groups(user.sudo())
         user_group_ids = set(user_groups.ids) | set(compat.implied_groups(user_groups).ids)
         return role_group_ids - user_group_ids
