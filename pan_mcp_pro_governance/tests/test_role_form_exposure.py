@@ -38,13 +38,30 @@ class TestRoleFormExposure(TransactionCase):
         nodes = tree.xpath("//page[@name='access_rights']//field[@name='role_line_ids']")
         self.assertEqual(len(nodes), 1, "role_line_ids must sit on the Access Rights page")
         self.assertIn("Roles are additive", nodes[0].get("help") or "")
+        # Core's own "Access Rights Mismatch" warning (17/18) is not ours.
         self.assertFalse(
-            tree.xpath("//page[@name='access_rights']//div[hasclass('alert')]"),
+            tree.xpath(
+                "//page[@name='access_rights']//div[hasclass('alert')]"
+                "[not(.//field[@name='user_group_warning'])]"
+            ),
             "the OCA 'managed by roles' alert must be gone",
         )
 
     def test_group_widget_hidden_when_a_role_is_set(self):
         tree = self._arch("res.users", "base.view_users_form")
+        if compat.ODOO_VERSION < 19:
+            # 17/18: `base.user_groups_view` replaces `groups_id` with
+            # generated fields, inside the div that carries the switch.
+            wrap = tree.xpath("//page[@name='access_rights']//div[@name='mcp_rights_by_hand']")
+            self.assertEqual(len(wrap), 1, "the group widget must sit in the switched div")
+            self.assertIn("show_alert", wrap[0].get("invisible") or "")
+            self.assertTrue(
+                wrap[0].xpath(
+                    ".//field[starts-with(@name, 'in_group_') or starts-with(@name, 'sel_groups_')]"
+                ),
+                "the standard group widget must still be in the view",
+            )
+            return
         widgets = tree.xpath(
             f"//page[@name='access_rights']//field[@name='{compat.USER_GROUPS_FIELD}']"
         )

@@ -13,14 +13,16 @@
          because nothing is shown.
 
          Odoo 17/18 anchors: there is no `role` radio and no `group_ids`
-         widget. `base.user_groups_view` replaces `groups_id` with generated
-         groups of `sel_groups_*` / `in_group_*` fields, so the role goes on
-         top of the page and those groups are hidden by what they contain.
-         The 19.0 trunk anchors on `role` and `group_ids` instead. -->
+         widget. `base.user_groups_view` swaps `groups_id` for groups it
+         generates from the installed apps, so this view wraps `groups_id`
+         in a div first (priority 15 applies it before that view's 16) and
+         the generated widget lands inside the div. The 19.0 trunk anchors
+         on `role` and `group_ids` instead. -->
     <record id="view_res_users_form_inherit" model="ir.ui.view">
         <field name="name">res.users.form.inherit</field>
         <field name="model">res.users</field>
         <field name="inherit_id" ref="base.view_users_form" />
+        <field name="priority">15</field>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='access_rights']/*[1]" position="before">
                 <group name="mcp_access_role">
@@ -40,41 +42,11 @@
                     </field>
                 </group>
             </xpath>
-        </field>
-    </record>
-    <!-- Hides the generated group widget. A separate view with a high
-         priority so it applies after `base.user_groups_view` has put the
-         generated groups in place. -->
-    <record id="view_res_users_form_inherit_hide_groups" model="ir.ui.view">
-        <field name="name">res.users.form.inherit.hide.groups</field>
-        <field name="model">res.users</field>
-        <field name="inherit_id" ref="base.view_users_form" />
-        <field name="priority">99</field>
-        <field name="arch" type="xml">
-            <xpath
-                expr="(//page[@name='access_rights']/group[.//field[starts-with(@name, 'sel_groups_')]])[1]"
-                position="attributes"
-            >
-                <attribute name="invisible">show_alert</attribute>
-            </xpath>
-            <xpath
-                expr="//page[@name='access_rights']/group[.//field[@name='user_group_warning']]"
-                position="attributes"
-            >
-                <attribute name="invisible" add="show_alert" separator=" or " />
-            </xpath>
-            <xpath
-                expr="(//page[@name='access_rights']/group[.//field[starts-with(@name, 'sel_groups_')]])[2]"
-                position="attributes"
-            >
-                <attribute name="invisible" add="show_alert" separator=" or " />
-            </xpath>
-            <xpath
-                expr="//page[@name='access_rights']/group[.//field[starts-with(@name, 'in_group_')]]"
-                position="attributes"
-            >
-                <attribute name="invisible" add="show_alert" separator=" or " />
-            </xpath>
+            <field name="groups_id" position="replace">
+                <div name="mcp_rights_by_hand" invisible="show_alert">
+                    <field name="groups_id" />
+                </div>
+            </field>
         </field>
     </record>
 

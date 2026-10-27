@@ -70,7 +70,9 @@ class TestApiKeyWizardValidation(TransactionCase):
         role = self.Role.create(
             {"name": "Unassigned Subset", "implied_ids": [(6, 0, [group_user.id])]}
         )
-        self.assertNotIn(owner, role.user_ids)
+        # res.groups.users became user_ids in Odoo 19 (reached via _inherits).
+        role_users = role.user_ids if compat.ODOO_VERSION >= 19 else role.users
+        self.assertNotIn(owner, role_users)
         self.assertFalse(role._mcp_excess_group_ids(owner))
         Desc = self.env["res.users.apikeys.description"]
         values = {"name": "roleless key"}

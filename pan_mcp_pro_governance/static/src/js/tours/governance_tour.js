@@ -14,7 +14,6 @@ import { registry } from "@web/core/registry";
  */
 registry.category("web_tour.tours").add("pan_mcp_pro_governance.smoke", {
     test: true,
-    url: "/odoo",
     steps: () => [
         // Community 20 lists apps in the navbar apps menu, not on a home
         // screen: open it first. Inlined `stepUtils.showAppsMenuItem()`,
