@@ -57,11 +57,10 @@ class TestApiKeyWizardValidation(TransactionCase):
         # hidden, because Odoo 19 counts the role's own backing group in its
         # implied groups and the owner does not hold that group. The owner
         # covers every group the role grants, so it must be offered.
+        group_user = self.env.ref("base.group_user")
+        self.user.sudo().write({compat.USER_GROUPS_FIELD: [(4, group_user.id)]})
         role = self.Role.create(
-            {
-                "name": "Unassigned Subset",
-                "implied_ids": [(6, 0, [self.env.ref("base.group_user").id])],
-            }
+            {"name": "Unassigned Subset", "implied_ids": [(6, 0, [group_user.id])]}
         )
         self.assertNotIn(self.user, role.user_ids)
         self.assertFalse(role._mcp_excess_group_ids(self.user))
