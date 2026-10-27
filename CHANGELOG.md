@@ -3,6 +3,14 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.26.3] - 2026-10-27
+
+### Fixed
+- **API-key wizard offers every role you cover, not only your own.** A
+  role you were not assigned to never showed in the Role dropdown, even
+  when you held all its groups. Odoo 19 counts a role's own backing
+  group among its groups, and only members hold that one (#48).
+
 ## [19.0.1.26.2] - 2026-10-23
 
 ### Fixed
