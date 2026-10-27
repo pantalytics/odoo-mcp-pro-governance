@@ -57,14 +57,27 @@ class TestApiKeyWizardValidation(TransactionCase):
         # hidden, because Odoo 19 counts the role's own backing group in its
         # implied groups and the owner does not hold that group. The owner
         # covers every group the role grants, so it must be offered.
+        # A user without role lines: on cls.user base_user_role resets the
+        # groups to its role's, so an extra group would not stick.
         group_user = self.env.ref("base.group_user")
-        self.user.sudo().write({compat.USER_GROUPS_FIELD: [(4, group_user.id)]})
+        owner = self.env["res.users"].create(
+            {
+                "name": "Roleless Owner",
+                "login": "roleless_owner",
+                compat.USER_GROUPS_FIELD: [(6, 0, [group_user.id])],
+            }
+        )
         role = self.Role.create(
             {"name": "Unassigned Subset", "implied_ids": [(6, 0, [group_user.id])]}
         )
-        self.assertNotIn(self.user, role.user_ids)
-        self.assertFalse(role._mcp_excess_group_ids(self.user))
-        self.assertIn(role, self._wizard().x_available_role_ids)
+        self.assertNotIn(owner, role.user_ids)
+        self.assertFalse(role._mcp_excess_group_ids(owner))
+        Desc = self.env["res.users.apikeys.description"]
+        values = {"name": "roleless key"}
+        if "duration" in Desc._fields:
+            values["duration"] = "1"
+        wiz = Desc.with_user(owner).sudo().create(values)
+        self.assertIn(role, wiz.x_available_role_ids)
 
     def test_non_admin_member_can_read_available_roles(self):
         # Regression: opening the New API Key wizard as a non-admin internal
