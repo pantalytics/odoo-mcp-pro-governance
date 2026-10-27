@@ -27,17 +27,27 @@ class TestScopedModelList(TransactionCase):
         # NOT base.group_user, so it carries no ir.model access. This mimics a
         # scoped read-only MCP role.
         cls.scoped_group = cls.env["res.groups"].create({"name": "MCP Scoped Test"})
-        cls.env["ir.model.access"].create(
-            {
-                "name": "mcp scoped: read res.partner",
-                "model_id": IrModel._get_id("res.partner"),
-                "group_id": cls.scoped_group.id,
-                "perm_read": True,
-                "perm_write": False,
-                "perm_create": False,
-                "perm_unlink": False,
-            }
-        )
+        if compat.ODOO_VERSION >= 20:
+            cls.env["ir.access"].create(
+                {
+                    "name": "mcp scoped: read res.partner",
+                    "model_id": IrModel._get_id("res.partner"),
+                    "group_id": cls.scoped_group.id,
+                    "operation": "r",
+                }
+            )
+        else:
+            cls.env["ir.model.access"].create(
+                {
+                    "name": "mcp scoped: read res.partner",
+                    "model_id": IrModel._get_id("res.partner"),
+                    "group_id": cls.scoped_group.id,
+                    "perm_read": True,
+                    "perm_write": False,
+                    "perm_create": False,
+                    "perm_unlink": False,
+                }
+            )
         cls.role = cls.env["res.users.role"].create(
             {
                 "name": "MCP Scoped Role",
@@ -67,14 +77,25 @@ class TestScopedModelList(TransactionCase):
     def _as_role(self):
         set_thread_api_key_role_id(self.role.id)
 
+    # A technical model the scoped role must not see (ir.rule is gone in 20).
+    OTHER_MODEL = "ir.access" if compat.ODOO_VERSION >= 20 else "ir.rule"
+
+    def _readable_models(self):
+        if compat.ODOO_VERSION >= 20:
+            return self.env["ir.access"].with_user(self.user)._mcp_readable_models()
+        return self.env["ir.model.access"].with_user(self.user)._get_allowed_models("read")
+
     def test_ir_model_is_readable_for_scoped_role(self):
         self._as_role()
-        allowed = self.env["ir.model.access"].with_user(self.user)._get_allowed_models("read")
+        allowed = self._readable_models()
         self.assertIn("res.partner", allowed)
         # Injected so the ACL check on ir.model passes for list_models...
         self.assertIn("ir.model", allowed)
+        if compat.ODOO_VERSION >= 20:
+            IrModel = self.env["ir.model"].with_user(self.user)
+            self.assertTrue(IrModel.browse().has_access("read"))
         # ...but the role still cannot read unrelated technical models.
-        self.assertNotIn("ir.rule", allowed)
+        self.assertNotIn(self.OTHER_MODEL, allowed)
 
     def test_ir_model_rows_are_scoped_to_the_role(self):
         self._as_role()
@@ -86,7 +107,7 @@ class TestScopedModelList(TransactionCase):
         )
         self.assertIn("res.partner", names)
         # A model the role cannot read must not appear in the catalogue.
-        self.assertNotIn("ir.rule", names)
+        self.assertNotIn(self.OTHER_MODEL, names)
         # ir.model is granted for the ACL check only; it is noise in the model
         # list, so the row rule hides it.
         self.assertNotIn("ir.model", names)
@@ -105,7 +126,11 @@ class TestScopedModelList(TransactionCase):
         # The introspection grant is read-only: ir.model must not leak into the
         # role's writable set.
         self._as_role()
-        allowed_write = (
-            self.env["ir.model.access"].with_user(self.user)._get_allowed_models("write")
-        )
-        self.assertNotIn("ir.model", allowed_write)
+        if compat.ODOO_VERSION >= 20:
+            IrModel = self.env["ir.model"].with_user(self.user)
+            self.assertFalse(IrModel.browse().has_access("write"))
+        else:
+            allowed_write = (
+                self.env["ir.model.access"].with_user(self.user)._get_allowed_models("write")
+            )
+            self.assertNotIn("ir.model", allowed_write)

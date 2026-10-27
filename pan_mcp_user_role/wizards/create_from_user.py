@@ -8,7 +8,14 @@ class WizardCreateRoleFromUser(models.TransientModel):
     _description = "Create role from user wizard"
 
     name = fields.Char(required=True)
-    assign_to_user = fields.Boolean("Assign to user", default=True)
+    # MCP Pro (issue #26): the upstream "Assign to user" option is gone.
+    # It created a res.users.role.line for the user the wizard was run
+    # from, which is the assignment surface this module deliberately no
+    # longer exposes -- a role here scopes an API key
+    # (res_users_apikeys.x_role_id), it does not manage a person's rights.
+    # Reading a user's groups into a fresh role stays useful, so the rest
+    # of the wizard is untouched. Do not re-add the option when
+    # re-vendoring OCA base_user_role.
 
     def create_from_user(self):
         self.ensure_one()
@@ -19,7 +26,6 @@ class WizardCreateRoleFromUser(models.TransientModel):
         user_id = user_ids[0]
 
         role_obj = self.env["res.users.role"]
-        role_line_obj = self.env["res.users.role.line"]
         user_obj = self.env["res.users"]
 
         user = user_obj.browse(user_id)
@@ -31,14 +37,6 @@ class WizardCreateRoleFromUser(models.TransientModel):
         )
 
         role.implied_ids = [fields.Command.set(compat.user_groups(user).ids)]
-
-        if self.assign_to_user:
-            role_line_obj.create(
-                {
-                    "role_id": role.id,
-                    "user_id": user_id,
-                }
-            )
 
         return {
             "context": self.env.context,

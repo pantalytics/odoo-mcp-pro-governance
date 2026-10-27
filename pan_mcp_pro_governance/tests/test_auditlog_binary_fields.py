@@ -20,8 +20,8 @@ from odoo.tests.common import TransactionCase
 # Smallest valid PNG: 1x1 transparent pixel, base64-encoded as the ORM
 # expects for an Image field.
 ONE_PIXEL_PNG = (
-    b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
-    b"YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+    "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 )
 
 

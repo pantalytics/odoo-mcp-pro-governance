@@ -116,7 +116,7 @@
         <field name="inherit_id" ref="pan_mcp_auditlog.view_auditlog_log_tree" />
         <field name="arch" type="xml">
             <field name="user_id" position="after">
-                <field name="x_api_key_id" optional="show" />
+                <field name="x_api_key_name" optional="show" />
             </field>
         </field>
     </record>
@@ -128,7 +128,8 @@
         <field name="inherit_id" ref="pan_mcp_auditlog.view_auditlog_log_form" />
         <field name="arch" type="xml">
             <field name="http_request_id" position="after">
-                <field name="x_api_key_id" readonly="1" />
+                <field name="x_api_key_name" readonly="1" />
+                <field name="x_api_key_ref" readonly="1" />
             </field>
         </field>
     </record>
@@ -140,14 +141,14 @@
         <field name="inherit_id" ref="pan_mcp_auditlog.view_auditlog_log_search" />
         <field name="arch" type="xml">
             <field name="user_id" position="after">
-                <field name="x_api_key_id" />
+                <field name="x_api_key_name" />
             </field>
             <filter name="group_by_user_id" position="after">
                 <filter
                     name="group_by_api_key"
                     string="API Key"
                     domain="[]"
-                    context="{'group_by':'x_api_key_id'}"
+                    context="{'group_by':'x_api_key_name'}"
                 />
             </filter>
         </field>
@@ -174,7 +175,7 @@
                     <field name="x_model" />
                     <field name="x_method" />
                     <field name="user_id" />
-                    <field name="x_api_key_id" />
+                    <field name="x_api_key_name" />
                     <field name="name" string="Path" optional="hide" />
                     <field name="http_session_id" optional="hide" />
                 </list>
@@ -195,7 +196,7 @@
         />
         <field name="arch" type="xml">
             <field name="user_id" position="after">
-                <field name="x_api_key_id" />
+                <field name="x_api_key_name" />
             </field>
             <field name="name" position="before">
                 <filter
@@ -215,7 +216,7 @@
                     name="group_by_api_key"
                     string="API Key"
                     domain="[]"
-                    context="{'group_by':'x_api_key_id'}"
+                    context="{'group_by':'x_api_key_name'}"
                 />
             </filter>
         </field>
@@ -232,7 +233,8 @@
         />
         <field name="arch" type="xml">
             <field name="http_session_id" position="after">
-                <field name="x_api_key_id" readonly="1" />
+                <field name="x_api_key_name" readonly="1" />
+                <field name="x_api_key_ref" readonly="1" />
             </field>
         </field>
     </record>

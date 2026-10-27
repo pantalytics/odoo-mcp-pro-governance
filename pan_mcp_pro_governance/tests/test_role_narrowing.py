@@ -51,17 +51,24 @@ class TestRoleNarrowing(TransactionCase):
     def setUp(self):
         super().setUp()
         self.addCleanup(clear_thread_api_key_role_id)
-        self.addCleanup(self.env.registry.clear_cache)
+        self.addCleanup(self._clear_caches)
+
+    def _clear_caches(self):
+        # Odoo 20 dropped Registry.clear_cache; ormcaches live on the transaction.
+        if compat.ODOO_VERSION >= 20:
+            self.env.transaction.invalidate_ormcache()
+        else:
+            self.env.registry.clear_cache()
 
     def _narrowed_env(self):
         """An env for the key owner with the role active, as during an RPC."""
         set_thread_api_key_role_id(self.role.id)
-        self.env.registry.clear_cache()
+        self._clear_caches()
         return self.env(user=self.user)
 
     def _plain_env(self):
         clear_thread_api_key_role_id()
-        self.env.registry.clear_cache()
+        self._clear_caches()
         return self.env(user=self.user)
 
     def test_role_is_picked_up(self):
@@ -85,68 +92,149 @@ class TestRoleNarrowing(TransactionCase):
             "an admin key bound to a plain-user role still reports as system admin",
         )
 
+    @staticmethod
+    def _can_write_acl_rows(env):
+        """Whether ``env`` may write access-control rows at all."""
+        if compat.ODOO_VERSION >= 20:
+            return env["ir.access"].browse().has_access("write")
+        return "ir.model.access" in env["ir.model.access"]._get_allowed_models("write")
+
     def test_acl_narrows_model_access(self):
         """The gate that decides whether a model is reachable at all."""
-        Access = self._plain_env()["ir.model.access"]
-        self.assertIn("ir.model.access", Access._get_allowed_models("write"))
+        self.assertTrue(self._can_write_acl_rows(self._plain_env()))
 
-        Access = self._narrowed_env()["ir.model.access"]
-        self.assertNotIn(
-            "ir.model.access",
-            Access._get_allowed_models("write"),
+        env = self._narrowed_env()
+        self.assertFalse(
+            self._can_write_acl_rows(env),
             "role-bound key can still write ACL rows",
         )
         with self.assertRaises(AccessError):
-            Access.check("ir.model.access", "write")
+            if compat.ODOO_VERSION >= 20:
+                env["ir.access"].browse().check_access("write")
+            else:
+                env["ir.model.access"].check("ir.model.access", "write")
 
-    def _hide_from(self, group, partner):
-        """A record rule that hides `partner` from members of `group`."""
-        self.env["ir.rule"].create(
-            {
-                "name": f"MCP test rule — {group.name}",
-                "model_id": self.env["ir.model"]._get("res.partner").id,
-                "groups": [(6, 0, [group.id])],
-                "domain_force": f"[('id', '!=', {partner.id})]",
-                "perm_read": True,
-            }
-        )
-
-    def _can_see(self, env, partner):
-        """Assert through a real search, not by reading the domain back.
-
-        Odoo 19 normalises `('id', '!=', x)` into `('id', 'not in', [x])`,
-        so comparing domain terms is version-specific. What the operator
-        cares about is whether the row comes back.
-        """
-        return bool(env["res.partner"].search([("id", "=", partner.id)]))
-
-    def test_record_rules_follow_the_role_not_the_user(self):
-        """Record rules decide which rows come back, so they have to be
-        intersected with the role's groups. Odoo 17 and 18 read the user's
-        own groups here, which is the half of narrowing that silently did
-        nothing."""
-        partner = self.env["res.partner"].create({"name": "MCP rule probe"})
-        self._hide_from(self.group_system, partner)
-
+    def test_access_cache_is_keyed_on_the_role(self):
+        """No cache clearing between the two calls, as within one worker:
+        the owner's own answer must not be served to the key."""
+        clear_thread_api_key_role_id()
+        env = self.env(user=self.user)
+        self.assertTrue(self._can_write_acl_rows(env))
+        set_thread_api_key_role_id(self.role.id)
         self.assertFalse(
-            self._can_see(self._plain_env(), partner),
-            "baseline: the admin-group rule should hide this row",
-        )
-        self.assertTrue(
-            self._can_see(self._narrowed_env(), partner),
-            "a rule for a group outside the role was applied as if the key "
-            "still carried that group",
+            self._can_write_acl_rows(self.env(user=self.user)),
+            "the owner's cached access was reused for the role-bound key",
         )
 
-    def test_record_rules_for_the_role_still_apply(self):
-        """The mirror image: narrowing must not throw every rule away."""
-        partner = self.env["res.partner"].create({"name": "MCP rule probe 2"})
-        self._hide_from(self.group_user, partner)
+    # Odoo 20 merged ir.model.access and ir.rule into ir.access. A group-bound
+    # ir.access is a *permission* (OR-ed with the user's other permissions),
+    # so the rule tests flip direction: a permission from a group outside the
+    # role must not widen what the key sees.
+    if compat.ODOO_VERSION >= 20:
 
-        self.assertFalse(
-            self._can_see(self._narrowed_env(), partner),
-            "a rule for a group the role does carry was dropped",
-        )
+        def _industries_only_via(self, hidden):
+            """Replace res.partner.industry's accesses with two permissions:
+            group_user sees everything but ``hidden``, group_system sees all."""
+            model_id = self.env["ir.model"]._get_id("res.partner.industry")
+            Access = self.env["ir.access"]
+            Access.search([("model_id", "=", model_id)]).active = False
+            Access.create(
+                [
+                    {
+                        "name": "MCP test: user sees all but one",
+                        "model_id": model_id,
+                        "group_id": self.group_user.id,
+                        "operation": "r",
+                        "domain": f"[('id', '!=', {hidden.id})]",
+                    },
+                    {
+                        "name": "MCP test: system sees all",
+                        "model_id": model_id,
+                        "group_id": self.group_system.id,
+                        "operation": "r",
+                    },
+                ]
+            )
+
+        def _can_see(self, env, record):
+            return bool(env[record._name].search([("id", "=", record.id)]))
+
+        def test_record_rules_follow_the_role_not_the_user(self):
+            Industry = self.env["res.partner.industry"]
+            hidden = Industry.create({"name": "MCP rule probe"})
+            self._industries_only_via(hidden)
+
+            self.assertTrue(
+                self._can_see(self._plain_env(), hidden),
+                "baseline: the admin-group permission should show this row",
+            )
+            self.assertFalse(
+                self._can_see(self._narrowed_env(), hidden),
+                "a permission for a group outside the role was applied as if "
+                "the key still carried that group",
+            )
+
+        def test_record_rules_for_the_role_still_apply(self):
+            Industry = self.env["res.partner.industry"]
+            hidden = Industry.create({"name": "MCP rule probe"})
+            visible = Industry.create({"name": "MCP rule probe 2"})
+            self._industries_only_via(hidden)
+
+            self.assertTrue(
+                self._can_see(self._narrowed_env(), visible),
+                "a permission for a group the role does carry was dropped",
+            )
+
+    else:
+
+        def _hide_from(self, group, partner):
+            """A record rule that hides `partner` from members of `group`."""
+            self.env["ir.rule"].create(
+                {
+                    "name": f"MCP test rule — {group.name}",
+                    "model_id": self.env["ir.model"]._get("res.partner").id,
+                    "groups": [(6, 0, [group.id])],
+                    "domain_force": f"[('id', '!=', {partner.id})]",
+                    "perm_read": True,
+                }
+            )
+
+        def _can_see(self, env, partner):
+            """Assert through a real search, not by reading the domain back.
+
+            Odoo 19 normalises `('id', '!=', x)` into `('id', 'not in', [x])`,
+            so comparing domain terms is version-specific. What the operator
+            cares about is whether the row comes back.
+            """
+            return bool(env["res.partner"].search([("id", "=", partner.id)]))
+
+        def test_record_rules_follow_the_role_not_the_user(self):
+            """Record rules decide which rows come back, so they have to be
+            intersected with the role's groups. Odoo 17 and 18 read the user's
+            own groups here, which is the half of narrowing that silently did
+            nothing."""
+            partner = self.env["res.partner"].create({"name": "MCP rule probe"})
+            self._hide_from(self.group_system, partner)
+
+            self.assertFalse(
+                self._can_see(self._plain_env(), partner),
+                "baseline: the admin-group rule should hide this row",
+            )
+            self.assertTrue(
+                self._can_see(self._narrowed_env(), partner),
+                "a rule for a group outside the role was applied as if the key "
+                "still carried that group",
+            )
+
+        def test_record_rules_for_the_role_still_apply(self):
+            """The mirror image: narrowing must not throw every rule away."""
+            partner = self.env["res.partner"].create({"name": "MCP rule probe 2"})
+            self._hide_from(self.group_user, partner)
+
+            self.assertFalse(
+                self._can_see(self._narrowed_env(), partner),
+                "a rule for a group the role does carry was dropped",
+            )
 
     def test_narrowing_does_not_leak_into_the_next_request(self):
         """Workers are reused. A UI session following an API call on the

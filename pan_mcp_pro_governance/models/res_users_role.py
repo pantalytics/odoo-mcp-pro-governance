@@ -42,6 +42,23 @@ class ResUsersRole(models.Model):
             for record in self:
                 record.view_group_hierarchy = hierarchy
 
+    # Smart button on the role form: how many API keys are scoped to it.
+    # `res.users.apikeys` is `_auto = False` with no foreign key, so this is
+    # a plain search, not a One2many.
+    x_apikey_count = fields.Integer(compute="_compute_x_apikey_count")
+
+    def _compute_x_apikey_count(self):
+        keys = self.env["res.users.apikeys"].sudo()
+        for role in self:
+            role.x_apikey_count = keys.search_count([("x_role_id", "=", role.id)]) if role.id else 0
+
+    def action_mcp_show_apikeys(self):
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "pan_mcp_pro_governance.action_mcp_governance_apikeys"
+        )
+        action["domain"] = [("x_role_id", "in", self.ids)]
+        return action
+
     # Progressive-disclosure helper on the new-role form: pick a user
     # and the role's implied groups are seeded from theirs. Non-stored,
     # only meaningful at creation time; the view hides it once the role
@@ -80,9 +97,14 @@ class ResUsersRole(models.Model):
         role's whole group set onto the user, making the raw lists match by
         accident. It surfaced when the vendored auditlog tests ran first and
         that sync did not hold.
+
+        The role's own backing group is left out. On Odoo 19 a non-empty
+        role's ``all_implied_ids`` contains it, and an owner only holds it
+        once the role is assigned to them, so every unassigned role came
+        out as excess and vanished from the key wizard (#48).
         """
         self.ensure_one()
-        role_group_ids = set(compat.implied_groups(self).ids)
+        role_group_ids = set(compat.implied_groups(self).ids) - {self.group_id.id}
         user_groups = compat.user_groups(user.sudo())
         user_group_ids = set(user_groups.ids) | set(compat.implied_groups(user_groups).ids)
         return role_group_ids - user_group_ids
