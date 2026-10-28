@@ -11,6 +11,18 @@
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button
+                            name="show_role_user_ids"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-users"
+                        >
+                            <field
+                                name="user_count"
+                                widget="statinfo"
+                                string="Users"
+                            />
+                        </button>
+                        <button
                             name="show_model_access_ids"
                             type="object"
                             class="oe_stat_button"
@@ -50,19 +62,9 @@
                                 options="{'no_create': True}"
                             />
                         </page>
-                        <page string="Users">
-                            <field name="line_ids" nolabel="1">
-                                <tree
-                                    editable="bottom"
-                                    decoration-muted="not is_enabled"
-                                >
-                                    <field name="user_id" />
-                                    <field name="date_from" />
-                                    <field name="date_to" />
-                                    <field name="is_enabled" />
-                                </tree>
-                            </field>
-                        </page>
+                        <!-- MCP Pro: no "Users" page. A role is assigned
+                             from the user's Access Rights page; this form
+                             only counts them (smart button above). -->
                         <page name="page_internal_notes" string="Internal Notes">
                             <field name="comment" />
                         </page>

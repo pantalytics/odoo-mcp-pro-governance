@@ -1,4 +1,4 @@
-"""Cross-version helpers for Odoo 17 / 18 / 19.
+"""Cross-version helpers for Odoo 17 / 18 / 19 / 20.
 
 Odoo 19 reworked the group model and renamed several fields. This module
 resolves the right name for the running Odoo version, so the rest of the
@@ -15,14 +15,28 @@ What changed in 19:
   groups carry ``category_id`` directly. This split is declarative, so it
   lives in version-specific data files, not here.
 
+What changed in 20:
+
+- ``ir.model.access`` and ``ir.rule`` are merged into one ``ir.access``
+  model (``operation`` + optional ``domain``). Every check goes through
+  ``BaseModel._access_domain``; see ``models/ir_access.py``. The CSV is
+  ``security/ir.access.csv`` there, a per-release-branch data file.
+- ``odoo.tools.ormcache`` moved to ``odoo.api.ormcache`` (the old import
+  still works on 20 but warns).
+
 Field-name renames *can* be resolved at runtime — that is what this module
 does. Declarative XML cannot, so the manifest's ``data`` list is the one
 legitimate per-version difference between release branches.
 """
 
+from odoo import api, tools
 from odoo.release import version_info
 
 ODOO_VERSION = version_info[0]
+
+# Method-result cache decorator. Lives in odoo.api from 20; odoo.tools still
+# serves it there but logs a DeprecationWarning on every import.
+ormcache = api.ormcache if hasattr(api, "ormcache") else tools.ormcache
 
 # res.users: the M2M of groups explicitly assigned to a user.
 USER_GROUPS_FIELD = "group_ids" if ODOO_VERSION >= 19 else "groups_id"

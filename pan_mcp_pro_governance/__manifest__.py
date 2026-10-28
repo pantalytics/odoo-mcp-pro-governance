@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "17.0.1.23.2",
+    "version": "17.0.1.26.3",
     "license": "AGPL-3",
     "depends": [
         "base",
@@ -71,10 +71,11 @@
     # Odoo parses __manifest__.py with ast.literal_eval, so this list cannot
     # branch on the running version. The few version-specific data files are
     # therefore the ONE legitimate per-release-branch difference. This is the
-    # **18.0** release branch: it loads the legacy (<= 18) variants —
+    # **17.0** release branch (18.0 is the same): it loads the legacy (<= 18) variants —
     #   - security/groups_legacy.xml          (category_id, no res.groups.privilege)
-    #   - no views/mcp_governance_role_views.xml  (res_user_group_ids widget is
-    #     19-only; 18 uses the OCA default flat tags)
+    #   - views/mcp_governance_role_views_legacy.xml instead of
+    #     views/mcp_governance_role_views.xml (res_user_group_ids widget is
+    #     19-only; 17/18 keep the OCA flat tags and get only the smart button)
     # The 19.0 trunk loads groups_privilege_v19.xml + the role view instead.
     # All Python stays identical across branches via compat.py.
     "data": [
@@ -86,6 +87,7 @@
         "views/mcp_governance_apikeys_views.xml",
         "views/mcp_governance_auditlog_views.xml",
         "views/mcp_governance_onboarding_views.xml",
+        "views/mcp_governance_role_views_legacy.xml",
         "views/mcp_governance_menus.xml",
     ],
     "post_init_hook": "post_init_hook",
