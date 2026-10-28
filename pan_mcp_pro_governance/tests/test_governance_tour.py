@@ -1,5 +1,7 @@
 from odoo.tests import HttpCase, tagged
 
+from .. import compat
+
 
 @tagged("post_install", "-at_install")
 class TestGovernanceSmokeTour(HttpCase):
@@ -12,8 +14,9 @@ class TestGovernanceSmokeTour(HttpCase):
     """
 
     def test_smoke_tour(self):
+        # The web client moved from /web to /odoo in Odoo 18.
         self.start_tour(
-            "/odoo",
+            "/odoo" if compat.ODOO_VERSION >= 18 else "/web",
             "pan_mcp_pro_governance.smoke",
             login="admin",
         )

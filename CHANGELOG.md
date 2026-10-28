@@ -3,6 +3,42 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [18.0.1.26.3] - 2026-10-27
+
+Trunk's fixes from 19.0.1.23.2 to 19.0.1.26.3, brought to Odoo 18. The
+`models/` and `tests/` folders match trunk again. Issue #51.
+
+### Fixed
+- **Revoking an API key broke the audit log** (#28). Requests and log
+  entries now keep the key's id and name as plain data, and the views
+  show those.
+- **Unlinking a role line wiped every group on the user** and set
+  `share = True` (#27). With no role lines left, the groups stay.
+- **The role button on a group raised `ValueError`** (#29): it pointed at
+  the old `base_user_role` view id.
+- Help links point at `odoo.pantalytics.com`.
+- API-key wizard offers every role you cover, not only roles assigned to
+  you (#48).
+
+### Changed
+- **User form: role or rights, never both** (#39, #41, #47). The Access
+  Rights page starts with "Access role". Empty: the group checkboxes show.
+  Set: they are hidden and the role decides, from the moment you add it.
+  Assigning a role replaces the user's groups with the role's (#26 is the
+  intended model now).
+- **Role form** counts instead of listing: smart buttons Users and API
+  Keys, no Users page.
+- **API-key wizard and API Key Ready**: one field per step, help in the
+  tooltip, "Rights: <role>" on the ready screen.
+
+Odoo 18 seams (same as 17.0): the rights checkboxes come from the generated
+`base.user_groups_view`, so the user form wraps `groups_id` in a div that
+hides when a role is set. The role form gets the API Keys button from
+`views/mcp_governance_role_views_legacy.xml`.
+
+pan_mcp_pro_governance 18.0.1.26.3, pan_mcp_user_role 18.0.1.0.9,
+pan_mcp_auditlog 18.0.1.0.4. Existing databases: `-u pan_mcp_pro_governance,pan_mcp_user_role`.
+
 ## [19.0.1.23.0] - 2026-09-15
 
 ### Fixed

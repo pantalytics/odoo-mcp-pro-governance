@@ -25,6 +25,8 @@ Two version gaps need more than the cache key:
   which no override reaches. Without the reimplementation below, record
   rules bound to the user's non-role groups are silently dropped from
   the domain, so a narrowed key sees *more* rows than its role allows.
+
+Odoo 17-19 only: 20 has no ``ir.rule`` (see ``ir_access.py``).
 """
 
 from odoo import api, models

@@ -15,7 +15,6 @@
             <form string="Create role from user">
                 <group>
                     <field name="name" />
-                    <field name="assign_to_user" />
                 </group>
 
                 <footer>

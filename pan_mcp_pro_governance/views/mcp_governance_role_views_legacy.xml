@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Odoo 17/18 only. The 19.0 trunk loads mcp_governance_role_views.xml,
+         which also swaps in the 19-only `res_user_group_ids` widget; this
+         file carries just the smart button that has no version seam. -->
+    <record id="view_res_users_role_form_legacy" model="ir.ui.view">
+        <field name="name">res.users.role.form.mcp_pro.legacy</field>
+        <field name="model">res.users.role</field>
+        <field name="inherit_id" ref="pan_mcp_user_role.view_res_users_role_form" />
+        <field name="arch" type="xml">
+            <!-- Smart button: the keys scoped to this role. The Users
+                 button next to it lives in pan_mcp_user_role. -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_mcp_show_apikeys"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-key">
+                    <field name="x_apikey_count" widget="statinfo" string="API Keys"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

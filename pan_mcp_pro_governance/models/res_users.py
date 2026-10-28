@@ -29,11 +29,21 @@ request is popped during dispatch). UI sessions are unaffected because
 import contextlib
 import string
 
-from odoo import api, models, tools
+from odoo import _, api, models
+from odoo.exceptions import AccessError
 from odoo.http import request
 
 from .. import compat
 from .ir_http import set_audit_api_key_id
+
+# Models the MCP introspection tools (notably the server's ``list_models``
+# tool, which does a ``search_read`` on ``ir.model``) must be able to read to
+# enumerate the catalogue -- even for a scoped read-only role that holds none
+# of the technical-model groups. They are granted for the access check only
+# (``ir_model_access.py`` on 17-19, ``ir_access.py`` on 20+); the *rows* of
+# ``ir.model`` are then scoped back to the role's own models by
+# ``_mcp_ir_model_domain`` below, so this never widens what a key can read.
+MCP_INTROSPECTION_MODELS = ("ir.model",)
 
 
 def _mcp_looks_like_api_key(passwd):
@@ -54,7 +64,7 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
     @api.model
-    @tools.ormcache("uid", "passwd")
+    @compat.ormcache("uid", "passwd")
     def _mcp_resolve_api_key(self, uid, passwd):
         """Return ``(api_key_id, role_id)`` for an active key matching
         ``(uid, passwd)``, or ``(False, False)``.
@@ -106,21 +116,54 @@ class ResUsers(models.Model):
         return result
 
     @api.model
-    def _get_api_key_role(self):
-        """Return the active API-key role for this request, or False."""
+    def _mcp_api_key_role_id(self):
+        """Raw role id of the active API key for this request, or None.
+
+        No database access, so it is cheap enough for the Odoo 20 access
+        cache key (see ``ir_access.py``), which is computed on every check.
+        """
         from .res_users_apikeys import get_thread_api_key_role_id
 
         role_id = None
         if request:
             role_id = request.session.get("x_mcp_api_key_role_id")
-        if not role_id:
-            role_id = get_thread_api_key_role_id()
+        return role_id or get_thread_api_key_role_id()
+
+    @api.model
+    def _get_api_key_role(self):
+        """Return the active API-key role for this request, or False."""
+        role_id = self._mcp_api_key_role_id()
         if not role_id:
             return False
         role = self.env["res.users.role"].sudo().browse(role_id)
         if not role.exists():
             return False
         return role
+
+    @api.model
+    def _mcp_role_access_error(self, role, model, operation):
+        """The access error for a role-bound key, pointing at the role.
+
+        Core's message lists groups the key owner may well hold; the real fix
+        is at the role layer.
+        """
+        operation_labels = {
+            "read": _("read"),
+            "write": _("write"),
+            "create": _("create"),
+            "unlink": _("delete"),
+        }
+        return AccessError(
+            _(
+                "The API key you are using is bound to the role '%(role)s', "
+                "which does not allow %(operation)s on model '%(model)s'.\n\n"
+                "To fix: either add the required groups to this role in "
+                "MCP Pro → Roles, or use an API key bound to a broader role.",
+                role=role.display_name,
+                operation=operation_labels.get(operation, operation),
+                model=model,
+            )
+        )
 
     def _mcp_role_group_ids(self, role):
         """Transitive closure of res.groups for a role."""
@@ -178,7 +221,8 @@ class ResUsers(models.Model):
         """Record-rule domain scoping ``ir.model`` rows for the active key.
 
         Referenced from the global rule in
-        ``security/mcp_scoped_model_list.xml``. For a role-bound API request
+        ``security/mcp_scoped_model_list.xml`` on 17-19, and from the
+        ``ir.model`` access-domain override in ``ir_access.py`` on 20+. For a role-bound API request
         it limits ``ir.model`` to the models the role may read, so the MCP
         ``list_models`` tool mirrors the role instead of leaking the whole
         catalogue (or, without the ACL grant in ``ir_model_access.py``,
@@ -190,12 +234,13 @@ class ResUsers(models.Model):
         are excluded from the visible rows: they are granted for the ACL check
         only, and would just be noise in ``list_models``.
         """
-        from .ir_model_access import MCP_INTROSPECTION_MODELS
-
         role = self._get_api_key_role()
         if not role:
             return [(1, "=", 1)]
-        allowed = self.env["ir.model.access"]._get_allowed_models("read")
+        if compat.ODOO_VERSION >= 20:
+            allowed = self.env["ir.access"]._mcp_readable_models()
+        else:
+            allowed = self.env["ir.model.access"]._get_allowed_models("read")
         allowed = allowed - frozenset(MCP_INTROSPECTION_MODELS)
         return [("model", "in", sorted(allowed))]
 
