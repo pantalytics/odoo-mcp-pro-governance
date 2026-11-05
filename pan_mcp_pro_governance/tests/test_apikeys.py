@@ -106,6 +106,15 @@ class TestApiKeyRoleBinding(TransactionCase):
         key.x_state = "revoked"
         self.assertEqual(key.x_state, "revoked")
 
+    def test_usage_counter_bumps(self):
+        # The SKIP LOCKED subquery must still match an unlocked row (#55).
+        key = self._make_key()
+        self.ApiKey._mcp_bump_usage(self.env.cr, key.id)
+        self.ApiKey._mcp_bump_usage(self.env.cr, key.id)
+        key.invalidate_recordset(["x_use_count", "x_last_used"])
+        self.assertEqual(key.x_use_count, 2)
+        self.assertTrue(key.x_last_used)
+
 
 class TestApiKeyFieldsOnTotpDevice(TransactionCase):
     """`auth_totp.device` inherits `res.users.apikeys` by prototype, so Odoo
