@@ -215,25 +215,21 @@ class ResUsersApikeys(models.Model):
 
         set_audit_api_key_id(api_key_id)
 
-        # Lightweight usage counter; one UPDATE per call. Promote to a
-        # deferred / batched update if it becomes a hot path.
-        #
-        # Best-effort by design: it runs on the auth path, so it must never
-        # deny a valid key. Concurrent calls on one key update this row at
-        # once and the loser gets a SerializationFailure, which retrying()
-        # would retry but never sees — _authenticate_explicit() wraps auth in
-        # `except Exception: raise AccessDenied()`, making it a 403 first. The
-        # savepoint stops that from poisoning the request transaction. A lost
-        # increment costs nothing: both columns are readonly display fields.
+        self._mcp_record_use(api_key_id)
+        return user_id
+
+    def _mcp_record_use(self, api_key_id):
+        """Bump the usage counter in its own short transaction.
+
+        Not in the request transaction: there the row lock lives until the
+        request commits, so a second call on the same key waits for it and
+        then hits a SerializationFailure (#55). Best-effort, so it must never
+        deny a valid key; a lost increment costs nothing, both columns are
+        readonly display fields.
+        """
         try:
-            with self.env.cr.savepoint(flush=False):
-                self.env.cr.execute(
-                    "UPDATE res_users_apikeys "
-                    "SET x_last_used = now() at time zone 'utc', "
-                    "    x_use_count = x_use_count + 1 "
-                    "WHERE id = %s",
-                    (api_key_id,),
-                )
+            with self.pool.cursor() as cr:
+                self._mcp_bump_usage(cr, api_key_id)
         except CONCURRENT_UPDATE_ERRORS:
             _logger.debug(
                 "MCP Pro Governance: usage counter for API key id=%s skipped, "
@@ -247,4 +243,17 @@ class ResUsersApikeys(models.Model):
                 api_key_id,
                 exc_info=True,
             )
-        return user_id
+
+    @staticmethod
+    def _mcp_bump_usage(cr, api_key_id):
+        """SKIP LOCKED: if a parallel call holds the row, skip this increment
+        instead of waiting for it or failing on it."""
+        cr.execute(
+            "UPDATE res_users_apikeys "
+            "SET x_last_used = now() at time zone 'utc', "
+            "    x_use_count = x_use_count + 1 "
+            "WHERE id = ("
+            "    SELECT id FROM res_users_apikeys WHERE id = %s FOR UPDATE SKIP LOCKED"
+            ")",
+            (api_key_id,),
+        )

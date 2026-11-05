@@ -3,6 +3,15 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.26.4] - 2026-11-05
+
+### Fixed
+- **No more serialization errors from the API-key usage counter.** Two
+  parallel calls on one key both updated its row inside the request, so
+  one waited for the other and then failed ("could not serialize access
+  due to concurrent update"). The counter now runs in its own short
+  transaction and skips a row another call is updating (#55).
+
 ## [19.0.1.26.3] - 2026-10-27
 
 ### Fixed
