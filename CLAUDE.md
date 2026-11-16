@@ -26,7 +26,8 @@ overrides on existing Odoo / OCA models, not new models.
   Access Rights page) or from the standard group widget; the form shows
   one of the two (v1.26, see docs/dev/design.md). The OCA sync
   `set_groups_from_roles()` replaces the user's groups with the role's
-  closure; "no roles" leaves the groups alone (#27).
+  closure; "no roles" leaves the groups alone (#27). One exception:
+  `base.group_multi_company` follows the user's companies, as core does (#57).
 - Each `res.users.apikeys` row can bind to a single `res.users.role`
   via `x_role_id`, as an optional narrower scope. State (`x_state` = active / suspended / revoked) +
   observability fields (`x_last_used`, `x_use_count`).

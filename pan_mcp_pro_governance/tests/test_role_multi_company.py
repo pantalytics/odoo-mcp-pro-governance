@@ -9,9 +9,10 @@ user could switch company but saw no company field on any record.
 Reproduced on a real Odoo 19 before the fix: a role-managed user with two
 companies did not have the group, a user without a role did.
 
-Every path that runs the sync is covered, because each one used to strip the
-group: a write on the user, an edit of the role, unlinking one of two role
-lines, and the daily cron.
+The sync applies core's rule itself (group if and only if more than one
+company), so every path that runs it keeps the group, and the 3-hourly cron
+repairs users who lost it before the fix. Each path test also shows the sync
+really ran: a group outside the role, slipped in past the sync, is gone again.
 """
 
 from odoo.tests.common import TransactionCase
@@ -24,7 +25,8 @@ class TestRoleSyncKeepsMultiCompanyGroup(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.group_user = cls.env.ref("base.group_user")
-        cls.group_partner_manager = cls.env.ref("base.group_partner_manager")
+        # A group no role here carries, so only the sync can take it away.
+        cls.stray = cls.env["res.groups"].create({"name": "MCP stray group"})
         cls.multi_company = cls.env.ref("base.group_multi_company")
         cls.main_company = cls.env.ref("base.main_company")
         cls.other_company = cls.env["res.company"].create({"name": "MCP Second Company"})
@@ -54,7 +56,29 @@ class TestRoleSyncKeepsMultiCompanyGroup(TransactionCase):
     def _two_company_user(self, login="mcp_mc_user", roles=None):
         user = self._user(login, self.main_company, roles or self.role)
         user.write({"company_ids": [(4, self.other_company.id)]})
+        self.assertIn(self.multi_company, self._groups(user), "precondition")
         return user
+
+    def _slip_in(self, user, group, present=True):
+        """Set one group on `user` behind the ORM's back, the way a database
+        looks after a sync that ran before this fix. Every ORM write on
+        res.users would run the sync itself."""
+        if present:
+            self.env.cr.execute(
+                "INSERT INTO res_groups_users_rel (gid, uid) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (group.id, user.id),
+            )
+        else:
+            self.env.cr.execute(
+                "DELETE FROM res_groups_users_rel WHERE gid = %s AND uid = %s", (group.id, user.id)
+            )
+        self.env.invalidate_all()
+        self.env.registry.clear_cache()
+
+    def _assert_sync_ran(self, user):
+        groups = self._groups(user)
+        self.assertNotIn(self.stray, groups, "the sync did not run")
+        self.assertIn(self.multi_company, groups)
 
     # -- core decides, the sync follows ------------------------------------
 
@@ -85,26 +109,49 @@ class TestRoleSyncKeepsMultiCompanyGroup(TransactionCase):
     # -- every path that re-runs the sync keeps it -------------------------
 
     def test_later_write_on_the_user_keeps_the_group(self):
+        # Only the group is asserted here, not that the sync ran: after the
+        # auditlog tests in the same process, res.users.write is base's own
+        # (pantalytics/odoo-mcp-pro-governance#59), so a user write skips every
+        # override. The other path tests show the sync ran.
         user = self._two_company_user()
         user.write({"name": "mcp_mc_user renamed"})
         self.assertIn(self.multi_company, self._groups(user))
 
     def test_editing_the_role_keeps_the_group(self):
         user = self._two_company_user()
-        self.role.write({"implied_ids": [(4, self.group_partner_manager.id)]})
-        groups = self._groups(user)
-        self.assertIn(self.group_partner_manager, groups, "the edit reached the user")
-        self.assertIn(self.multi_company, groups)
+        self._slip_in(user, self.stray)
+        self.role.write({"name": "MCP Multi Company Test Role renamed"})
+        self._assert_sync_ran(user)
 
     def test_unlinking_one_of_two_role_lines_keeps_the_group(self):
         second = self.Role.create(
             {"name": "MCP Second Role", "implied_ids": [(6, 0, [self.group_user.id])]}
         )
         user = self._two_company_user(roles=self.role | second)
+        self._slip_in(user, self.stray)
         user.role_line_ids.filtered(lambda line: line.role_id == second).unlink()
-        self.assertIn(self.multi_company, self._groups(user))
+        self._assert_sync_ran(user)
 
-    def test_daily_cron_keeps_the_group(self):
+    def test_cron_keeps_the_group(self):
         user = self._two_company_user()
+        self._slip_in(user, self.stray)
+        self.Role.cron_update_users()
+        self._assert_sync_ran(user)
+
+    # -- users broken before the fix are repaired --------------------------
+
+    def test_cron_gives_the_group_back_to_a_user_who_lost_it(self):
+        user = self._two_company_user()
+        self._slip_in(user, self.multi_company, present=False)
+        self.assertNotIn(
+            self.multi_company, self._groups(user), "precondition: broken as before #57"
+        )
+
         self.Role.cron_update_users()
         self.assertIn(self.multi_company, self._groups(user))
+
+    def test_cron_takes_the_group_from_a_one_company_user(self):
+        user = self._user("mcp_mc_stale", self.main_company, self.role)
+        self._slip_in(user, self.multi_company)
+        self.Role.cron_update_users()
+        self.assertNotIn(self.multi_company, self._groups(user))

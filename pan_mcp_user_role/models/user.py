@@ -86,6 +86,7 @@ class ResUsers(models.Model):
             # Transitive implied groups provided by the ORM
             # (all_implied_ids on 19, trans_implied_ids on <= 18).
             role_groups[role] = list(set(compat.implied_groups(role).ids))
+        multi_company = self.env.ref("base.group_multi_company", raise_if_not_found=False)
         for user in self:
             # A user without role lines is not managed by this module, so its
             # groups are none of our business -- not even under `force`.
@@ -105,11 +106,7 @@ class ResUsers(models.Model):
             group_ids = list(set(group_ids))  # Remove duplicates IDs
             # Preserve admin only if dropping it would leave zero administrators
             admin_group = self.env.ref("base.group_system", raise_if_not_found=False)
-            if (
-                admin_group
-                and admin_group.id in user_group_ids
-                and admin_group.id not in group_ids
-            ):
+            if admin_group and admin_group.id in user_group_ids and admin_group.id not in group_ids:
                 other_admins = self.sudo().search_count(
                     [("id", "!=", user.id), (compat.USER_GROUPS_FIELD, "in", admin_group.id)]
                 )
@@ -117,16 +114,21 @@ class ResUsers(models.Model):
                     group_ids.append(admin_group.id)
             groups_to_add = set(group_ids) - set(user_group_ids)
             groups_to_remove = set(user_group_ids) - set(group_ids)
-            # base.group_multi_company belongs to core, not to a role: Odoo
-            # links it when a user gets a second company and unlinks it at
-            # one (res.users.write). Replacing the groups with the role's
-            # closure used to undo that right after core did it, hiding the
-            # company field on every record for a user in several companies
-            # (#57). The sync neither adds nor removes it.
-            multi_company = self.env.ref("base.group_multi_company", raise_if_not_found=False)
+            # base.group_multi_company follows the user's companies, not a
+            # role: core links it when a user has more than one company and
+            # unlinks it at one (res.users.write). Replacing the groups with
+            # the role's closure used to undo that right after core did it,
+            # hiding the company field on every record (#57). The sync applies
+            # core's rule instead, so the 3-hourly cron also repairs users who
+            # lost the group before this fix.
             if multi_company:
                 groups_to_add.discard(multi_company.id)
                 groups_to_remove.discard(multi_company.id)
+                wanted = len(user.sudo().company_ids) > 1
+                if wanted and multi_company.id not in user_group_ids:
+                    groups_to_add.add(multi_company.id)
+                elif not wanted and multi_company.id in user_group_ids:
+                    groups_to_remove.add(multi_company.id)
             to_add = [fields.Command.link(gr) for gr in groups_to_add]
             to_remove = [fields.Command.unlink(gr) for gr in groups_to_remove]
             groups = to_remove + to_add
