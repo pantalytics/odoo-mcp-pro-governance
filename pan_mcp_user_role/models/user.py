@@ -115,8 +115,18 @@ class ResUsers(models.Model):
                 )
                 if other_admins == 0:
                     group_ids.append(admin_group.id)
-            groups_to_add = list(set(group_ids) - set(user_group_ids))
-            groups_to_remove = list(set(user_group_ids) - set(group_ids))
+            groups_to_add = set(group_ids) - set(user_group_ids)
+            groups_to_remove = set(user_group_ids) - set(group_ids)
+            # base.group_multi_company belongs to core, not to a role: Odoo
+            # links it when a user gets a second company and unlinks it at
+            # one (res.users.write). Replacing the groups with the role's
+            # closure used to undo that right after core did it, hiding the
+            # company field on every record for a user in several companies
+            # (#57). The sync neither adds nor removes it.
+            multi_company = self.env.ref("base.group_multi_company", raise_if_not_found=False)
+            if multi_company:
+                groups_to_add.discard(multi_company.id)
+                groups_to_remove.discard(multi_company.id)
             to_add = [fields.Command.link(gr) for gr in groups_to_add]
             to_remove = [fields.Command.unlink(gr) for gr in groups_to_remove]
             groups = to_remove + to_add
