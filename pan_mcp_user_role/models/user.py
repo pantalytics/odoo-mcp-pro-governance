@@ -103,17 +103,21 @@ class ResUsers(models.Model):
             for role_line in user._get_enabled_roles():
                 role = role_line.role_id
                 group_ids += role_groups[role]
-            group_ids = list(set(group_ids))  # Remove duplicates IDs
-            # Preserve admin only if dropping it would leave zero administrators
+            group_ids = set(group_ids)
+            # Administrator (base.group_system) is a choice per user, made
+            # with the Role radio on the user form, not a role's (#60). The
+            # sync never adds or removes it. A user who has it keeps it and
+            # everything it implies, so no role edit or cron run can lock an
+            # administrator out, and ticking Administrator on a user with a
+            # role is no longer undone by the same save.
             admin_group = self.env.ref("base.group_system", raise_if_not_found=False)
-            if admin_group and admin_group.id in user_group_ids and admin_group.id not in group_ids:
-                other_admins = self.sudo().search_count(
-                    [("id", "!=", user.id), (compat.USER_GROUPS_FIELD, "in", admin_group.id)]
-                )
-                if other_admins == 0:
-                    group_ids.append(admin_group.id)
-            groups_to_add = set(group_ids) - set(user_group_ids)
-            groups_to_remove = set(user_group_ids) - set(group_ids)
+            if admin_group and admin_group.id in user_group_ids:
+                group_ids |= {admin_group.id, *compat.implied_groups(admin_group).ids}
+            groups_to_add = group_ids - set(user_group_ids)
+            groups_to_remove = set(user_group_ids) - group_ids
+            if admin_group:
+                groups_to_add.discard(admin_group.id)
+                groups_to_remove.discard(admin_group.id)
             # base.group_multi_company follows the user's companies, not a
             # role: core links it when a user has more than one company and
             # unlinks it at one (res.users.write). Replacing the groups with

@@ -3,6 +3,20 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.26.6] - 2026-11-16
+
+### Fixed
+- **Making a user with a role Administrator now sticks.** Setting the Role
+  radio on the user form to Administrator and saving jumped straight back to
+  User: the save ran the role sync, which replaced the user's groups with the
+  role's. Administrator is now a choice per user, as in standard Odoo. The
+  role sync never adds or removes it, and a user who has it keeps everything
+  it implies. A role edit or the 3-hourly cron can therefore never take an
+  administrator's rights away. A role that implies Administrator no longer
+  hands it out through the sync (#60).
+
+pan_mcp_pro_governance 19.0.1.26.6, pan_mcp_user_role 19.0.1.0.11.
+
 ## [19.0.1.26.5] - 2026-11-16
 
 ### Fixed
