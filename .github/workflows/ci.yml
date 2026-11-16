@@ -112,11 +112,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential libldap2-dev libsasl2-dev libxml2-dev libxslt1-dev \
             libjpeg-dev zlib1g-dev libpq-dev libffi-dev libssl-dev \
-            postgresql-client \
-            chromium-browser
+            postgresql-client
           # Odoo's HttpCase looks up the browser via `which chromium`/`google-chrome`.
-          # Without this the web tours (test_governance_tour, test_lifecycle_tour)
+          # Without one the web tours (test_governance_tour, test_lifecycle_tour)
           # silently skip and we lose the only end-to-end check we have.
+          # Use the Google Chrome the runner image ships: on Ubuntu 26.04 the
+          # `chromium-browser` deb only installs a snap, and the snap store is
+          # often unreachable from runners (#62). Fail loudly if it is gone.
+          command -v google-chrome || command -v chromium \
+            || { echo "::error::no Chrome/Chromium on the runner"; exit 1; }
 
       - name: Install Odoo Python dependencies
         working-directory: odoo

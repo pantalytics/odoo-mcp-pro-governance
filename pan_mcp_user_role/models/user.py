@@ -27,9 +27,12 @@ class ResUsers(models.Model):
         for user in self:
             user.show_alert = user.role_line_ids.filtered(lambda rec: rec.is_enabled)
 
-    role_ids = fields.One2many(
+    # Not `role_ids`: Odoo's `mail` defines res.users.role_ids (mention
+    # roles, `res.role`) and, loading after this module, replaces ours.
+    x_role_ids = fields.Many2many(
         comodel_name="res.users.role",
-        string="User Roles",
+        string="Access role",
+        help="The access roles linked to this user (Access Rights tab).",
         compute="_compute_role_ids",
         compute_sudo=True,
         groups="base.group_erp_manager",
@@ -50,7 +53,7 @@ class ResUsers(models.Model):
     @api.depends("role_line_ids.role_id")
     def _compute_role_ids(self):
         for user in self:
-            user.role_ids = user.role_line_ids.mapped("role_id")
+            user.x_role_ids = user.role_line_ids.mapped("role_id")
 
     @api.model_create_multi
     def create(self, vals_list):
