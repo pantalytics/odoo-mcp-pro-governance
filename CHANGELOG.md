@@ -3,6 +3,20 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [19.0.1.26.5] - 2026-11-16
+
+### Fixed
+- **A user with a role and more than one company keeps seeing the company
+  field.** Odoo gives a user the Multi Companies group as soon as they get a
+  second company. The role sync then replaced the user's groups with the
+  role's, which never holds that group, so it was gone again right away: the
+  user could switch company but saw no company on invoices, journals or lists.
+  The sync now follows Odoo's rule for that group (more than one company),
+  so the role cron, every 3 hours, also gives it back to users who lost it
+  before this fix (#57).
+
+pan_mcp_pro_governance 19.0.1.26.5, pan_mcp_user_role 19.0.1.0.10.
+
 ## [19.0.1.26.4] - 2026-11-05
 
 ### Fixed
