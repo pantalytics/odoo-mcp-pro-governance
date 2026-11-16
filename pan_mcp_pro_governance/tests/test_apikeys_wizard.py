@@ -42,7 +42,7 @@ class TestApiKeyWizardValidation(TransactionCase):
             values["duration"] = "30"
         values.update(overrides)
         # sudo to bypass the wizard's own ACL; with_user to make
-        # env.user.role_ids the test user's roles (what the compute reads).
+        # env.user the test user (what the compute reads).
         return Desc.with_user(self.user).sudo().create(values)
 
     def test_available_roles_include_subset_roles(self):

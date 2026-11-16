@@ -15,4 +15,5 @@ from . import (
     test_role_unlink_groups,
     test_scoped_model_list,
     test_ui_contract,
+    test_user_role_column,
 )

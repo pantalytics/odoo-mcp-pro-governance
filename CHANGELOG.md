@@ -3,6 +3,16 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+- **The users list shows each user's access role.** The roles column was
+  always empty: Odoo's Discussion app has its own "User Roles" field under
+  the same technical name, and it replaced ours. The column now reads the
+  access role, is called "Access role", and can be hidden.
+
+pan_mcp_user_role 19.0.1.0.11.
+
 ## [19.0.1.26.5] - 2026-11-16
 
 ### Fixed

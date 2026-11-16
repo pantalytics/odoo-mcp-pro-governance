@@ -58,7 +58,7 @@
         <field name="arch" type="xml">
             <field name="company_ids" position="after">
                 <field
-                    name="role_ids"
+                    name="x_role_ids"
                     filter_domain="[('role_line_ids.role_id.name','ilike',self)]"
                 />
             </field>
@@ -69,7 +69,7 @@
         <field name="inherit_id" ref="base.view_users_tree" />
         <field name="arch" type="xml">
             <field name="role" position="after">
-                <field name="role_ids" widget="many2many_tags" />
+                <field name="x_role_ids" widget="many2many_tags" optional="show" />
             </field>
         </field>
     </record>
