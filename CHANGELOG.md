@@ -10,6 +10,10 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   always empty: Odoo's Discussion app has its own "User Roles" field under
   the same technical name, and it replaced ours. The column now reads the
   access role, is called "Access role", and can be hidden.
+- **Dutch users see "Toegangsrol".** The vendored Dutch translations still
+  pointed at the old OCA module name, so Odoo skipped them and the role
+  field showed in English. The role field, its list column and the help
+  text on the Access Rights tab now have Dutch translations.
 
 pan_mcp_user_role 19.0.1.0.12.
 

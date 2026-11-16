@@ -323,8 +323,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:base_user_role.field_res_groups__role_id
 #: model:ir.model.fields,field_description:base_user_role.field_res_users_role__role_id
 #: model:ir.model.fields,field_description:base_user_role.field_res_users_role_line__role_id
+#: model:ir.model.fields,field_description:pan_mcp_user_role.field_res_users_role_line__role_id
 msgid "Role"
-msgstr ""
+msgstr "Rol"
 
 #. module: base_user_role
 #: model:ir.model.fields,field_description:base_user_role.field_res_users__role_line_ids
@@ -485,3 +486,28 @@ msgstr ""
 
 #~ msgid "Last Modified on"
 #~ msgstr "Laatst bijgewerkt op"
+
+#. module: pan_mcp_user_role
+#: model:ir.model.fields,field_description:pan_mcp_user_role.field_res_users__x_role_ids
+#: model_terms:ir.ui.view,arch_db:pan_mcp_user_role.view_res_users_form_inherit
+msgid "Access role"
+msgstr "Toegangsrol"
+
+#. module: pan_mcp_user_role
+#: model:ir.model.fields,help:pan_mcp_user_role.field_res_users__x_role_ids
+msgid "The access roles linked to this user (Access Rights tab)."
+msgstr "De toegangsrollen van deze gebruiker (tabblad Toegangsrechten)."
+
+#. module: pan_mcp_user_role
+#: model_terms:ir.ui.view,arch_db:pan_mcp_user_role.view_res_users_form_inherit
+msgid "Add a role"
+msgstr "Rol toevoegen"
+
+#. module: pan_mcp_user_role
+#: model_terms:ir.ui.view,arch_db:pan_mcp_user_role.view_res_users_form_inherit
+msgid ""
+"Leave empty to set rights by hand below. When one or more roles are linked "
+"to this user, their rights are used. Roles are additive."
+msgstr ""
+"Laat leeg om de rechten hieronder met de hand in te stellen. Hangen er een "
+"of meer rollen aan deze gebruiker, dan gelden hun rechten. Rollen tellen op."
