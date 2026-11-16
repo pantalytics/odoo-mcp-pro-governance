@@ -8,6 +8,7 @@ from . import (
     test_hooks,
     test_migrations,
     test_request_api_key_id,
+    test_role_admin_flag,
     test_role_form_exposure,
     test_role_group_action,
     test_role_multi_company,
