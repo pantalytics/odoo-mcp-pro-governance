@@ -54,7 +54,7 @@
     "website": "https://pantalytics.com/apps/odoo-mcp-server",
     "support": "support@pantalytics.com",
     "category": "Productivity",
-    "version": "19.0.1.26.6",
+    "version": "19.0.1.26.7",
     "license": "AGPL-3",
     "depends": [
         "base",
@@ -96,6 +96,7 @@
     "assets": {
         "web.assets_backend": [
             "pan_mcp_pro_governance/static/src/js/apikeys_help_banner.xml",
+            "pan_mcp_pro_governance/static/src/scss/button_icons.scss",
         ],
         "web.assets_tests": [
             "pan_mcp_pro_governance/static/src/js/tours/governance_tour.js",
