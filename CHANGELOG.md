@@ -6,6 +6,11 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Fixed
+- **Button icons on Odoo 20.** Odoo 20 ships no Font Awesome, so every
+  button written as `icon="fa-..."` (Access Rights, Record Rules, Users,
+  API keys, delete, open log) showed no icon. `static/src/scss/button_icons.scss`
+  draws the Material symbol from Odoo 20's subset in its place; the rules only
+  match Odoo 20's markup, so 17, 18 and 19 keep Font Awesome.
 - **The users list shows each user's access role.** The roles column was
   always empty: Odoo's Discussion app has its own "User Roles" field under
   the same technical name, and it replaced ours. The column now reads the
