@@ -3,6 +3,14 @@
 All notable changes to this module are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [20.0.1.25.2] - 2026-11-18
+
+### Fixed
+- **Button icons on Odoo 20.** Odoo 20 ships no Font Awesome, so every
+  button written as `icon="fa-..."` showed no icon. `static/src/scss/button_icons.scss`
+  draws the Material symbol from Odoo 20's subset in its place. Same change as
+  on trunk (19.0), where the rules match nothing.
+
 ## [19.0.1.25.0] - 2026-09-30
 
 Odoo 20 support. Shared, version-tolerant code on trunk; the `20.0` release
