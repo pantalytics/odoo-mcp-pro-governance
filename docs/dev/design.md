@@ -58,6 +58,11 @@ MCP Pro
   standaard Many2one-pijltje door naar de rol.
 - Uitleg zit in de `help=` van het veld (het ?-icoontje), niet in een
   alert boven het formulier.
+- Beheerder is een keuze per gebruiker: de standaard Odoo-radio "Role"
+  (User / Administrator) boven "Access role". Een rol maakt nooit iemand
+  beheerder en de rol-sync laat `base.group_system` met rust (#60). "Beheerder"
+  op een app-regel in het rolformulier (Project, Urenstaten) is beheer van
+  die app, niet van Odoo.
 - Een API-key mag optioneel een kleinere rol dragen. Dat is de tweede,
   optionele laag; de gebruikersrol is de eerste.
 - Het rolformulier heeft geen "Users"-tabblad. Toewijzen gebeurt op de
